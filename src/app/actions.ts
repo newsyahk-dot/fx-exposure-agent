@@ -71,3 +71,28 @@ export async function approve(_prev: ApproveState, form: FormData): Promise<Appr
 function errorText(e: unknown): string {
   return e instanceof PayPalError ? e.message : e instanceof Error ? e.message : String(e);
 }
+
+// Sandbox demo control: records the client paying the whole open amount today, through PayPal. Lets a
+// judge close the loop (reminder -> payment -> exposure gone) without a client account. It is labelled as
+// a simulation on screen and in the payment note; a real client payment shows up the same way.
+export async function simulateClientPayment(_prev: ApproveState, form: FormData): Promise<ApproveState> {
+  const invoiceId = str(form, "invoiceId");
+  if (!INVOICE_ID.test(invoiceId)) return { ok: false, message: "Unknown invoice." };
+  if (demoMode()) return { ok: false, message: "This is a read-only demo snapshot." };
+  const pp = new PayPalClient();
+  try {
+    const inv = await pp.getInvoice(invoiceId);
+    if (!["SENT", "UNPAID", "PARTIALLY_PAID", "SCHEDULED"].includes(inv.status) || !inv.due_amount || !(Number(inv.due_amount.value) > 0))
+      return { ok: false, message: "This invoice has nothing left to pay." };
+    await pp.recordPayment(invoiceId, {
+      method: "PAYPAL",
+      payment_date: new Date().toISOString().slice(0, 10),
+      amount: inv.due_amount,
+      note: "Simulated client payment (sandbox demo)",
+    });
+    refresh();
+    return { ok: true, message: `Paid: ${inv.due_amount.currency_code} ${inv.due_amount.value} for ${inv.detail.invoice_number}.` };
+  } catch (e) {
+    return { ok: false, message: `PayPal refused: ${errorText(e)}` };
+  }
+}

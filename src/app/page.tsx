@@ -9,7 +9,9 @@ import { BASES } from "@/lib/fx";
 import { cell, compact, full, money } from "@/lib/format";
 import { BUCKETS, type Bucket } from "@/lib/types";
 import { pickBase, SHOCK_PCT, TIMING_DAYS, VOL_LOOKBACK_DAYS, viewFor, type BookView } from "@/lib/view";
+import { clientViewUrl } from "@/lib/paypal";
 import { ApproveForm } from "./approve-button";
+import { SimulatePayment } from "./client-pay";
 import styles from "./page.module.css";
 
 const BUCKET_LABEL: Record<Bucket, string> = {
@@ -58,6 +60,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   const { exposure: e, rates } = view;
   const c = (n: number) => compact(base, n);
   const open = inputs.invoices.filter((i) => OPEN_STATUSES.has(i.status) && i.amountDue > 0);
+  const paidToday = inputs.invoices.filter((i) => !OPEN_STATUSES.has(i.status) && i.payments?.some((p) => p.date === inputs.asOf));
   const overdue = e.rows.reduce((s, r) => s + r.buckets.overdue * rates[r.currency], 0);
   const skipped = [...inputs.skipped, ...e.skipped];
   const readOnly = inputs.source === "demo";
@@ -213,6 +216,56 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
         )}
       </section>
 
+      <section aria-labelledby="client-h" className={styles.sandboxPanel}>
+        <h2 id="client-h">Act as the client (sandbox)</h2>
+        <p className={styles.muted}>
+          Close the loop: pay an open invoice as the client and watch the exposure shrink and the payment appear under
+          &ldquo;What the wait already did&rdquo;. &ldquo;Open as client&rdquo; is the real PayPal invoice page (log in
+          with the sandbox buyer account); &ldquo;Simulate client payment&rdquo; records the same payment without a login and
+          is labelled as a simulation.
+        </p>
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th scope="col">Invoice</th>
+                <th scope="col">Client</th>
+                <th scope="col" className={styles.num}>
+                  Still owed
+                </th>
+                <th scope="col">Due</th>
+                <th scope="col">Pay it</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...paidToday, ...open.slice().sort((a, b) => (rates[b.currency] ?? 0) * b.amountDue - (rates[a.currency] ?? 0) * a.amountDue)].map((i) => {
+                const paid = !OPEN_STATUSES.has(i.status);
+                return (
+                  <tr key={i.id} className={paid ? styles.today : undefined}>
+                    <th scope="row">{i.number}</th>
+                    <td>{i.recipientName ?? ""}</td>
+                    <td className={styles.num}>{paid ? money(i.currency, i.total ?? 0) : money(i.currency, i.amountDue)}</td>
+                    <td>{i.dueDate}</td>
+                    <td>
+                      {paid ? (
+                        "Paid today ✓"
+                      ) : (
+                        <div className={styles.inlineForm}>
+                          <a href={clientViewUrl(i.id)} target="_blank" rel="noopener noreferrer" className={styles.link}>
+                            Open as client ↗
+                          </a>
+                          <SimulatePayment invoiceId={i.id} disabledReason={readOnly ? "demo" : undefined} />
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <footer className={styles.footer}>
         <p>
           Rates: {RATE_SOURCE}, {inputs.ecb.date}, crossed into {base}. 1σ swing from {VOL_LOOKBACK_DAYS} days of daily
@@ -281,8 +334,11 @@ function Timing({ view }: { view: BookView }) {
           </thead>
           <tbody>
             {t.rows.map((r) => (
-              <tr key={`${r.invoiceId}-${r.paidDate}`}>
-                <th scope="row">{r.invoiceNumber}</th>
+              <tr key={`${r.invoiceId}-${r.paidDate}`} className={r.paidDate === t.to ? styles.today : undefined}>
+                <th scope="row">
+                  {r.invoiceNumber}
+                  {r.paidDate === t.to && " · paid today"}
+                </th>
                 <td className={styles.num}>{money(r.currency, r.amount)}</td>
                 <td>
                   {r.invoiceDate} → {r.paidDate} ({r.daysWaited} days)

@@ -437,3 +437,49 @@
 .leftAlone ul {
   margin: 6px 0 0 18px;
 }
+
+.inlineForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 13px;
+}
+
+.secondaryButton {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.secondaryButton:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.sandboxPanel {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.sandboxPanel table td,
+.sandboxPanel table th {
+  vertical-align: middle;
+}
+
+.today {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

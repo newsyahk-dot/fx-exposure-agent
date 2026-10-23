@@ -195,6 +195,11 @@ function safeJson(text: string): unknown {
   }
 }
 
+// The page a client sees for an invoice (and pays from), in the sandbox.
+export function clientViewUrl(invoiceId: string): string {
+  return `https://www.sandbox.paypal.com/invoice/p/#${invoiceId.replace(/^INV2-/, "").replace(/-/g, "")}`;
+}
+
 // --- Mapping PayPal -> engine ----------------------------------------------------------------
 
 export type PPMoney = { currency_code: string; value: string };
