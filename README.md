@@ -33,6 +33,11 @@ them *how much* is exposed, *in which currency*, and *for how long*.
    net 45"). Claude reads it into fields; code prices each way of billing — as asked, in your home currency, shorter
    terms, half up front — from that client's payment history (average days late) and the ECB rates; Claude compares
    them in plain words, under the same checks. You approve one and it is created and sent in PayPal.
+8. **Standing orders.** Approve a policy once — reminders yes/no, discounts up to 1/1.5/2%, at most N actions per run —
+   and the autopilot runs the agent's proposals that fit it, on weekday mornings (Vercel Cron) or when you press Run
+   now. Same agent, same checks, same PayPal calls; each action is marked "autopilot". Everything outside the policy
+   still waits for a click. Standing notes ("Kleinfeld pays on the 5th, don't chase before") go to the agent as
+   preferences. The policy lives in your PayPal account as an invoice template.
 
 It never predicts which way rates will go.
 
@@ -49,6 +54,7 @@ It never predicts which way rates will go.
   action is logged in the invoice's private memo (`src/lib/agent-log.ts`), so it survives redeploys
 - [x] Timing effect over the last 90 days (`src/lib/timing.ts`)
 - [x] Two-year evidence: range by wait and the book replayed under two payment timelines (`src/lib/evidence.ts`)
+- [x] Standing orders: policy, autopilot, notes (`src/lib/policy.ts`, `src/lib/autopilot.ts`, `src/app/api/autopilot`)
 - [x] New-invoice assistant (`src/lib/invoice-plan.ts`, `src/app/invoice-actions.ts`). PayPal does not invoice in
   KRW, so a KRW seller bills in USD, EUR, GBP or JPY and the "bill in your home currency" option is not offered.
 - [x] Demo mode — `DEMO_MODE=1` (or no PayPal keys) serves `src/data/demo-snapshot.json`, which stores one agent run per

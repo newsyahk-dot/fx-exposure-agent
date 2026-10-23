@@ -21,7 +21,11 @@ actions that shorten that exposure (payment reminders, early-payment discount te
 - **Nothing silently dropped.** Invoices that cannot be valued go to `skipped` with a reason.
 - **Rates source:** ECB euro reference rates via Frankfurter, EUR base crossed into the home currency (`src/lib/fx.ts`).
   Do not query `base=KRW` — it returns rounded quotes (0.7% error, measured 2026-10-23). Show the source on screen.
-- **Every agent action needs an explicit approve click.** The model proposes; the user decides.
+- **Every agent action needs an explicit approve click** — either on that proposal, or on a standing policy that covers
+  it (`src/lib/policy.ts`, stored in a PayPal invoice template). The autopilot (`src/lib/autopilot.ts`, button or Vercel
+  cron with `CRON_SECRET`) runs only proposals inside the approved policy, through the same checks and the same
+  `executeAction` path, and logs them with an `auto` mark. Only "approve" can change the bounds. Seller notes are
+  preferences passed to the agent as data; they cannot change rules, eligibility or numbers.
 - **The agent is checked by code** (`src/lib/agent.ts`, `src/lib/checks.ts`): code decides eligibility and every
   number; every text the model writes must use only numbers from the facts, keep each figure under its own label
   (3% stress test vs 1σ typical swing), avoid forecasts/advice/"benefit"/"pays for itself", and (client text) links

@@ -1,6 +1,6 @@
 {
   "asOf": "2026-10-23",
-  "fetchedAt": "2026-10-23T08:27:09.370Z",
+  "fetchedAt": "2026-10-23T08:45:52.152Z",
   "ecb": {
     "date": "2026-10-22",
     "latest": {
@@ -3506,6 +3506,40 @@
   },
   "invoices": [
     {
+      "id": "INV2-PP4C-Z6AF-2U2Z-3C8Y",
+      "number": "FXA-N261023-E6ED-2",
+      "status": "SENT",
+      "currency": "JPY",
+      "amountDue": 240000,
+      "dueDate": "2026-12-07",
+      "invoiceDate": "2026-10-23",
+      "recipientName": "Sakura Games",
+      "total": 240000,
+      "agentLog": [
+        {
+          "kind": "created",
+          "at": "2026-10-23T08:36:43.139Z"
+        }
+      ]
+    },
+    {
+      "id": "INV2-6EWY-RCU2-TUW8-3RYU",
+      "number": "FXA-N261023-E6ED-1",
+      "status": "SENT",
+      "currency": "JPY",
+      "amountDue": 240000,
+      "dueDate": "2026-10-30",
+      "invoiceDate": "2026-10-23",
+      "recipientName": "Sakura Games",
+      "total": 240000,
+      "agentLog": [
+        {
+          "kind": "created",
+          "at": "2026-10-23T08:36:43.139Z"
+        }
+      ]
+    },
+    {
       "id": "INV2-HC6A-RTDK-CMBT-KQLA",
       "number": "FXA-3005-r5",
       "status": "SENT",
@@ -3569,7 +3603,13 @@
       "invoiceDate": "2026-09-15",
       "recipientName": "Sakura Games",
       "total": 310000,
-      "agentLog": []
+      "agentLog": [
+        {
+          "kind": "reminder",
+          "at": "2026-10-23T08:44:01.569Z",
+          "auto": true
+        }
+      ]
     },
     {
       "id": "INV2-GFGJ-WH9J-5Q3C-M8A9",
@@ -3653,7 +3693,13 @@
       "invoiceDate": "2026-09-05",
       "recipientName": "Atelier Moreau",
       "total": 1800,
-      "agentLog": []
+      "agentLog": [
+        {
+          "kind": "reminder",
+          "at": "2026-10-23T08:44:01.569Z",
+          "auto": true
+        }
+      ]
     },
     {
       "id": "INV2-6DTG-JG6K-KEE5-EE35",
@@ -3795,6 +3841,16 @@
   ],
   "skipped": [],
   "archived": 88,
+  "policy": {
+    "enabled": false,
+    "base": "USD",
+    "reminders": true,
+    "discounts": false,
+    "maxDiscountPct": 1,
+    "maxActionsPerRun": 2,
+    "approvedAt": "2026-10-23T08:43:20.421Z",
+    "notes": "Keep e-mails short and friendly."
+  },
   "agentRuns": {
     "USD": {
       "base": "USD",
@@ -3802,32 +3858,6 @@
       "source": "agent",
       "model": "claude-haiku-5-5",
       "proposals": [
-        {
-          "kind": "reminder",
-          "invoiceId": "INV2-PUXW-P2QQ-TCMA-T4TS",
-          "invoiceNumber": "FXA-2001-r5",
-          "currency": "EUR",
-          "amount": 1800,
-          "value": 2016.9,
-          "daysOverdue": 18,
-          "lastReminderAt": null,
-          "subject": "Friendly reminder: invoice FXA-2001-r5 (EUR 1,800.00) is overdue",
-          "message": "Dear Atelier Moreau,\n\nI hope you are well. This is a friendly reminder that invoice FXA-2001-r5 for EUR 1,800.00 was due on 2026-10-05 and is now 18 days overdue.\n\nIf the payment has already been sent, please accept my thanks and disregard this note. Otherwise, I would be grateful if you could settle the invoice through PayPal at your earliest convenience. Please let me know if anything is holding it up.\n\nKind regards",
-          "rationale": "The invoice is 18 days overdue for EUR 1,800.00, so a reminder asks the client to pay and shortens how long that amount stays open to exchange-rate movement. No earlier reminder is recorded, so the e-mail opens gently."
-        },
-        {
-          "kind": "reminder",
-          "invoiceId": "INV2-Z3UX-T6HL-5CKA-CVSS",
-          "invoiceNumber": "FXA-3001-r5",
-          "currency": "JPY",
-          "amount": 310000,
-          "value": 1973.944422344718,
-          "daysOverdue": 8,
-          "lastReminderAt": null,
-          "subject": "Friendly reminder: invoice FXA-3001-r5 (JPY 310,000) is overdue",
-          "message": "Dear Sakura Games team,\n\nI hope all is well. This is a friendly reminder that invoice FXA-3001-r5 for JPY 310,000 was due on 2026-10-15 and is now 8 days overdue.\n\nIf the payment has already been sent, please accept my thanks and disregard this note. Otherwise, I would be grateful if you could settle the invoice through PayPal when convenient. Please let me know if you have any questions.\n\nKind regards",
-          "rationale": "The invoice is 8 days overdue for JPY 310,000, so a reminder asks the client to pay and shortens how long that amount stays open to exchange-rate movement. The stress-test figure for this invoice is about $59 either way, and the e-mail stays gentle because it is only a few days late."
-        },
         {
           "kind": "early_pay_discount",
           "invoiceId": "INV2-KLMU-Y3DC-7UXG-5K4T",
@@ -3842,8 +3872,8 @@
           "cost": 56.025,
           "swingNow": 104.17617611913863,
           "swingIfEarly": 42.52974580770066,
-          "clientNote": "Hello Kleinfeld GmbH, a 1% early-payment discount has been applied to invoice FXA-2005-r5. The new due date is 2026-11-02.",
-          "rationale": "The 1% discount costs about $56 and applies whether or not the client pays early. Until the current due date, the typical swing either way (one standard deviation) falls from about $104 to about $43 if paid within 10 days, a reduction of about $61 that is larger than the cost."
+          "clientNote": "Hello Kleinfeld GmbH team, we have applied a 1% early-payment discount to invoice FXA-2005-r5. The new due date is 2026-11-02. Thank you!",
+          "rationale": "The 1% discount costs about $56 and is applied whether or not the client pays early. The typical swing until the current due date is about $104, and if paid within 10 days it drops to about $43, a reduction of about $61, which is larger than the cost. The 1.5% and 2% options cost more ($84 and $112) than their reduction, so 1% is the only one of the three where the reduction exceeds the cost."
         },
         {
           "kind": "early_pay_discount",
@@ -3859,20 +3889,40 @@
           "cost": 48.39347616070921,
           "swingNow": 162.86536759983625,
           "swingIfEarly": 67.2954707539832,
-          "clientNote": "Hello Sakura Games, a 1% early-payment discount has been applied to invoice FXA-3005-r5. The new due date is 2026-11-02.",
-          "rationale": "The 1% discount costs about $48 and applies whether or not the client pays early. Until the current due date, the typical swing either way (one standard deviation) falls from about $163 to about $67 if paid within 10 days, a reduction of about $96 that is larger than the cost."
+          "clientNote": "Hello Sakura Games team, we have applied a 1% early-payment discount to invoice FXA-3005-r5. The new due date is 2026-11-02. Thank you!",
+          "rationale": "The 1% discount costs about $48 and is applied whether or not the client pays early. The typical swing until the current due date is about $163, and if paid within 10 days it drops to about $67, a reduction of about $96, which is larger than the cost. The 2% option costs about $97, slightly more than its $96 reduction, and 1.5% costs about $73."
         }
       ],
       "notProposed": [
         {
           "invoiceNumber": "FXA-3002-r5",
-          "why": "Every offer costs more than the swing it removes: the 1% discount costs about $31 against a reduction of about $17 in the typical swing.",
+          "why": "Even the smallest offer (1%, about $31) costs more than the about $17 reduction in typical swing, so no offer is proposed.",
           "by": "agent"
         },
         {
           "invoiceNumber": "FXA-2002-r5",
-          "why": "Every offer costs more than the swing it removes: the 1% discount costs about $27 against a reduction of about $7 in the typical swing.",
+          "why": "The 1% offer's cost and reduction figures could not be cited in the required format, so I have not proposed it; this invoice can be re-priced later.",
           "by": "agent"
+        },
+        {
+          "invoiceNumber": "FXA-2001-r5",
+          "why": "a reminder was sent on 2026-10-23; next one after 3 days",
+          "by": "code"
+        },
+        {
+          "invoiceNumber": "FXA-3001-r5",
+          "why": "a reminder was sent on 2026-10-23; next one after 3 days",
+          "by": "code"
+        },
+        {
+          "invoiceNumber": "FXA-N261023-E6ED-2",
+          "why": "The smallest offer costs more than its typical swing reduction, so no offer is proposed.",
+          "by": "agent"
+        },
+        {
+          "invoiceNumber": "FXA-N261023-E6ED-1",
+          "why": "due in 7 days, too soon for an early-payment offer",
+          "by": "code"
         },
         {
           "invoiceNumber": "FXA-2003-r5",
@@ -3894,7 +3944,7 @@
         {
           "tool": "list_open_invoices",
           "ok": true,
-          "detail": "8 invoices"
+          "detail": "10 invoices"
         },
         {
           "tool": "price_discount",
@@ -3965,6 +4015,24 @@
         {
           "tool": "price_discount",
           "invoice": "FXA-2002-r5",
+          "ok": true,
+          "detail": "2% within 10 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "1% within 10 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "1.5% within 10 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
           "ok": true,
           "detail": "2% within 10 days"
         },
@@ -3981,8 +4049,44 @@
           "detail": "1% within 10 days"
         },
         {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-2002-r5",
+          "ok": false,
+          "detail": "rationale: numbers not in the facts: 15, 45, 21, 24, 23, 31"
+        },
+        {
           "tool": "skip_invoice",
           "invoice": "FXA-3002-r5",
+          "ok": true,
+          "detail": "skipped"
+        },
+        {
+          "tool": "skip_invoice",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": false,
+          "detail": "why: numbers not in the facts: 27"
+        },
+        {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-2002-r5",
+          "ok": false,
+          "detail": "rationale: numbers not in the facts: 15, 45, 21, 24"
+        },
+        {
+          "tool": "skip_invoice",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": false,
+          "detail": "why: numbers not in the facts: 27"
+        },
+        {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-2002-r5",
+          "ok": false,
+          "detail": "rationale: numbers not in the facts: 15, 24"
+        },
+        {
+          "tool": "skip_invoice",
+          "invoice": "FXA-N261023-E6ED-2",
           "ok": true,
           "detail": "skipped"
         },
@@ -3993,23 +4097,16 @@
           "detail": "skipped"
         },
         {
-          "tool": "propose_reminder",
-          "invoice": "FXA-2001-r5",
-          "ok": true,
-          "detail": "accepted"
-        },
-        {
-          "tool": "propose_reminder",
-          "invoice": "FXA-3001-r5",
-          "ok": true,
-          "detail": "accepted"
+          "tool": "summary",
+          "ok": false,
+          "detail": "withheld (too long (806 > 700 characters))"
         }
       ],
-      "rejections": 0,
-      "summary": "I proposed a 1% early-payment discount on FXA-2005-r5 (Kleinfeld, EUR 5,000) and FXA-3005-r5 (Sakura Games, JPY 760,000), and payment reminders for FXA-2001-r5 (Atelier Moreau, EUR 1,800, 18 days overdue) and FXA-3001-r5 (Sakura Games, JPY 310,000, 8 days overdue). I skipped FXA-3002-r5 and FXA-2002-r5 because their discounts cost more than the swing they remove. FXA-2003-r5 and FXA-3003-r5 are not eligible yet, since they fall due in 10 days and 7 days.",
+      "rejections": 5,
+      "summary": "Proposed 0 reminders and 2 early-payment offers.",
       "usage": {
-        "input": 25425,
-        "output": 4999
+        "input": 73850,
+        "output": 9156
       }
     },
     "EUR": {
@@ -4020,19 +4117,6 @@
       "proposals": [
         {
           "kind": "reminder",
-          "invoiceId": "INV2-Z3UX-T6HL-5CKA-CVSS",
-          "invoiceNumber": "FXA-3001-r5",
-          "currency": "JPY",
-          "amount": 310000,
-          "value": 1761.6639199863614,
-          "daysOverdue": 8,
-          "lastReminderAt": null,
-          "subject": "Friendly reminder: invoice FXA-3001-r5",
-          "message": "Hello Sakura Games team,\n\nI hope you are well. This is a friendly reminder that invoice FXA-3001-r5 for JPY 310,000 was due on 2026-10-15 and is now 8 days overdue. If it has already been sent on your side, please disregard this note. Otherwise, could you please arrange payment through PayPal at your earliest convenience?\n\nIf anything is holding it up, just let me know and we will sort it out.\n\nThank you very much,\nThe seller",
-          "rationale": "This invoice is 8 days overdue, so a gentle reminder asks the client to pay the JPY 310,000 that is currently worth about €1,762 and exposed to the 3% stress-test move of about €53. Getting it paid would remove that exposure from the open balance."
-        },
-        {
-          "kind": "reminder",
           "invoiceId": "INV2-CAKK-XHMA-LH3T-P2CN",
           "invoiceNumber": "FXA-1006-r5",
           "currency": "USD",
@@ -4040,9 +4124,9 @@
           "value": 1606.425702811245,
           "daysOverdue": 22,
           "lastReminderAt": null,
-          "subject": "Overdue invoice FXA-1006-r5, please arrange payment",
-          "message": "Hello Copperleaf Apps team,\n\nI am writing about invoice FXA-1006-r5 for USD 1,800.00, which was due on 2026-10-01 and is now 22 days overdue. I have not yet received payment, and I would appreciate it if you could settle it through PayPal as soon as possible.\n\nIf there is an issue with the invoice or payment, please reply to this message so we can resolve it together.\n\nThank you,\nThe seller",
-          "rationale": "At 22 days overdue, a firmer but courteous reminder asks for the USD 1,800.00 that is currently worth about €1,606 and carries a 3% stress-test move of about €48. Payment would close that exposure on this invoice."
+          "subject": "Friendly reminder: invoice FXA-1006-r5 (USD 1,800.00)",
+          "message": "Hello Copperleaf Apps team,\n\nI hope you are doing well. This is a friendly reminder that invoice FXA-1006-r5 for USD 1,800.00 was due on 2026-10-01 and is now 22 days overdue.\n\nYou can settle it through the PayPal invoice link you already have. If you have any questions, or if the payment is already on its way, please let me know.\n\nThank you, and have a great day.",
+          "rationale": "Invoice FXA-1006-r5 is 22 days overdue with USD 1,800.00 still owed, worth about €1,606, and a 3% stress-test move either way would change that by about €48. This is the first reminder on this invoice, so a short, gentle nudge fits."
         },
         {
           "kind": "early_pay_discount",
@@ -4058,29 +4142,56 @@
           "cost": 43.18917997385918,
           "swingNow": 130.0248332067672,
           "swingIfEarly": 45.406641356996246,
-          "clientNote": "Hello Sakura Games team, a 1% early-payment discount has been applied to invoice FXA-3005-r5. The new due date is 2026-10-30. Thank you for your business.",
-          "rationale": "A 1% discount costs about €43 and, if the client pays within 7 days, the typical swing on this JPY 760,000 invoice falls from about €130 to about €45, a reduction of about €85. The discount stays even if the client pays late, so the €43 cost applies either way."
+          "clientNote": "Hello Sakura Games team, a 1% early-payment discount has been applied to invoice FXA-3005-r5. The new due date is 2026-10-30. Thank you.",
+          "rationale": "The 1% discount costs about €43, and it reduces the typical swing (one standard deviation) until the due date from about €130 to about €45, a reduction of about €85. The discount stays even if the client pays late."
+        },
+        {
+          "kind": "early_pay_discount",
+          "invoiceId": "INV2-PP4C-Z6AF-2U2Z-3C8Y",
+          "invoiceNumber": "FXA-N261023-E6ED-2",
+          "currency": "JPY",
+          "amount": 240000,
+          "value": 1363.8688412797635,
+          "daysToDue": 45,
+          "percent": 1,
+          "withinDays": 7,
+          "newDueDate": "2026-10-30",
+          "cost": 13.638688412797634,
+          "swingNow": 36.27496612711752,
+          "swingIfEarly": 14.33893937589355,
+          "clientNote": "Hello Sakura Games team, a 1% early-payment discount has been applied to invoice FXA-N261023-E6ED-2. The new due date is 2026-10-30. Thank you.",
+          "rationale": "The 1% discount costs about €14, and it reduces the typical swing (one standard deviation) until the due date from about €36 to about €14, a reduction of about €22. The discount stays even if the client pays late."
         }
       ],
       "notProposed": [
         {
           "invoiceNumber": "FXA-1004-r5",
-          "why": "Every offer (1%, 1.5%, 2%) costs more (€58, €87, €116) than the typical-swing reduction of about €54 it would bring.",
+          "why": "At every offered level the cost (about €58 for 1%) is larger than the reduction in typical swing (about €54 if paid within 7 days).",
           "by": "agent"
         },
         {
           "invoiceNumber": "FXA-3002-r5",
-          "why": "Every offer costs more (€27 at 1%, €41 at 1.5%, €55 at 2%) than the typical-swing reduction of about €19 it would bring.",
+          "why": "The cheapest option, 1% at about €27, costs more than the reduction in typical swing of about €19.",
           "by": "agent"
         },
         {
           "invoiceNumber": "FXA-1003-r5",
-          "why": "Every offer costs more (€23 at 1%, €35 at 1.5%, €46 at 2%) than the typical-swing reduction of about €12 it would bring.",
+          "why": "The cheapest option, 1% at about €23, costs more than the reduction in typical swing of about €12.",
           "by": "agent"
+        },
+        {
+          "invoiceNumber": "FXA-3001-r5",
+          "why": "a reminder was sent on 2026-10-23; next one after 3 days",
+          "by": "code"
         },
         {
           "invoiceNumber": "FXA-1002-r5",
           "why": "due in 2 days, too soon for an early-payment offer",
+          "by": "code"
+        },
+        {
+          "invoiceNumber": "FXA-N261023-E6ED-1",
+          "why": "due in 7 days, too soon for an early-payment offer",
           "by": "code"
         },
         {
@@ -4103,7 +4214,7 @@
         {
           "tool": "list_open_invoices",
           "ok": true,
-          "detail": "9 invoices"
+          "detail": "11 invoices"
         },
         {
           "tool": "price_discount",
@@ -4178,16 +4289,22 @@
           "detail": "2% within 7 days"
         },
         {
-          "tool": "propose_early_payment_discount",
-          "invoice": "FXA-3005-r5",
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
           "ok": true,
           "detail": "1% within 7 days"
         },
         {
-          "tool": "propose_reminder",
-          "invoice": "FXA-3001-r5",
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
           "ok": true,
-          "detail": "accepted"
+          "detail": "1.5% within 7 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "2% within 7 days"
         },
         {
           "tool": "propose_reminder",
@@ -4196,6 +4313,18 @@
           "detail": "accepted"
         },
         {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-3005-r5",
+          "ok": true,
+          "detail": "1% within 7 days"
+        },
+        {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "1% within 7 days"
+        },
+        {
           "tool": "skip_invoice",
           "invoice": "FXA-1004-r5",
           "ok": true,
@@ -4212,18 +4341,13 @@
           "invoice": "FXA-1003-r5",
           "ok": true,
           "detail": "skipped"
-        },
-        {
-          "tool": "summary",
-          "ok": false,
-          "detail": "withheld (numbers not in the facts: 600)"
         }
       ],
       "rejections": 0,
-      "summary": "Proposed 2 reminders and 1 early-payment offers.",
+      "summary": "I proposed a payment reminder for Copperleaf Apps' overdue invoice FXA-1006-r5 (USD 1,800.00), and two 1% early-payment discounts for Sakura Games: FXA-3005-r5 and FXA-N261023-E6ED-2, both with a new due date of 2026-10-30. I skipped Northwind Outfitters (FXA-1004-r5), Mori Design Office (FXA-3002-r5) and Harbor & Pine (FXA-1003-r5), because at every offered level the discount cost was larger than the reduction in typical swing. The other open invoices were not eligible for action yet.",
       "usage": {
-        "input": 25371,
-        "output": 4388
+        "input": 29420,
+        "output": 4880
       }
     },
     "GBP": {
@@ -4234,32 +4358,6 @@
       "proposals": [
         {
           "kind": "reminder",
-          "invoiceId": "INV2-PUXW-P2QQ-TCMA-T4TS",
-          "invoiceNumber": "FXA-2001-r5",
-          "currency": "EUR",
-          "amount": 1800,
-          "value": 1507.86,
-          "daysOverdue": 18,
-          "lastReminderAt": null,
-          "subject": "Friendly reminder: invoice FXA-2001-r5",
-          "message": "Dear Atelier Moreau,\n\nI hope you are well. This is a friendly reminder that invoice FXA-2001-r5 for EUR 1,800.00 was due on 2026-10-05 and is now 18 days overdue.\n\nIf payment has already been sent, please disregard this message. Otherwise, I would be grateful if you could settle the invoice through PayPal when convenient. Please let me know if anything is needed from my side.\n\nThank you very much.",
-          "rationale": "The EUR 1,800.00 is 18 days overdue and is worth about £1,508, with a 3% stress-test move of about £45 either way. A payment would remove this amount from the open foreign-currency exposure."
-        },
-        {
-          "kind": "reminder",
-          "invoiceId": "INV2-Z3UX-T6HL-5CKA-CVSS",
-          "invoiceNumber": "FXA-3001-r5",
-          "currency": "JPY",
-          "amount": 310000,
-          "value": 1475.745865772575,
-          "daysOverdue": 8,
-          "lastReminderAt": null,
-          "subject": "Friendly reminder: invoice FXA-3001-r5",
-          "message": "Dear Sakura Games,\n\nI hope all is well with you. This is a friendly reminder that invoice FXA-3001-r5 for JPY 310,000 was due on 2026-10-15 and is now 8 days overdue.\n\nIf payment has already been sent, please disregard this message. Otherwise, I would appreciate it if you could settle the invoice through PayPal when convenient.\n\nThank you very much.",
-          "rationale": "The JPY 310,000 is 8 days overdue and is worth about £1,476, with a 3% stress-test move of about £44 either way. A payment would remove this amount from the open foreign-currency exposure."
-        },
-        {
-          "kind": "reminder",
           "invoiceId": "INV2-CAKK-XHMA-LH3T-P2CN",
           "invoiceNumber": "FXA-1006-r5",
           "currency": "USD",
@@ -4267,9 +4365,9 @@
           "value": 1345.7028112449798,
           "daysOverdue": 22,
           "lastReminderAt": null,
-          "subject": "Reminder: invoice FXA-1006-r5 is overdue",
-          "message": "Dear Copperleaf Apps,\n\nI hope you are well. I am writing about invoice FXA-1006-r5 for USD 1,800.00, which was due on 2026-10-01 and is now 22 days overdue.\n\nIf payment has already been sent, please accept my thanks and disregard this note. If not, I would be grateful if you could arrange payment through PayPal at your earliest convenience. If there is an issue with the invoice, please let me know so we can resolve it together.\n\nThank you.",
-          "rationale": "The USD 1,800.00 is 22 days overdue and is worth about £1,346, with a 3% stress-test move of about £40 either way. A payment would remove this amount from the open foreign-currency exposure."
+          "subject": "Friendly reminder: invoice FXA-1006-r5",
+          "message": "Hi Copperleaf Apps,\n\nI hope you're well. A quick reminder that invoice FXA-1006-r5 for USD 1,800.00 was due on 2026-10-01 and is now 22 days overdue.\n\nIf payment is already on its way, please ignore this note. Otherwise, could you arrange payment when you get a chance? Let me know if anything is needed from my side.\n\nThank you!",
+          "rationale": "This invoice is 22 days overdue with no reminder yet, so a reminder is the only action available. Sending it would shorten the time the USD 1,800.00 (about £1,346) stays exposed, where a 3% stress-test move is about £40."
         },
         {
           "kind": "early_pay_discount",
@@ -4285,8 +4383,8 @@
           "cost": 48.594823739402045,
           "swingNow": 79.62250008020938,
           "swingIfEarly": 29.074026252591715,
-          "clientNote": "Hello Northwind Outfitters, we have applied a 1% discount to invoice FXA-1004-r5. The new due date is 2026-10-28. Thank you for your business.",
-          "rationale": "A 1% discount costs about £49 whether or not the client pays early. Paying within 5 days would cut the typical swing (one standard deviation) on the USD 6,500.00 from about £80 to about £29, a reduction of about £51, which is slightly larger than the cost."
+          "clientNote": "Hi Northwind Outfitters, a 1% early-payment discount has been applied to invoice FXA-1004-r5. The new due date is 2026-10-28. Thank you!",
+          "rationale": "The 1% discount costs about £49 and the typical swing (one standard deviation) on this invoice falls from about £80 to about £29 if paid within 5 days, a reduction of about £51. The discount stays even if the client pays late, so the cost applies whatever the payment date."
         },
         {
           "kind": "early_pay_discount",
@@ -4302,34 +4400,66 @@
           "cost": 36.17957606410184,
           "swingNow": 112.75600875115052,
           "swingIfEarly": 35.21906012442353,
-          "clientNote": "Hello Sakura Games, we have applied a 1% discount to invoice FXA-3005-r5. The new due date is 2026-10-28. Thank you for your business.",
-          "rationale": "A 1% discount costs about £36 whether or not the client pays early. Paying within 5 days would cut the typical swing (one standard deviation) on the JPY 760,000 from about £113 to about £35, a reduction of about £78, which is larger than the cost."
+          "clientNote": "Hi Sakura Games, a 1% early-payment discount has been applied to invoice FXA-3005-r5. The new due date is 2026-10-28. Thank you!",
+          "rationale": "The 1% discount costs about £36 and the typical swing (one standard deviation) on this invoice falls from about £113 to about £35 if paid within 5 days, a reduction of about £78. The discount stays even if the client pays late, and the new due date is 2026-10-28."
+        },
+        {
+          "kind": "early_pay_discount",
+          "invoiceId": "INV2-PP4C-Z6AF-2U2Z-3C8Y",
+          "invoiceNumber": "FXA-N261023-E6ED-2",
+          "currency": "JPY",
+          "amount": 240000,
+          "value": 1142.512928340058,
+          "daysToDue": 45,
+          "percent": 1,
+          "withinDays": 5,
+          "newDueDate": "2026-10-28",
+          "cost": 11.42512928340058,
+          "swingNow": 31.457224725469406,
+          "swingIfEarly": 11.121808460344273,
+          "clientNote": "Hi Sakura Games, a 1% early-payment discount has been applied to invoice FXA-N261023-E6ED-2. The new due date is 2026-10-28. Thank you!",
+          "rationale": "The 1% discount costs about £11 and the typical swing (one standard deviation) on this invoice falls from about £31 to about £11 if paid within 5 days, a reduction of about £20. The discount stays even if the client pays late, and the new due date is 2026-10-28."
         }
       ],
       "notProposed": [
         {
           "invoiceNumber": "FXA-2005-r5",
-          "why": "A 1% discount costs about £42 against a typical swing reduction of about £32 if paid within 5 days, so the cost is larger than the reduction.",
+          "why": "At 1% over 5 days the cost of about £42 is larger than the typical-swing reduction of about £32.",
           "by": "agent"
         },
         {
           "invoiceNumber": "FXA-3002-r5",
-          "why": "A 1% discount costs about £23 against a typical swing reduction of about £13 within 10 days, and the other percentages cost more than they reduce.",
+          "why": "At 1% over 5 days the cost of about £23 is larger than the typical-swing reduction of about £20.",
           "by": "agent"
         },
         {
           "invoiceNumber": "FXA-2002-r5",
-          "why": "A 1% discount costs about £20 against a typical swing reduction of about £5 within 5 days, so the cost is well above the reduction.",
+          "why": "At 1% over 5 days the cost of about £20 is larger than the typical-swing reduction of about £5.",
           "by": "agent"
         },
         {
           "invoiceNumber": "FXA-1003-r5",
-          "why": "A 1% discount costs about £19 against a typical swing reduction of about £11 within 5 days, so the cost is larger than the reduction.",
+          "why": "At 1% over 5 days the cost of about £19 is larger than the typical-swing reduction of about £11.",
           "by": "agent"
+        },
+        {
+          "invoiceNumber": "FXA-2001-r5",
+          "why": "a reminder was sent on 2026-10-23; next one after 3 days",
+          "by": "code"
+        },
+        {
+          "invoiceNumber": "FXA-3001-r5",
+          "why": "a reminder was sent on 2026-10-23; next one after 3 days",
+          "by": "code"
         },
         {
           "invoiceNumber": "FXA-1002-r5",
           "why": "due in 2 days, too soon for an early-payment offer",
+          "by": "code"
+        },
+        {
+          "invoiceNumber": "FXA-N261023-E6ED-1",
+          "why": "due in 7 days, too soon for an early-payment offer",
           "by": "code"
         },
         {
@@ -4357,19 +4487,13 @@
         {
           "tool": "list_open_invoices",
           "ok": true,
-          "detail": "13 invoices"
+          "detail": "15 invoices"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-1004-r5",
           "ok": true,
-          "detail": "1% within 5 days"
-        },
-        {
-          "tool": "price_discount",
-          "invoice": "FXA-1004-r5",
-          "ok": true,
-          "detail": "1.5% within 7 days"
+          "detail": "1% within 10 days"
         },
         {
           "tool": "price_discount",
@@ -4381,13 +4505,7 @@
           "tool": "price_discount",
           "invoice": "FXA-2005-r5",
           "ok": true,
-          "detail": "1% within 5 days"
-        },
-        {
-          "tool": "price_discount",
-          "invoice": "FXA-2005-r5",
-          "ok": true,
-          "detail": "1.5% within 7 days"
+          "detail": "1% within 10 days"
         },
         {
           "tool": "price_discount",
@@ -4399,13 +4517,7 @@
           "tool": "price_discount",
           "invoice": "FXA-3005-r5",
           "ok": true,
-          "detail": "1% within 5 days"
-        },
-        {
-          "tool": "price_discount",
-          "invoice": "FXA-3005-r5",
-          "ok": true,
-          "detail": "1.5% within 7 days"
+          "detail": "1% within 10 days"
         },
         {
           "tool": "price_discount",
@@ -4417,13 +4529,7 @@
           "tool": "price_discount",
           "invoice": "FXA-3002-r5",
           "ok": true,
-          "detail": "1% within 5 days"
-        },
-        {
-          "tool": "price_discount",
-          "invoice": "FXA-3002-r5",
-          "ok": true,
-          "detail": "1.5% within 7 days"
+          "detail": "1% within 10 days"
         },
         {
           "tool": "price_discount",
@@ -4435,13 +4541,7 @@
           "tool": "price_discount",
           "invoice": "FXA-2002-r5",
           "ok": true,
-          "detail": "1% within 5 days"
-        },
-        {
-          "tool": "price_discount",
-          "invoice": "FXA-2002-r5",
-          "ok": true,
-          "detail": "1.5% within 7 days"
+          "detail": "1% within 10 days"
         },
         {
           "tool": "price_discount",
@@ -4453,55 +4553,121 @@
           "tool": "price_discount",
           "invoice": "FXA-1003-r5",
           "ok": true,
-          "detail": "1% within 5 days"
-        },
-        {
-          "tool": "price_discount",
-          "invoice": "FXA-1003-r5",
-          "ok": true,
-          "detail": "1.5% within 7 days"
+          "detail": "1% within 10 days"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-1003-r5",
           "ok": true,
           "detail": "2% within 10 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "1% within 10 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "2% within 10 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-3005-r5",
+          "ok": true,
+          "detail": "1% within 5 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "1% within 5 days"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-1004-r5",
           "ok": true,
-          "detail": "1% within 10 days"
+          "detail": "1% within 5 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-1004-r5",
+          "ok": true,
+          "detail": "2% within 5 days"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-2005-r5",
           "ok": true,
-          "detail": "1% within 10 days"
+          "detail": "1% within 5 days"
         },
         {
           "tool": "price_discount",
-          "invoice": "FXA-3005-r5",
+          "invoice": "FXA-2005-r5",
           "ok": true,
-          "detail": "1% within 10 days"
+          "detail": "2% within 5 days"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-3002-r5",
           "ok": true,
-          "detail": "1% within 10 days"
+          "detail": "1% within 5 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-3002-r5",
+          "ok": true,
+          "detail": "2% within 5 days"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-2002-r5",
           "ok": true,
-          "detail": "1% within 10 days"
+          "detail": "1% within 5 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-2002-r5",
+          "ok": true,
+          "detail": "2% within 5 days"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-1003-r5",
           "ok": true,
-          "detail": "1% within 10 days"
+          "detail": "1% within 5 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-1003-r5",
+          "ok": true,
+          "detail": "2% within 5 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-3005-r5",
+          "ok": true,
+          "detail": "2% within 5 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "2% within 5 days"
+        },
+        {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-3005-r5",
+          "ok": true,
+          "detail": "1% within 5 days"
+        },
+        {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "1% within 5 days"
         },
         {
           "tool": "propose_early_payment_discount",
@@ -4510,22 +4676,34 @@
           "detail": "1% within 5 days"
         },
         {
-          "tool": "propose_early_payment_discount",
-          "invoice": "FXA-3005-r5",
-          "ok": true,
-          "detail": "1% within 5 days"
+          "tool": "propose_reminder",
+          "invoice": "FXA-1006-r5",
+          "ok": false,
+          "detail": "rationale: forecast or advice wording: \"should\""
         },
         {
-          "tool": "propose_reminder",
-          "invoice": "FXA-2001-r5",
+          "tool": "skip_invoice",
+          "invoice": "FXA-2005-r5",
           "ok": true,
-          "detail": "accepted"
+          "detail": "skipped"
         },
         {
-          "tool": "propose_reminder",
-          "invoice": "FXA-3001-r5",
+          "tool": "skip_invoice",
+          "invoice": "FXA-3002-r5",
           "ok": true,
-          "detail": "accepted"
+          "detail": "skipped"
+        },
+        {
+          "tool": "skip_invoice",
+          "invoice": "FXA-2002-r5",
+          "ok": true,
+          "detail": "skipped"
+        },
+        {
+          "tool": "skip_invoice",
+          "invoice": "FXA-1003-r5",
+          "ok": true,
+          "detail": "skipped"
         },
         {
           "tool": "propose_reminder",
@@ -4534,35 +4712,16 @@
           "detail": "accepted"
         },
         {
-          "tool": "skip_invoice",
-          "invoice": "FXA-2005-r5",
-          "ok": true,
-          "detail": "skipped"
-        },
-        {
-          "tool": "skip_invoice",
-          "invoice": "FXA-3002-r5",
-          "ok": true,
-          "detail": "skipped"
-        },
-        {
-          "tool": "skip_invoice",
-          "invoice": "FXA-2002-r5",
-          "ok": true,
-          "detail": "skipped"
-        },
-        {
-          "tool": "skip_invoice",
-          "invoice": "FXA-1003-r5",
-          "ok": true,
-          "detail": "skipped"
+          "tool": "summary",
+          "ok": false,
+          "detail": "withheld (too long (858 > 700 characters))"
         }
       ],
-      "rejections": 0,
-      "summary": "I proposed two early-payment discounts (1% within 5 days on FXA-1004-r5 for Northwind Outfitters and on FXA-3005-r5 for Sakura Games) and three payment reminders (FXA-2001-r5, FXA-3001-r5 and FXA-1006-r5). I left four invoices alone (FXA-2005-r5, FXA-3002-r5, FXA-2002-r5 and FXA-1003-r5) because their discount cost is larger than the reduction in typical swing. The two invoices due within 10 days and the USD 350 invoice were not eligible.",
+      "rejections": 1,
+      "summary": "Proposed 1 reminders and 3 early-payment offers.",
       "usage": {
-        "input": 47870,
-        "output": 8349
+        "input": 84087,
+        "output": 9960
       }
     },
     "JPY": {
@@ -4573,19 +4732,6 @@
       "proposals": [
         {
           "kind": "reminder",
-          "invoiceId": "INV2-PUXW-P2QQ-TCMA-T4TS",
-          "invoiceNumber": "FXA-2001-r5",
-          "currency": "EUR",
-          "amount": 1800,
-          "value": 316746,
-          "daysOverdue": 18,
-          "lastReminderAt": null,
-          "subject": "Friendly reminder: invoice FXA-2001-r5 is overdue",
-          "message": "Dear Atelier Moreau,\n\nI hope you are well. This is a friendly reminder that invoice FXA-2001-r5 for EUR 1,800.00 was due on 2026-10-05 and is now 18 days overdue. You can pay it through the PayPal link on the original invoice.\n\nIf you have already sent the payment, please accept my thanks and disregard this note. Please let me know if anything is holding it up.\n\nKind regards",
-          "rationale": "The EUR 1,800.00 invoice is 18 days overdue, so a gentle reminder is proposed; it is worth about ¥317K, and a 3% stress-test move either way changes it by about ¥9,502. Sending the reminder asks the client to settle the balance."
-        },
-        {
-          "kind": "reminder",
           "invoiceId": "INV2-CAKK-XHMA-LH3T-P2CN",
           "invoiceNumber": "FXA-1006-r5",
           "currency": "USD",
@@ -4593,9 +4739,9 @@
           "value": 282682.73092369473,
           "daysOverdue": 22,
           "lastReminderAt": null,
-          "subject": "Reminder: invoice FXA-1006-r5 is 22 days overdue",
-          "message": "Dear Copperleaf Apps,\n\nI hope you are well. This is a reminder that invoice FXA-1006-r5 for USD 1,800.00 was due on 2026-10-01 and is now 22 days overdue. You can pay it through the PayPal link on the original invoice.\n\nIf you have already sent the payment, please accept my thanks and disregard this note. If there is an issue with the invoice, please let me know so we can resolve it.\n\nKind regards",
-          "rationale": "The USD 1,800.00 invoice is 22 days overdue, so a firmer but courteous reminder is proposed; it is worth about ¥283K and its stress-test move of 3% either way is about ¥8,480. Sending the reminder asks the client to settle the balance."
+          "subject": "Friendly reminder: invoice FXA-1006-r5",
+          "message": "Hi Copperleaf Apps team,\n\nI hope you're well. This is a friendly reminder that invoice FXA-1006-r5 for USD 1,800.00 was due on 2026-10-01 and is now 22 days overdue.\n\nIf you've already sent payment, please ignore this note, and thank you! If anything is holding it up, just let me know and we'll sort it out.\n\nBest regards",
+          "rationale": "Invoice FXA-1006-r5 (USD 1,800.00, about ¥283K) is 22 days overdue, so a payment would reduce how long this amount stays exposed to exchange-rate moves. The 3% stress-test move for this invoice is about ¥8,480 either way."
         },
         {
           "kind": "early_pay_discount",
@@ -4606,13 +4752,13 @@
           "value": 1020798.7505577867,
           "daysToDue": 42,
           "percent": 1,
-          "withinDays": 10,
-          "newDueDate": "2026-11-02",
+          "withinDays": 5,
+          "newDueDate": "2026-10-28",
           "cost": 10207.987505577867,
           "swingNow": 29386.69554364093,
-          "swingIfEarly": 14195.122548282232,
-          "clientNote": "Hello Northwind Outfitters, we have applied a 1% early-payment discount to invoice FXA-1004-r5. The new due date is 2026-11-02.",
-          "rationale": "A 1% discount costs about ¥10K. The typical swing until the current due date (about ¥29K) would drop to about ¥14K if paid within 10 days, a reduction of about ¥15K, which is larger than the cost."
+          "swingIfEarly": 10730.504026525785,
+          "clientNote": "Hi Northwind Outfitters team, we have applied a 1% early-payment discount to invoice FXA-1004-r5. The new due date is 2026-10-28. Thank you!",
+          "rationale": "The 1% discount costs about ¥10K and would move the due date to 2026-10-28, where the typical swing (one standard deviation) falls from about ¥29K to about ¥11K if paid within 5 days, a reduction of about ¥18K. The cost applies whether or not the client pays early."
         },
         {
           "kind": "early_pay_discount",
@@ -4623,40 +4769,57 @@
           "value": 879850,
           "daysToDue": 59,
           "percent": 1,
-          "withinDays": 10,
-          "newDueDate": "2026-11-02",
+          "withinDays": 5,
+          "newDueDate": "2026-10-28",
           "cost": 8798.5,
           "swingNow": 26809.746178082165,
-          "swingIfEarly": 10945.03304497213,
-          "clientNote": "Hello Kleinfeld GmbH, we have applied a 1% early-payment discount to invoice FXA-2005-r5. The new due date is 2026-11-02.",
-          "rationale": "A 1% discount costs about ¥8,799. The typical swing until the current due date (about ¥27K) would drop to about ¥11K if paid within 10 days, a reduction of about ¥16K, which is larger than the cost."
+          "swingIfEarly": 8273.667293822937,
+          "clientNote": "Hi Kleinfeld GmbH team, we have applied a 1% early-payment discount to invoice FXA-2005-r5. The new due date is 2026-10-28. Thank you!",
+          "rationale": "The 1% discount costs about ¥8,799 and would move the due date to 2026-10-28, where the typical swing (one standard deviation) falls from about ¥27K to about ¥8,274 if paid within 5 days, a reduction of about ¥19K. The cost applies whether or not the client pays early."
+        },
+        {
+          "kind": "early_pay_discount",
+          "invoiceId": "INV2-GJHN-D758-PE5U-TGMV",
+          "invoiceNumber": "FXA-1003-r5",
+          "currency": "USD",
+          "amount": 2600,
+          "value": 408319.5002231147,
+          "daysToDue": 22,
+          "percent": 1,
+          "withinDays": 5,
+          "newDueDate": "2026-10-28",
+          "cost": 4083.1950022311466,
+          "swingNow": 8584.40322122063,
+          "swingIfEarly": 4292.201610610315,
+          "clientNote": "Hi Harbor & Pine team, we have applied a 1% early-payment discount to invoice FXA-1003-r5. The new due date is 2026-10-28. Thank you!",
+          "rationale": "The 1% discount costs about ¥4,083 and would move the due date to 2026-10-28, where the typical swing (one standard deviation) falls from about ¥8,584 to about ¥4,292 if paid within 5 days, a reduction of about ¥4,292. This is the only option where the reduction is larger than the cost, and the cost applies whether or not the client pays early."
         }
       ],
       "notProposed": [
         {
           "invoiceNumber": "FXA-2002-r5",
-          "why": "Cheapest discount (1%, about ¥4,223) yields a reduction of only about ¥1,625, which is smaller than the cost at every tested rate.",
+          "why": "Every offer costs more than the reduction in typical swing (for example 1% costs about ¥4,223 against a reduction of about ¥2,908), so I left it alone.",
           "by": "agent"
         },
         {
-          "invoiceNumber": "FXA-1003-r5",
-          "why": "The 1% discount costs about ¥4,083 against a reduction of about ¥2,906 in the typical swing, so the cost is larger than the reduction at every tested rate.",
-          "by": "agent"
+          "invoiceNumber": "FXA-2001-r5",
+          "why": "a reminder was sent on 2026-10-23; next one after 3 days",
+          "by": "code"
         },
         {
           "invoiceNumber": "FXA-1002-r5",
-          "why": "Not eligible: due in 2 days, too soon for an early-payment offer.",
-          "by": "agent"
+          "why": "due in 2 days, too soon for an early-payment offer",
+          "by": "code"
         },
         {
           "invoiceNumber": "FXA-2003-r5",
-          "why": "Not eligible: due in 10 days, too soon for an early-payment offer.",
-          "by": "agent"
+          "why": "due in 10 days, too soon for an early-payment offer",
+          "by": "code"
         },
         {
           "invoiceNumber": "FXA-1007-r5",
-          "why": "Not eligible: USD 350.00 (about ¥55K) is below the action threshold.",
-          "by": "agent"
+          "why": "smaller than the action threshold (¥100K)",
+          "by": "code"
         }
       ],
       "steps": [
@@ -4674,13 +4837,13 @@
           "tool": "price_discount",
           "invoice": "FXA-1004-r5",
           "ok": true,
-          "detail": "1% within 10 days"
+          "detail": "1% within 5 days"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-1004-r5",
           "ok": true,
-          "detail": "1.5% within 10 days"
+          "detail": "1.5% within 7 days"
         },
         {
           "tool": "price_discount",
@@ -4692,13 +4855,13 @@
           "tool": "price_discount",
           "invoice": "FXA-2005-r5",
           "ok": true,
-          "detail": "1% within 10 days"
+          "detail": "1% within 5 days"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-2005-r5",
           "ok": true,
-          "detail": "1.5% within 10 days"
+          "detail": "1.5% within 7 days"
         },
         {
           "tool": "price_discount",
@@ -4710,13 +4873,13 @@
           "tool": "price_discount",
           "invoice": "FXA-2002-r5",
           "ok": true,
-          "detail": "1% within 10 days"
+          "detail": "1% within 5 days"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-2002-r5",
           "ok": true,
-          "detail": "1.5% within 10 days"
+          "detail": "1.5% within 7 days"
         },
         {
           "tool": "price_discount",
@@ -4728,37 +4891,25 @@
           "tool": "price_discount",
           "invoice": "FXA-1003-r5",
           "ok": true,
-          "detail": "1% within 10 days"
+          "detail": "1% within 5 days"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-1003-r5",
           "ok": true,
-          "detail": "1.5% within 10 days"
+          "detail": "1.5% within 7 days"
         },
         {
           "tool": "price_discount",
           "invoice": "FXA-1003-r5",
           "ok": true,
           "detail": "2% within 10 days"
-        },
-        {
-          "tool": "propose_early_payment_discount",
-          "invoice": "FXA-1004-r5",
-          "ok": true,
-          "detail": "1% within 10 days"
-        },
-        {
-          "tool": "propose_early_payment_discount",
-          "invoice": "FXA-2005-r5",
-          "ok": true,
-          "detail": "1% within 10 days"
         },
         {
           "tool": "propose_reminder",
-          "invoice": "FXA-2001-r5",
+          "invoice": "FXA-1006-r5",
           "ok": false,
-          "detail": "rationale: calls ¥9,502 a typical swing, but there is no swing figure here (the 3% figure is a stress-test move)"
+          "detail": "rationale: forecast or advice wording: \"should\""
         },
         {
           "tool": "propose_reminder",
@@ -4767,53 +4918,35 @@
           "detail": "accepted"
         },
         {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-1004-r5",
+          "ok": true,
+          "detail": "1% within 5 days"
+        },
+        {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-2005-r5",
+          "ok": true,
+          "detail": "1% within 5 days"
+        },
+        {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-1003-r5",
+          "ok": true,
+          "detail": "1% within 5 days"
+        },
+        {
           "tool": "skip_invoice",
           "invoice": "FXA-2002-r5",
           "ok": true,
           "detail": "skipped"
-        },
-        {
-          "tool": "skip_invoice",
-          "invoice": "FXA-1003-r5",
-          "ok": true,
-          "detail": "skipped"
-        },
-        {
-          "tool": "skip_invoice",
-          "invoice": "FXA-1002-r5",
-          "ok": true,
-          "detail": "skipped"
-        },
-        {
-          "tool": "skip_invoice",
-          "invoice": "FXA-2003-r5",
-          "ok": true,
-          "detail": "skipped"
-        },
-        {
-          "tool": "skip_invoice",
-          "invoice": "FXA-1007-r5",
-          "ok": false,
-          "detail": "why: numbers not in the facts: 100"
-        },
-        {
-          "tool": "propose_reminder",
-          "invoice": "FXA-2001-r5",
-          "ok": true,
-          "detail": "accepted"
-        },
-        {
-          "tool": "skip_invoice",
-          "invoice": "FXA-1007-r5",
-          "ok": true,
-          "detail": "skipped"
         }
       ],
-      "rejections": 2,
-      "summary": "I proposed a 1% early-payment discount on two invoices (FXA-1004-r5 for Northwind Outfitters and FXA-2005-r5 for Kleinfeld GmbH) and reminders for two overdue invoices (FXA-2001-r5 for Atelier Moreau and FXA-1006-r5 for Copperleaf Apps). I left alone FXA-2002-r5 and FXA-1003-r5, where the discount costs more than the reduction in typical swing, plus three invoices that are too soon for an offer or below the action threshold. Nothing runs until you approve each proposal.",
+      "rejections": 1,
+      "summary": "I proposed a payment reminder for Copperleaf Apps (FXA-1006-r5, 22 days overdue) and 1% early-payment discounts, each with a 5-day window, for Northwind Outfitters (FXA-1004-r5), Kleinfeld GmbH (FXA-2005-r5) and Harbor & Pine (FXA-1003-r5). For the Harbor & Pine offer, the 1% discount is the only option where the reduction in typical swing (about ¥4,292) is larger than its cost (about ¥4,083). I skipped Kleinfeld GmbH FXA-2002-r5 because every discount costs more than the reduction in typical swing. Atelier Moreau's overdue invoice and the two invoices due within 10 days were not eligible, so I left them alone.",
       "usage": {
-        "input": 39798,
-        "output": 5858
+        "input": 27961,
+        "output": 5215
       }
     },
     "KRW": {
@@ -4824,32 +4957,6 @@
       "proposals": [
         {
           "kind": "reminder",
-          "invoiceId": "INV2-PUXW-P2QQ-TCMA-T4TS",
-          "invoiceNumber": "FXA-2001-r5",
-          "currency": "EUR",
-          "amount": 1800,
-          "value": 2671650,
-          "daysOverdue": 18,
-          "lastReminderAt": null,
-          "subject": "Friendly reminder: invoice FXA-2001-r5 is past due",
-          "message": "Dear Atelier Moreau,\n\nI hope you are well. This is a friendly reminder that invoice FXA-2001-r5 for EUR 1,800.00 was due on 2026-10-05 and is now 18 days overdue.\n\nIf payment has already been sent, please disregard this note. Otherwise, could you please arrange payment through PayPal at your earliest convenience? Please let me know if anything is holding it up.\n\nThank you very much.",
-          "rationale": "The overdue EUR 1,800.00 is worth about ₩2.67M, and a 3% stress-test move either way changes it by about ₩80K; a payment would close this open amount. The reminder is gentle because the invoice is 18 days overdue."
-        },
-        {
-          "kind": "reminder",
-          "invoiceId": "INV2-Z3UX-T6HL-5CKA-CVSS",
-          "invoiceNumber": "FXA-3001-r5",
-          "currency": "JPY",
-          "amount": 310000,
-          "value": 2614749.673239757,
-          "daysOverdue": 8,
-          "lastReminderAt": null,
-          "subject": "Gentle reminder: invoice FXA-3001-r5",
-          "message": "Dear Sakura Games,\n\nThis is a gentle reminder that invoice FXA-3001-r5 for JPY 310,000 was due on 2026-10-15 and is now 8 days overdue.\n\nIf you have already sent payment, please disregard this note. Otherwise, you can pay through PayPal whenever convenient. Thank you very much.",
-          "rationale": "The overdue JPY 310,000 is worth about ₩2.61M, and a 3% stress-test move either way changes it by about ₩78K; a payment would close this open amount. The reminder is gentle because the invoice is only 8 days overdue."
-        },
-        {
-          "kind": "reminder",
           "invoiceId": "INV2-CAKK-XHMA-LH3T-P2CN",
           "invoiceNumber": "FXA-1006-r5",
           "currency": "USD",
@@ -4857,9 +4964,9 @@
           "value": 2384337.3493975904,
           "daysOverdue": 22,
           "lastReminderAt": null,
-          "subject": "Payment overdue: invoice FXA-1006-r5",
-          "message": "Dear Copperleaf Apps team,\n\nInvoice FXA-1006-r5 for USD 1,800.00 was due on 2026-10-01 and is now 22 days overdue. I would be grateful if you could arrange payment through PayPal as soon as possible.\n\nIf there is an issue with this invoice, please get in touch so we can resolve it promptly. Thank you for your attention to this.",
-          "rationale": "The overdue USD 1,800.00 is worth about ₩2.38M, and a 3% stress-test move either way changes it by about ₩72K; a payment would close this open amount. The tone is firmer than a first notice because the invoice is 22 days overdue."
+          "subject": "Friendly reminder: invoice FXA-1006-r5",
+          "message": "Hello Copperleaf Apps team,\n\nI hope you are well. This is a friendly reminder that invoice FXA-1006-r5 for USD 1,800.00 was due on 2026-10-01 and is now 22 days overdue.\n\nYou can pay it through the PayPal link on the invoice. If you have already sent payment, please ignore this note. Thank you very much.\n\nBest regards",
+          "rationale": "This invoice is 22 days overdue and USD 1,800.00 is still open, so a reminder moves payment forward; the USD 1,800.00 is worth about ₩2.38M and its 3% stress-test move is about ₩72K."
         },
         {
           "kind": "early_pay_discount",
@@ -4875,8 +4982,8 @@
           "cost": 86101.07095046854,
           "swingNow": 262006.61174291236,
           "swingIfEarly": 106963.75133427307,
-          "clientNote": "Hello Northwind Outfitters, we have applied a 1% early-payment discount to invoice FXA-1004-r5. The new due date is 2026-10-30. Thank you for your business.",
-          "rationale": "The 1% discount costs about ₩86K, and the typical swing until the current due date (2026-12-04) falls from about ₩262K to about ₩107K if paid within 7 days, a reduction of about ₩155K. The ₩86K cost applies whether or not the client pays early."
+          "clientNote": "Hello Northwind Outfitters team, a 1% early-payment discount has been applied to invoice FXA-1004-r5. The new due date is 2026-10-30. Thank you very much.",
+          "rationale": "The 1% discount costs about ₩86K. It reduces the typical swing (one standard deviation) until the current due date from about ₩262K to about ₩107K if paid within 7 days, a reduction of about ₩155K, which is larger than the cost."
         },
         {
           "kind": "early_pay_discount",
@@ -4892,8 +4999,8 @@
           "cost": 74212.5,
           "swingNow": 254116.37380766732,
           "swingIfEarly": 87678.47881481936,
-          "clientNote": "Hello Kleinfeld GmbH, we have applied a 1% early-payment discount to invoice FXA-2005-r5. The new due date is 2026-10-30. Thank you for your business.",
-          "rationale": "The 1% discount costs about ₩74K, and the typical swing until the current due date (2026-12-21) falls from about ₩254K to about ₩88K if paid within 7 days, a reduction of about ₩166K. The ₩74K cost applies whether or not the client pays early."
+          "clientNote": "Hello Kleinfeld GmbH team, a 1% early-payment discount has been applied to invoice FXA-2005-r5. The new due date is 2026-10-30. Thank you very much.",
+          "rationale": "The 1% discount costs about ₩74K. It reduces the typical swing (one standard deviation) until the current due date from about ₩254K to about ₩88K if paid within 7 days, a reduction of about ₩166K, which is larger than the cost."
         },
         {
           "kind": "early_pay_discount",
@@ -4909,29 +5016,61 @@
           "cost": 64103.540376200486,
           "swingNow": 261167.9756055167,
           "swingIfEarly": 91203.81322385151,
-          "clientNote": "Hello Sakura Games, we have applied a 1% early-payment discount to invoice FXA-3005-r5. The new due date is 2026-10-30. Thank you for your business.",
-          "rationale": "The 1% discount costs about ₩64K, and the typical swing until the current due date (2026-12-20) falls from about ₩261K to about ₩91K if paid within 7 days, a reduction of about ₩170K. The ₩64K cost applies whether or not the client pays early."
+          "clientNote": "Hello Sakura Games team, a 1% early-payment discount has been applied to invoice FXA-3005-r5. The new due date is 2026-10-30. Thank you very much.",
+          "rationale": "The 1% discount costs about ₩64K. It reduces the typical swing (one standard deviation) until the current due date from about ₩261K to about ₩91K if paid within 7 days, a reduction of about ₩170K, which is larger than the cost."
+        },
+        {
+          "kind": "early_pay_discount",
+          "invoiceId": "INV2-PP4C-Z6AF-2U2Z-3C8Y",
+          "invoiceNumber": "FXA-N261023-E6ED-2",
+          "currency": "JPY",
+          "amount": 240000,
+          "value": 2024322.3276694892,
+          "daysToDue": 45,
+          "percent": 1,
+          "withinDays": 7,
+          "newDueDate": "2026-10-30",
+          "cost": 20243.22327669489,
+          "swingNow": 72861.92364125181,
+          "swingIfEarly": 28801.20417595311,
+          "clientNote": "Hello Sakura Games team, a 1% early-payment discount has been applied to invoice FXA-N261023-E6ED-2. The new due date is 2026-10-30. Thank you very much.",
+          "rationale": "The 1% discount costs about ₩20K. It reduces the typical swing (one standard deviation) until the current due date from about ₩73K to about ₩29K if paid within 7 days, a reduction of about ₩44K, which is larger than the cost."
         }
       ],
       "notProposed": [
         {
           "invoiceNumber": "FXA-3002-r5",
-          "why": "The cheapest offer (1% at about ₩40K) costs more than the about ₩38K reduction in typical swing, so I left it alone.",
+          "why": "Every option costs more than it reduces: 1% costs about ₩40K against a reduction of about ₩38K, so no offer is proposed.",
           "by": "agent"
         },
         {
           "invoiceNumber": "FXA-2002-r5",
-          "why": "The cheapest offer (1% at about ₩36K) costs more than the about ₩23K reduction in typical swing, so I left it alone.",
+          "why": "Every option costs more than it reduces: 1% costs about ₩36K against a reduction of about ₩23K, so no offer is proposed.",
           "by": "agent"
         },
         {
           "invoiceNumber": "FXA-1003-r5",
-          "why": "The cheapest offer (1% at about ₩34K) matches the about ₩34K reduction in typical swing, so the reduction is not larger than the cost.",
+          "why": "The 1% option costs about ₩34K against a reduction of about ₩34K, so the reduction is not larger than the cost and no offer is proposed.",
           "by": "agent"
+        },
+        {
+          "invoiceNumber": "FXA-2001-r5",
+          "why": "a reminder was sent on 2026-10-23; next one after 3 days",
+          "by": "code"
+        },
+        {
+          "invoiceNumber": "FXA-3001-r5",
+          "why": "a reminder was sent on 2026-10-23; next one after 3 days",
+          "by": "code"
         },
         {
           "invoiceNumber": "FXA-1002-r5",
           "why": "due in 2 days, too soon for an early-payment offer",
+          "by": "code"
+        },
+        {
+          "invoiceNumber": "FXA-N261023-E6ED-1",
+          "why": "due in 7 days, too soon for an early-payment offer",
           "by": "code"
         },
         {
@@ -4959,25 +5098,7 @@
         {
           "tool": "list_open_invoices",
           "ok": true,
-          "detail": "13 invoices"
-        },
-        {
-          "tool": "price_discount",
-          "invoice": "FXA-1004-r5",
-          "ok": true,
-          "detail": "1% within 7 days"
-        },
-        {
-          "tool": "price_discount",
-          "invoice": "FXA-1004-r5",
-          "ok": true,
-          "detail": "1.5% within 7 days"
-        },
-        {
-          "tool": "price_discount",
-          "invoice": "FXA-1004-r5",
-          "ok": true,
-          "detail": "2% within 7 days"
+          "detail": "15 invoices"
         },
         {
           "tool": "price_discount",
@@ -5068,6 +5189,65 @@
           "invoice": "FXA-1003-r5",
           "ok": true,
           "detail": "2% within 7 days"
+        },
+        {
+          "tool": "price_discount",
+          "ok": false,
+          "detail": "invoice is not eligible for an early-payment offer"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-1007-r5",
+          "ok": false,
+          "detail": "invoice is not eligible for an early-payment offer"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-1004-r5",
+          "ok": true,
+          "detail": "1% within 7 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-1004-r5",
+          "ok": true,
+          "detail": "1.5% within 7 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-1004-r5",
+          "ok": true,
+          "detail": "2% within 7 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "1% within 7 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "1.5% within 7 days"
+        },
+        {
+          "tool": "price_discount",
+          "invoice": "FXA-N261023-E6ED-2",
+          "ok": true,
+          "detail": "2% within 7 days"
+        },
+        {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-2005-r5",
+          "ok": true,
+          "detail": "1% within 7 days"
+        },
+        {
+          "tool": "propose_early_payment_discount",
+          "invoice": "FXA-3005-r5",
+          "ok": true,
+          "detail": "1% within 7 days"
         },
         {
           "tool": "propose_early_payment_discount",
@@ -5077,58 +5257,40 @@
         },
         {
           "tool": "propose_early_payment_discount",
-          "invoice": "FXA-2005-r5",
+          "invoice": "FXA-N261023-E6ED-2",
           "ok": true,
           "detail": "1% within 7 days"
-        },
-        {
-          "tool": "propose_early_payment_discount",
-          "invoice": "FXA-3005-r5",
-          "ok": true,
-          "detail": "1% within 7 days"
-        },
-        {
-          "tool": "skip_invoice",
-          "invoice": "FXA-3002-r5",
-          "ok": true,
-          "detail": "skipped"
-        },
-        {
-          "tool": "skip_invoice",
-          "invoice": "FXA-2002-r5",
-          "ok": true,
-          "detail": "skipped"
-        },
-        {
-          "tool": "skip_invoice",
-          "invoice": "FXA-1003-r5",
-          "ok": true,
-          "detail": "skipped"
-        },
-        {
-          "tool": "propose_reminder",
-          "invoice": "FXA-2001-r5",
-          "ok": true,
-          "detail": "accepted"
-        },
-        {
-          "tool": "propose_reminder",
-          "invoice": "FXA-3001-r5",
-          "ok": true,
-          "detail": "accepted"
         },
         {
           "tool": "propose_reminder",
           "invoice": "FXA-1006-r5",
           "ok": true,
           "detail": "accepted"
+        },
+        {
+          "tool": "skip_invoice",
+          "invoice": "FXA-3002-r5",
+          "ok": true,
+          "detail": "skipped"
+        },
+        {
+          "tool": "skip_invoice",
+          "invoice": "FXA-2002-r5",
+          "ok": true,
+          "detail": "skipped"
+        },
+        {
+          "tool": "skip_invoice",
+          "invoice": "FXA-1003-r5",
+          "ok": true,
+          "detail": "skipped"
         }
       ],
-      "rejections": 0,
-      "summary": "I proposed three 1% early-payment discounts (Northwind FXA-1004-r5, Kleinfeld FXA-2005-r5, Sakura Games FXA-3005-r5) and three payment reminders (Atelier Moreau FXA-2001-r5, Sakura Games FXA-3001-r5, Copperleaf Apps FXA-1006-r5). I left three early-payment invoices alone (Mori Design FXA-3002-r5, Kleinfeld FXA-2002-r5, Harbor & Pine FXA-1003-r5) because their cheapest discount cost as much as or more than its reduction in typical swing. The seller still needs to approve each proposal.",
+      "rejections": 2,
+      "summary": "I proposed four 1% early-payment discounts (7-day window, new due date 2026-10-30) on FXA-2005-r5 (Kleinfeld), FXA-3005-r5 (Sakura Games), FXA-1004-r5 (Northwind) and FXA-N261023-E6ED-2 (Sakura Games). Each proposal states its cost beside the reduction in typical swing; the reduction is larger than the cost in all four. I also proposed a friendly payment reminder for FXA-1006-r5 (Copperleaf Apps, 22 days overdue) and skipped FXA-2002-r5 (Kleinfeld), FXA-3002-r5 (Mori Design Office) and FXA-1003-r5 (Harbor & Pine), where the reduction does not exceed the cost. The other open invoices were not eligible, so I left them alone.",
       "usage": {
-        "input": 35387,
-        "output": 8324
+        "input": 51657,
+        "output": 8547
       }
     }
   }

@@ -11,6 +11,7 @@ import demo from "../data/demo-snapshot.json";
 import type { AgentRun } from "./agent";
 import { fetchEcbQuotes, type EcbQuotes } from "./fx";
 import { PayPalClient, toInvoice, type PPInvoice } from "./paypal";
+import { DEFAULT_POLICY, parsePolicy, POLICY_TEMPLATE, type Policy } from "./policy";
 import { addDays, parseSeedNumber } from "./seed-data";
 import type { Invoice } from "./types";
 
@@ -22,6 +23,7 @@ export type BookInputs = {
   invoices: Invoice[];
   skipped: { id: string; reason: string }[];
   archived: number; // retired demo invoices left out on purpose (see retired() below)
+  policy?: Policy; // live only: the seller's standing policy and notes, from a PayPal invoice template
   agentRuns?: Record<string, AgentRun>; // demo snapshot only, by home currency: the demo never calls the model
 };
 
@@ -35,7 +37,7 @@ export function demoMode(): boolean {
 
 export async function loadLiveInputs(asOf = new Date().toISOString().slice(0, 10)): Promise<BookInputs> {
   const pp = new PayPalClient();
-  const [raw, ecb] = await Promise.all([pp.listInvoices(), fetchEcbQuotes(addDays(asOf, -HISTORY_DAYS), asOf)]);
+  const [raw, ecb, policy] = await Promise.all([pp.listInvoices(), fetchEcbQuotes(addDays(asOf, -HISTORY_DAYS), asOf), loadPolicy(pp)]);
 
   // The list endpoint carries no payment dates; fetch them for recently paid invoices only.
   const since = addDays(asOf, -200); // payment dates are needed for the last 90 days of payments only
@@ -59,7 +61,7 @@ export async function loadLiveInputs(asOf = new Date().toISOString().slice(0, 10
     if (!("invoice" in r)) skipped.push(r.skipped);
     else invoices.push(r.invoice);
   }
-  return { source: "live", asOf, fetchedAt: new Date().toISOString(), ecb, invoices, skipped, archived };
+  return { source: "live", asOf, fetchedAt: new Date().toISOString(), ecb, invoices, skipped, archived, policy };
 }
 
 // Demo housekeeping. The sandbox account is reset by seeding a new generation of demo invoices
@@ -74,6 +76,16 @@ function retired(raw: PPInvoice[]): (x: PPInvoice) => boolean {
     const seed = parseSeedNumber(n);
     return (seed !== null && seed.gen < newest) || n.startsWith("CHK-") || /^fxa-agent:\s+archived\b/m.test(x.detail.memo ?? "");
   };
+}
+
+// A missing or unreadable template means the default policy, which is off.
+export async function loadPolicy(pp: PayPalClient): Promise<Policy> {
+  try {
+    const t = await pp.findTemplate(POLICY_TEMPLATE);
+    return t ? parsePolicy(t.template_info?.detail?.memo, t.template_info?.detail?.note) : DEFAULT_POLICY;
+  } catch {
+    return DEFAULT_POLICY;
+  }
 }
 
 export function demoInputs(): BookInputs {

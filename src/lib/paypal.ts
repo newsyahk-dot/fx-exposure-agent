@@ -147,23 +147,50 @@ export class PayPalClient {
   // USD/EUR/JPY, even AUTO_CANCEL). Editing a sent invoice does work: this puts a flat percent
   // discount on it, moves the due date to `newDueDate` and re-sends it with a note.
   // ⚠️ Not the same offer: the discount is unconditional (the buyer keeps it even if they pay late).
-  async offerEarlyPaymentByUpdate(id: string, percent: number, newDueDate: string, note: string, logAt?: Date) {
+  async offerEarlyPaymentByUpdate(id: string, percent: number, newDueDate: string, note: string, logAt?: Date, auto = false) {
     const cur = await this.getInvoice(id);
     return this.putInvoice(id, cur, true, {
       detail: {
         ...cur.detail,
         payment_term: { term_type: "DUE_ON_DATE_SPECIFIED", due_date: newDueDate },
         note,
-        ...(logAt ? { memo: appendAgentLog(cur.detail.memo, "early_pay_discount", logAt) } : {}),
+        ...(logAt ? { memo: appendAgentLog(cur.detail.memo, "early_pay_discount", logAt, auto) } : {}),
       },
       amount: { breakdown: { discount: { invoice_discount: { percent: String(percent) } } } },
     });
   }
 
   // Records an agent action in the invoice's private memo without e-mailing anyone.
-  async logAgentAction(id: string, kind: AgentActionKind, at: Date) {
+  async logAgentAction(id: string, kind: AgentActionKind, at: Date, auto = false) {
     const cur = await this.getInvoice(id);
-    return this.putInvoice(id, cur, false, { detail: { ...cur.detail, memo: appendAgentLog(cur.detail.memo, kind, at) } });
+    return this.putInvoice(id, cur, false, { detail: { ...cur.detail, memo: appendAgentLog(cur.detail.memo, kind, at, auto) } });
+  }
+
+  // --- Invoice templates: where the seller's standing policy is kept (src/lib/policy.ts) -------------
+
+  async findTemplate(name: string): Promise<PPTemplate | null> {
+    const r = await this.request<{ templates?: PPTemplate[] }>("GET", "/v2/invoicing/templates?fields=all&page_size=50");
+    return r.templates?.find((t) => t.name === name) ?? null;
+  }
+
+  // Creates the template, or replaces its memo and note. Memo is capped by PayPal at 500 characters.
+  async saveTemplate(name: string, currency: string, memo: string, note: string): Promise<PPTemplate> {
+    const cur = await this.findTemplate(name);
+    if (!cur)
+      return this.request<PPTemplate>(
+        "POST",
+        "/v2/invoicing/templates",
+        { name, default_template: false, template_info: { detail: { currency_code: currency, memo, note } } },
+        { Prefer: "return=representation" },
+      );
+    const { links: _l, ...rest } = cur as PPTemplate & { links?: unknown };
+    void _l;
+    return this.request<PPTemplate>(
+      "PUT",
+      `/v2/invoicing/templates/${cur.id}`,
+      { ...rest, default_template: false, template_info: { ...rest.template_info, detail: { ...rest.template_info?.detail, memo, note } } },
+      { Prefer: "return=representation" },
+    );
   }
 
   // Full-replace update (PUT). `links` is read-only and must not be sent back.
@@ -203,6 +230,7 @@ export function clientViewUrl(invoiceId: string): string {
 // --- Mapping PayPal -> engine ----------------------------------------------------------------
 
 export type PPMoney = { currency_code: string; value: string };
+export type PPTemplate = { id: string; name: string; template_info?: { detail?: { currency_code?: string; memo?: string; note?: string } & Record<string, unknown> } & Record<string, unknown> };
 export type PPInvoice = {
   id: string;
   status: string;

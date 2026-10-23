@@ -16,6 +16,8 @@ import type { AgentInput } from "@/lib/agent";
 import { ApproveForm } from "./approve-button";
 import { WaitChart } from "./wait-chart";
 import { InvoiceAssistant } from "./invoice-assistant";
+import { AutopilotPanel } from "./autopilot-panel";
+import { DEFAULT_POLICY } from "@/lib/policy";
 import { SimulatePayment } from "./client-pay";
 import styles from "./page.module.css";
 
@@ -199,6 +201,16 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
         </Suspense>
       </section>
 
+      <section aria-labelledby="autopilot-h">
+        <h2 id="autopilot-h">Standing orders</h2>
+        <p className={styles.muted}>
+          Approve a policy once and the agent runs the proposals it covers without asking — same agent, same checks, same
+          PayPal calls, each one marked &ldquo;autopilot&rdquo; below. Anything outside the policy keeps waiting for your
+          click. The policy is stored in your PayPal account as an invoice template.
+        </p>
+        <AutopilotPanel policy={inputs.policy ?? DEFAULT_POLICY} base={base} readOnly={readOnly} />
+      </section>
+
       <section aria-labelledby="new-h">
         <h2 id="new-h">Before you send the next invoice</h2>
         <p className={styles.muted}>
@@ -218,7 +230,10 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
             {done.map((d) => (
               <li key={`${d.inv.id}-${d.kind}-${d.at}`}>
                 <time dateTime={d.at}>{d.at.slice(0, 16).replace("T", " ")} UTC</time>
-                <span>{d.kind === "reminder" ? "Reminder sent" : d.kind === "created" ? "Invoice created" : "Early-payment discount applied"}</span>
+                <span>
+                  {d.kind === "reminder" ? "Reminder sent" : d.kind === "created" ? "Invoice created" : "Early-payment discount applied"}
+                  {d.auto && <strong className={styles.autoTag}> · autopilot</strong>}
+                </span>
                 <span>
                   {d.inv.number} · {money(d.inv.currency, d.inv.amountDue)} still owed, due {d.inv.dueDate}
                 </span>

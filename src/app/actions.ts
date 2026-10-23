@@ -8,10 +8,9 @@
 // allowed bounds and runs the same text checks the agent had to pass. Only then is PayPal called.
 
 import { refresh } from "next/cache";
-import { DISCOUNT_PCTS, priceDiscount, WINDOW_DAYS } from "@/lib/agent";
 import { demoMode, loadLiveInputs } from "@/lib/book";
-import { checkClientText } from "@/lib/checks";
-import { PayPalClient, PayPalError } from "@/lib/paypal";
+import { errorText, executeAction, type ActionRequest } from "@/lib/execute";
+import { PayPalClient } from "@/lib/paypal";
 import { pickBase, viewFor } from "@/lib/view";
 
 export type ApproveState = { ok: boolean; message: string } | null;
@@ -29,47 +28,15 @@ export async function approve(_prev: ApproveState, form: FormData): Promise<Appr
   const inputs = await loadLiveInputs();
   const view = viewFor(inputs, pickBase(str(form, "base")), now);
   const cand = view.agentInput.candidates.find((c) => c.invoiceId === invoiceId);
-  if (!cand?.eligible.includes(kind as "reminder" | "early_pay_discount"))
-    return { ok: false, message: "This invoice is no longer eligible for that action (it has changed). Reload the page." };
+  if (!cand) return { ok: false, message: "This invoice is no longer open. Reload the page." };
 
-  const pp = new PayPalClient();
-  try {
-    if (kind === "reminder") {
-      const subject = str(form, "subject");
-      const message = str(form, "message");
-      const why =
-        checkClientText(subject, cand.facts, { maxLen: 120, allowOffer: false }) ??
-        checkClientText(message, cand.facts, { maxLen: 900, allowOffer: false });
-      if (why) return { ok: false, message: `Not sent — the e-mail failed a check: ${why}.` };
-      await pp.sendReminder(invoiceId, { subject, note: message });
-      try {
-        await pp.logAgentAction(invoiceId, "reminder", now);
-      } catch (e) {
-        refresh();
-        return { ok: true, message: `Reminder sent, but it could not be recorded on the invoice (${errorText(e)}).` };
-      }
-      refresh();
-      return { ok: true, message: `Reminder sent for ${cand.invoiceNumber}.` };
-    }
-
-    const percent = Number(str(form, "percent"));
-    const within = Number(str(form, "withinDays"));
-    if (!(DISCOUNT_PCTS as readonly number[]).includes(percent) || !Number.isInteger(within) || within < WINDOW_DAYS.min || within > WINDOW_DAYS.max)
-      return { ok: false, message: "Those discount terms are outside the allowed range." };
-    const p = priceDiscount(cand, view.base, inputs.asOf, percent, within);
-    const note = str(form, "clientNote");
-    const why = checkClientText(note, `${cand.facts} ${p.facts}`, { maxLen: 300, allowOffer: true, unconditional: true });
-    if (why) return { ok: false, message: `Not applied — the client note failed a check: ${why}.` };
-    await pp.offerEarlyPaymentByUpdate(invoiceId, percent, p.newDueDate, note, now);
-    refresh();
-    return { ok: true, message: `${percent}% discount applied to ${cand.invoiceNumber}; now due ${p.newDueDate}. The client has been e-mailed.` };
-  } catch (e) {
-    return { ok: false, message: `PayPal refused: ${errorText(e)}` };
-  }
-}
-
-function errorText(e: unknown): string {
-  return e instanceof PayPalError ? e.message : e instanceof Error ? e.message : String(e);
+  const req: ActionRequest =
+    kind === "reminder"
+      ? { kind, subject: str(form, "subject"), message: str(form, "message") }
+      : { kind: "early_pay_discount", percent: Number(str(form, "percent")), withinDays: Number(str(form, "withinDays")), clientNote: str(form, "clientNote") };
+  const r = await executeAction(new PayPalClient(), cand, req, { base: view.base, asOf: inputs.asOf, now });
+  if (r.ok) refresh();
+  return r;
 }
 
 // Sandbox demo control: records the client paying the whole open amount today, through PayPal. Lets a

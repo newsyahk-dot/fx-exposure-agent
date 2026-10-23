@@ -601,3 +601,66 @@
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
+
+/* Standing orders (autopilot) */
+.autopilot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.policyBox {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.policyBox legend {
+  padding: 0 4px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.check {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.check select,
+.smallNum {
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.smallNum {
+  width: 4em;
+}
+
+.runResult {
+  font-size: 14px;
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+}
+
+.runResult ul {
+  margin-top: 4px;
+  padding-left: 18px;
+}
+
+.autoTag {
+  color: var(--accent);
+  font-weight: 600;
+}
