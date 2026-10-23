@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { computeExposure } from "./exposure";
 import { cleanCredential, sandboxBase, toInvoice, type PPInvoice } from "./paypal";
-import { buildProposals } from "./proposals";
+import { buildAgentInput } from "./agent";
+import { ratesFor, volsFor } from "./fx";
+import { DAY, SEED_BOOK, syntheticEcb } from "./test-fixtures";
 import { addDays, draftBody, SEED_INVOICES } from "./seed-data";
 import type { Invoice } from "./types";
 
@@ -69,13 +71,19 @@ describe("seed book", () => {
     for (const s of SEED_INVOICES) expect(s.issueOffset).toBeLessThan(s.dueOffset);
   });
 
-  it("gives the agent both kinds of proposal in every currency", () => {
-    const p = buildProposals(book, RATES, day);
+  it("gives the agent both kinds of action in every foreign currency (KRW home)", () => {
+    const ecb = syntheticEcb();
+    const ccys = ["USD", "EUR", "JPY", "KRW"];
+    const rates = ratesFor(ecb, "KRW", ccys);
+    const vols = volsFor(ecb, "KRW", ccys, addDays(DAY, -120), DAY);
+    const input = buildAgentInput(SEED_BOOK, rates, vols, computeExposure(SEED_BOOK, rates, DAY), "KRW", DAY, new Date(DAY + "T09:00:00Z"));
     for (const ccy of ["USD", "EUR", "JPY"]) {
-      expect(p.some((x) => x.kind === "reminder" && x.currency === ccy)).toBe(true);
-      expect(p.some((x) => x.kind === "early_pay_discount" && x.currency === ccy)).toBe(true);
+      expect(input.candidates.some((x) => x.eligible.includes("reminder") && x.currency === ccy)).toBe(true);
+      expect(input.candidates.some((x) => x.eligible.includes("early_pay_discount") && x.currency === ccy)).toBe(true);
     }
-    expect(p.some((x) => x.invoiceNumber === "FXA-1007")).toBe(false); // below the threshold
+    const small = input.candidates.find((x) => x.invoiceNumber === "FXA-1007")!;
+    expect(small.eligible).toEqual([]);
+    expect(small.notEligible[0]).toMatch(/threshold/);
   });
 
   it("fills overdue, near weeks and later in the exposure table", () => {

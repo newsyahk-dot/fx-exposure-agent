@@ -210,10 +210,10 @@ export type PPInvoice = {
     invoice_date?: string;
     payment_term?: { term_type?: string; due_date?: string };
   };
-  primary_recipients?: { billing_info?: { email_address?: string; name?: { given_name?: string; surname?: string } } }[];
+  primary_recipients?: { billing_info?: { email_address?: string; business_name?: string; name?: { given_name?: string; surname?: string; full_name?: string } } }[];
   amount?: PPMoney;
   due_amount?: PPMoney;
-  payments?: { paid_amount?: PPMoney };
+  payments?: { paid_amount?: PPMoney; transactions?: { payment_date?: string; amount?: PPMoney }[] };
 };
 
 // Turns a PayPal invoice into the engine's shape. Returns null with a reason when it can't.
@@ -238,7 +238,17 @@ export function toInvoice(pp: PPInvoice): { invoice: Invoice } | { skipped: { id
       dueDate: due,
       invoiceDate: pp.detail.invoice_date ?? due,
       recipient: r?.email_address,
+      recipientName: recipientName(r),
+      total: Number.isFinite(total) ? total : undefined,
+      payments: pp.payments?.transactions
+        ?.filter((t) => t.payment_date && t.amount)
+        .map((t) => ({ date: t.payment_date!, amount: Number(t.amount!.value) })),
       agentLog: parseAgentLog(pp.detail.memo),
     },
   };
+}
+
+function recipientName(b: { business_name?: string; name?: { given_name?: string; surname?: string; full_name?: string } } | undefined) {
+  const person = b?.name?.full_name || [b?.name?.given_name, b?.name?.surname].filter(Boolean).join(" ");
+  return (b?.business_name || person || "").trim() || undefined;
 }

@@ -32,8 +32,8 @@ export type CurrencyRow = {
   currency: string;
   total: number;
   buckets: Record<Bucket, number>;
-  krw: number; // total valued at today's rate
-  shockKrw: number; // KRW change if this currency moves shockPct against KRW
+  value: number; // total in the home currency at today's rate
+  shock: number; // home-currency change if this currency moves shockPct either way
   invoiceCount: number;
 };
 
@@ -41,10 +41,10 @@ export type Exposure = {
   asOf: string;
   base: string;
   shockPct: number;
-  rows: CurrencyRow[]; // foreign currencies only, largest KRW value first
+  rows: CurrencyRow[]; // foreign currencies only, largest home-currency value first
   baseTotal: number; // invoices already in the base currency (no FX exposure)
-  totalKrw: number; // foreign exposure in KRW
-  totalShockKrw: number;
+  totalValue: number; // foreign exposure in the home currency
+  totalShock: number;
   skipped: { id: string; reason: string }[];
 };
 
@@ -83,7 +83,7 @@ export function computeExposure(
     }
     let row = byCcy.get(inv.currency);
     if (!row) {
-      row = { currency: inv.currency, total: 0, buckets: emptyBuckets(), krw: 0, shockKrw: 0, invoiceCount: 0 };
+      row = { currency: inv.currency, total: 0, buckets: emptyBuckets(), value: 0, shock: 0, invoiceCount: 0 };
       byCcy.set(inv.currency, row);
     }
     row.total += inv.amountDue;
@@ -92,10 +92,10 @@ export function computeExposure(
   }
 
   const rows = [...byCcy.values()].map((r) => {
-    const krw = r.total * rates[r.currency];
-    return { ...r, krw, shockKrw: (krw * shockPct) / 100 };
+    const value = r.total * rates[r.currency];
+    return { ...r, value, shock: (value * shockPct) / 100 };
   });
-  rows.sort((a, b) => b.krw - a.krw);
+  rows.sort((a, b) => b.value - a.value);
 
   return {
     asOf,
@@ -103,8 +103,8 @@ export function computeExposure(
     shockPct,
     rows,
     baseTotal,
-    totalKrw: rows.reduce((s, r) => s + r.krw, 0),
-    totalShockKrw: rows.reduce((s, r) => s + r.shockKrw, 0),
+    totalValue: rows.reduce((s, r) => s + r.value, 0),
+    totalShock: rows.reduce((s, r) => s + r.shock, 0),
     skipped,
   };
 }

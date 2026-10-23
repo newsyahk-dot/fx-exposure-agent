@@ -335,3 +335,105 @@
   color: var(--text-muted);
   margin-top: 2px;
 }
+
+.baseNav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  font-size: 14px;
+}
+
+.basePill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.basePill[aria-current="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.baseNav .sourceBadge {
+  margin-left: auto;
+}
+
+.timingLead {
+  font-size: 17px;
+  margin: 4px 0;
+}
+
+.agentStatus {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.steps {
+  margin: 6px 0 0 20px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.steps li[data-ok="false"] {
+  color: var(--warning);
+}
+
+.approveForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.draft {
+  font-size: 13px;
+}
+
+.draft summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+.draft label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+  color: var(--text-secondary);
+}
+
+.draft input,
+.draft textarea {
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.leftAlone {
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+.leftAlone summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.leftAlone ul {
+  margin: 6px 0 0 18px;
+}

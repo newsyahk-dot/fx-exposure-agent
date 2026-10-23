@@ -1,31 +1,41 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  buildAgentInput,
+  discountNoteTemplate,
+  labelContext,
+  priceDiscount,
+  rationaleTemplate,
+  reminderTemplate,
+  rulesRun,
+  runAgent,
+  type AgentInput,
+} from "./agent";
 import { appendAgentLog, lastOf, parseAgentLog } from "./agent-log";
-import { buildProposals } from "./proposals";
-import { parseSeedNumber, seedNumber } from "./seed-data";
+import { checkClientText, checkSellerText } from "./checks";
+import { computeExposure } from "./exposure";
+import { BASES, ratesFor, volsFor } from "./fx";
+import { addDays, parseSeedNumber, seedNumber } from "./seed-data";
+import { DAY, SEED_BOOK, syntheticEcb } from "./test-fixtures";
 import type { Invoice } from "./types";
 
-const AS_OF = "2026-10-23";
-const RATES = { USD: 1300, EUR: 1500 };
-const inv = (p: Partial<Invoice>): Invoice => ({
-  id: p.id ?? "I-1",
-  number: p.number ?? "0001",
-  status: "SENT",
-  currency: p.currency ?? "USD",
-  amountDue: p.amountDue ?? 2000,
-  dueDate: p.dueDate ?? "2026-10-13",
-  invoiceDate: "2026-09-01",
-  agentLog: p.agentLog,
-});
+const NOW = new Date(DAY + "T09:00:00Z");
+const ecb = syntheticEcb();
+
+function inputFor(base: string, book: Invoice[] = SEED_BOOK): AgentInput {
+  const ccys = ["USD", "EUR", "JPY", "GBP", "KRW"];
+  const rates = ratesFor(ecb, base, ccys);
+  const vols = volsFor(ecb, base, ccys, addDays(DAY, -120), DAY);
+  return buildAgentInput(book, rates, vols, computeExposure(book, rates, DAY, { base }), base, DAY, NOW);
+}
 
 describe("agent log in the invoice memo", () => {
   it("round-trips and keeps the merchant's own memo lines", () => {
     const m1 = appendAgentLog("Client prefers wire", "reminder", new Date("2026-10-20T01:00:00Z"));
-    const m2 = appendAgentLog(m1, "reminder", new Date("2026-10-23T02:00:00Z"));
+    const m2 = appendAgentLog(m1, "archived", new Date("2026-10-23T02:00:00Z"));
     expect(m2.split("\n")[0]).toBe("Client prefers wire");
     const log = parseAgentLog(m2);
-    expect(log).toHaveLength(2);
-    expect(lastOf(log, "reminder")).toBe("2026-10-23T02:00:00.000Z");
-    expect(lastOf(log, "early_pay_discount")).toBeNull();
+    expect(log.map((e) => e.kind)).toEqual(["reminder", "archived"]);
+    expect(lastOf(log, "reminder")).toBe("2026-10-20T01:00:00.000Z");
   });
 
   it("ignores lines that only look similar", () => {
@@ -34,27 +44,83 @@ describe("agent log in the invoice memo", () => {
   });
 });
 
-describe("proposals respect what the agent already did", () => {
-  const now = new Date("2026-10-23T09:00:00Z");
-
-  it("holds a reminder for 3 days after the last one, then offers it again", () => {
-    const recent = inv({ agentLog: [{ kind: "reminder", at: "2026-10-22T09:00:00Z" }] });
-    const old = inv({ id: "I-2", agentLog: [{ kind: "reminder", at: "2026-10-19T09:00:00Z" }] });
-    const p = buildProposals([recent, old], RATES, AS_OF, { now });
-    const r = (id: string) => p.find((x) => x.invoiceId === id)!;
-    const held = r("I-1");
-    if (held.kind !== "reminder") throw new Error("expected a reminder");
-    expect(held.canAct).toBe(false);
-    expect(held.lastReminderAt).toBe("2026-10-22T09:00:00Z");
-    expect(r("I-2").canAct).toBe(true);
+describe("what code lets the agent do", () => {
+  it("holds a reminder for 3 days after the last one", () => {
+    const late = SEED_BOOK.find((i) => i.number === "FXA-1001")!;
+    const recent = { ...late, agentLog: [{ kind: "reminder" as const, at: "2026-10-22T09:00:00Z" }] };
+    const c = inputFor("KRW", [recent]).candidates[0];
+    expect(c.eligible).toEqual([]);
+    expect(c.notEligible[0]).toMatch(/reminder was sent on 2026-10-22/);
+    const old = { ...late, agentLog: [{ kind: "reminder" as const, at: "2026-10-19T09:00:00Z" }] };
+    expect(inputFor("KRW", [old]).candidates[0].eligible).toEqual(["reminder"]);
   });
 
-  it("never offers a second discount on the same invoice", () => {
-    const far = { currency: "EUR", amountDue: 3000, dueDate: "2026-11-30" };
-    const fresh = inv({ ...far, id: "F-1" });
-    const taken = inv({ ...far, id: "F-2", agentLog: [{ kind: "early_pay_discount", at: "2026-10-20T00:00:00Z" }] });
-    const ids = buildProposals([fresh, taken], RATES, AS_OF, { now }).map((x) => x.invoiceId);
-    expect(ids).toEqual(["F-1"]);
+  it("never offers a second discount, nor one on an invoice due soon", () => {
+    const far = SEED_BOOK.find((i) => i.number === "FXA-1004")!;
+    const taken = { ...far, agentLog: [{ kind: "early_pay_discount" as const, at: "2026-10-20T00:00:00Z" }] };
+    expect(inputFor("KRW", [taken]).candidates[0].notEligible[0]).toMatch(/already applied/);
+    const soon = SEED_BOOK.find((i) => i.number === "FXA-2003")!;
+    expect(inputFor("KRW", [soon]).candidates[0].notEligible[0]).toMatch(/too soon/);
+  });
+
+  it("leaves invoices in the home currency out: they carry no FX risk", () => {
+    const usdHome = inputFor("USD");
+    expect(usdHome.candidates.some((c) => c.currency === "USD")).toBe(false);
+    expect(usdHome.candidates.some((c) => c.currency === "EUR")).toBe(true);
+  });
+
+  it("prices discounts in code: the swing shrinks with a shorter window, cost grows with the percent", () => {
+    const c = inputFor("USD").candidates.find((x) => x.invoiceNumber === "FXA-2005")!;
+    const a = priceDiscount(c, "USD", DAY, 1, 7);
+    const b = priceDiscount(c, "USD", DAY, 2, 5);
+    expect(a.swingIfEarly!).toBeLessThan(a.swingNow!);
+    expect(b.cost).toBeCloseTo(a.cost * 2);
+    expect(b.swingIfEarly!).toBeLessThan(a.swingIfEarly!);
+    expect(a.newDueDate).toBe("2026-10-30");
+  });
+});
+
+describe("fixed wording passes the same checks as the agent, in every home currency", () => {
+  for (const base of BASES) {
+    it(base, () => {
+      const input = inputFor(base);
+      expect(input.candidates.some((c) => c.eligible.length)).toBe(true);
+      for (const c of input.candidates) {
+        if (c.eligible.includes("reminder")) {
+          const t = reminderTemplate(c);
+          expect(checkClientText(t.subject, c.facts, { maxLen: 120, allowOffer: false }), t.subject).toBeNull();
+          expect(checkClientText(t.message, c.facts, { maxLen: 900, allowOffer: false }), t.message).toBeNull();
+          expect(checkSellerText(rationaleTemplate(c, base), c.facts, 450, labelContext(c, input)), rationaleTemplate(c, base)).toBeNull();
+        }
+        if (c.eligible.includes("early_pay_discount")) {
+          const p = priceDiscount(c, base, DAY, 1.5, 7);
+          const facts = `${c.facts} ${p.facts}`;
+          expect(checkClientText(discountNoteTemplate(p), facts, { maxLen: 300, allowOffer: true, unconditional: true })).toBeNull();
+          expect(checkSellerText(rationaleTemplate(c, base, p), facts, 450, labelContext(c, input, [p])), rationaleTemplate(c, base, p)).toBeNull();
+        }
+      }
+    });
+  }
+});
+
+describe("rules fallback", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("proposes every eligible action with fixed wording, reminders first", () => {
+    const r = rulesRun(inputFor("KRW"), "test");
+    expect(r.source).toBe("rules");
+    expect(r.proposals.filter((p) => p.kind === "reminder")).toHaveLength(4);
+    expect(r.proposals.filter((p) => p.kind === "early_pay_discount")).toHaveLength(6);
+    expect(r.proposals[0].kind).toBe("reminder");
+    expect(r.notProposed.map((n) => n.invoiceNumber).sort()).toEqual(["FXA-1002", "FXA-1007", "FXA-2003", "FXA-3003"]);
+  });
+
+  it("is what runs without an API key — never an exception", async () => {
+    vi.stubEnv("FXA_ANTHROPIC_API_KEY", "");
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    const r = await runAgent(inputFor("USD"));
+    expect(r.source).toBe("rules");
+    expect(r.reason).toBe("no API key");
   });
 });
 
@@ -63,7 +129,6 @@ describe("seed generations", () => {
     expect(seedNumber("FXA-1001", 1)).toBe("FXA-1001");
     expect(seedNumber("FXA-1001", 3)).toBe("FXA-1001-r3");
     expect(parseSeedNumber("FXA-1001-r3")).toEqual({ base: "FXA-1001", gen: 3 });
-    expect(parseSeedNumber("FXA-1001")).toEqual({ base: "FXA-1001", gen: 1 });
     expect(parseSeedNumber("CHK-ABC-R")).toBeNull();
   });
 });

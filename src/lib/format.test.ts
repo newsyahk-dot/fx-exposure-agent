@@ -1,36 +1,67 @@
 import { describe, expect, it } from "vitest";
 import demo from "../data/demo-snapshot.json";
+import { labelContext, priceDiscount } from "./agent";
 import { demoInputs } from "./book";
-import { computeExposure } from "./exposure";
-import { cell, krwCompact, money } from "./format";
-import { buildProposals } from "./proposals";
+import { checkClientText, checkSellerText } from "./checks";
+import { BASES } from "./fx";
+import { compact, money, roundAsShown } from "./format";
+import { viewFor } from "./view";
 
 describe("format", () => {
-  it("compacts won for tiles", () => {
-    expect(krwCompact(1_569_607)).toBe("₩1.57M");
-    expect(krwCompact(52_320_219)).toBe("₩52.3M");
-    expect(krwCompact(86_101)).toBe("₩86K");
-    expect(krwCompact(9_800)).toBe("₩9,800");
-    expect(krwCompact(-2_000_000)).toBe("-₩2.00M");
+  it("compacts amounts in any home currency", () => {
+    expect(compact("KRW", 1_569_607)).toBe("₩1.57M");
+    expect(compact("USD", 52_320)).toBe("$52K");
+    expect(compact("EUR", 9_800)).toBe("€9,800");
+    expect(compact("GBP", -2_000_000)).toBe("-£2.00M");
+  });
+
+  it("rounds a number the way compact() shows it, so shown differences add up", () => {
+    expect(roundAsShown(103.6)).toBe(104);
+    expect(roundAsShown(42.5)).toBe(43);
+    expect(compact("USD", roundAsShown(103.6) - roundAsShown(42.5))).toBe("$61");
+    expect(roundAsShown(1_569_607)).toBe(1_570_000);
+    expect(compact("KRW", roundAsShown(1_569_607))).toBe(compact("KRW", 1_569_607));
   });
 
   it("uses no decimals for yen", () => {
     expect(money("JPY", 310000)).toBe("JPY 310,000");
     expect(money("USD", 4200)).toBe("USD 4,200.00");
-    expect(cell("USD", 0)).toBe("");
   });
 });
 
 describe("demo snapshot", () => {
-  it("holds everything the page needs and produces the same screen as live", () => {
+  it("holds everything the page needs, for every home currency", () => {
     const d = demoInputs();
     expect(d.source).toBe("demo");
-    expect(d.rates.USD).toBeGreaterThan(0);
     expect(d.invoices.length).toBe((demo as { invoices: unknown[] }).invoices.length);
-    const e = computeExposure(d.invoices, d.rates, d.asOf);
-    expect(e.rows.map((r) => r.currency).sort()).toEqual(["EUR", "JPY", "USD"]);
-    const p = buildProposals(d.invoices, d.rates, d.asOf, { dailyVols: d.dailyVols });
-    expect(p.some((x) => x.kind === "reminder")).toBe(true);
-    expect(p.some((x) => x.kind === "early_pay_discount" && x.swingNowKrw != null)).toBe(true);
+    expect(JSON.stringify(demo)).not.toMatch(/@personal\.example\.com/); // buyer e-mails stay out
+    for (const base of BASES) {
+      const v = viewFor(d, base, new Date(d.asOf + "T12:00:00Z"));
+      expect(v.exposure.rows.length).toBeGreaterThan(0);
+      expect(v.agentInput.candidates.some((c) => c.eligible.length)).toBe(true);
+    }
+  });
+
+  it("every text the agent wrote in the snapshot still passes today's checks", () => {
+    const d = demoInputs();
+    for (const base of BASES) {
+      const run = d.agentRuns?.[base];
+      expect(run, base).toBeDefined();
+      const input = viewFor(d, base, new Date(d.asOf + "T12:00:00Z")).agentInput;
+      for (const p of run!.proposals) {
+        const cand = input.candidates.find((c) => c.invoiceId === p.invoiceId)!;
+        if (p.kind === "reminder") {
+          expect(checkClientText(p.subject, cand.facts, { maxLen: 120, allowOffer: false }), `${base} ${p.invoiceNumber}`).toBeNull();
+          expect(checkClientText(p.message, cand.facts, { maxLen: 900, allowOffer: false }), `${base} ${p.invoiceNumber}`).toBeNull();
+          expect(checkSellerText(p.rationale, cand.facts, 450, labelContext(cand, input)), `${base} ${p.invoiceNumber}`).toBeNull();
+        } else {
+          // The agent may have compared several terms; the rationale can quote any of them.
+          const tried = [1, 1.5, 2].flatMap((pct) => [5, 6, 7, 8, 9, 10].map((w) => priceDiscount(cand, base, d.asOf, pct, w)));
+          const facts = `${cand.facts} ${tried.map((x) => x.facts).join(" ")}`;
+          expect(checkClientText(p.clientNote, facts, { maxLen: 300, allowOffer: true, unconditional: true }), `${base} ${p.invoiceNumber}`).toBeNull();
+          expect(checkSellerText(p.rationale, facts, 450, labelContext(cand, input, tried)), `${base} ${p.invoiceNumber}: ${p.rationale}`).toBeNull();
+        }
+      }
+    }
   });
 });

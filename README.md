@@ -12,27 +12,37 @@ they do the work. Until the money lands, every rate move changes what they actua
 them *how much* is exposed, *in which currency*, and *for how long*.
 
 ## What it does
-1. **Reads your PayPal invoices** (sandbox) and stacks the unpaid amounts by currency and by the week they fall due.
-2. **Values them in your home currency** using ECB reference rates, and shows what a ±3% move would do.
-3. **Proposes PayPal actions** that shorten the exposure — a reminder for an overdue invoice, an early-payment
-   discount on a large one due far out — with the cost and the size of the FX swing side by side.
-4. **Executes only what you approve**, then recalculates.
+1. **Reads your PayPal invoices** (sandbox) and stacks the unpaid amounts by currency and by the week they fall due,
+   valued in **your home currency** (USD, EUR, GBP, JPY or KRW) at ECB reference rates, with a ±3% stress test.
+2. **Shows what the wait already did**: for money received in the last 90 days, how much more or less it was worth on
+   the day it arrived than on the day it was invoiced — and how much of that came from late payments.
+3. **An AI agent plans the actions.** Claude (Haiku 5.5) reads the book through tools — `get_exposure`,
+   `list_open_invoices`, `price_discount` — and decides what to propose: a payment reminder with an e-mail it writes
+   for that client, or an early-payment discount on terms it picks, or nothing (with its reason).
+4. **Code keeps the agent honest.** Code decides which invoices are eligible and computes every number. Every piece of
+   text the agent writes is checked before it is accepted: only numbers from the facts, each figure under its own
+   label, no forecasts, no advice, no links, no conditional promises. A rejected draft goes back to the agent with
+   the reason, and it rewrites it — the screen shows how many drafts were rejected and every step it took.
+5. **Executes only what you approve** — you can edit the e-mail first — and the server re-checks everything before
+   calling PayPal. Then it recalculates.
 
 It never predicts which way rates will go.
 
 ## Status
-- [x] Exposure engine — currency × due-week table, symmetric shock, 1-sigma swing (`src/lib`)
+- [x] Exposure engine — currency × due-week table, symmetric shock, 1-sigma swing, any home currency (`src/lib`)
 - [x] PayPal sandbox integration — Invoicing v2 client (`src/lib/paypal.ts`), 18-invoice demo book (`src/lib/seed-data.ts`)
   - Reminders work in sandbox. The early-payment-discount rule endpoint (`/conditional-rules`) returns HTTP 500
-    for every variant tried (2026-10-23), so the fallback edits the sent invoice: 1% off + earlier due date, re-sent.
-- [ ] Agent: propose → approve → execute → recalculate
-- [x] Exposure screen — hero ±3% figure, currency × due-week heat table, proposal cards (`src/app/page.tsx`)
-- [x] Demo mode — `DEMO_MODE=1` (or no PayPal keys) serves `src/data/demo-snapshot.json`; refresh it with `npm run sandbox:snapshot`
-- [x] Approve → execute → recalculate — server action re-derives the proposal from the live book, runs it in PayPal,
-  re-renders; each action is logged in the invoice's private memo (`src/lib/agent-log.ts`), so it survives redeploys
+    for every variant tried (2026-10-23), so the agent edits the sent invoice instead: discount + earlier due date,
+    re-sent. The discount is then unconditional, and the screen and the client note say so.
+  - Transaction Search and Balances return 403 for this app, so the timing effect is computed from each paid
+    invoice's own payment dates.
+- [x] Agent with tools, text checks and a rule-based fallback (`src/lib/agent.ts`, `src/lib/checks.ts`)
+- [x] Approve → execute → recalculate, with editable drafts re-checked on the server (`src/app/actions.ts`); every
+  action is logged in the invoice's private memo (`src/lib/agent-log.ts`), so it survives redeploys
+- [x] Timing effect over the last 90 days (`src/lib/timing.ts`)
+- [x] Demo mode — `DEMO_MODE=1` (or no PayPal keys) serves `src/data/demo-snapshot.json`, which stores one agent run per
+  home currency, so the demo never calls PayPal or the model
 - [x] Demo reset — `npm run sandbox:seed -- --reset --apply` closes the open seed invoices and seeds a new generation
-- [x] AI explanations — Claude writes one or two sentences per proposal; a deterministic gate rejects any number not
-  in the facts and any forecast/advice wording, falling back to a template (`src/lib/explain.ts`)
 - [ ] Hosted demo
 
 ## Run locally

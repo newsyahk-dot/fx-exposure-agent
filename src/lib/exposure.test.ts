@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bucketOf, computeExposure, daysBetween } from "./exposure";
-import { crossToKrw, dailyVol, oneSigmaKrw } from "./fx";
-import { buildProposals } from "./proposals";
+import { cross, dailyVol, oneSigma, rateOn, type EcbQuotes } from "./fx";
 import type { Invoice } from "./types";
 
 const AS_OF = "2026-10-23";
@@ -46,9 +45,9 @@ describe("computeExposure", () => {
     expect(usd.total).toBe(1500);
     expect(usd.buckets.overdue).toBe(1000);
     expect(usd.buckets.w2).toBe(500);
-    expect(usd.krw).toBe(1_950_000);
-    expect(e.totalKrw).toBe(4_950_000);
-    expect(e.totalShockKrw).toBeCloseTo(148_500);
+    expect(usd.value).toBe(1_950_000);
+    expect(e.totalValue).toBe(4_950_000);
+    expect(e.totalShock).toBeCloseTo(148_500);
   });
 
   it("ignores paid, draft and zero-balance invoices", () => {
@@ -65,7 +64,7 @@ describe("computeExposure", () => {
     const e = computeExposure([inv({ currency: "KRW", amountDue: 5_000_000 })], RATES, AS_OF);
     expect(e.rows).toHaveLength(0);
     expect(e.baseTotal).toBe(5_000_000);
-    expect(e.totalKrw).toBe(0);
+    expect(e.totalValue).toBe(0);
   });
 
   it("reports what it cannot value instead of dropping it silently", () => {
@@ -82,15 +81,29 @@ describe("computeExposure", () => {
 });
 
 describe("fx helpers", () => {
-  it("crosses EUR-based ECB quotes into KRW per unit", () => {
-    const r = crossToKrw({ KRW: 1484.25, USD: 1.1205, JPY: 175.97 }, ["USD", "EUR", "JPY"]);
-    expect(r.EUR).toBe(1484.25);
-    expect(r.USD).toBeCloseTo(1324.63, 2);
-    expect(r.JPY).toBeCloseTo(8.4347, 4);
+  const q = { KRW: 1484.25, USD: 1.1205, JPY: 175.97, GBP: 0.86 };
+
+  it("crosses EUR-based ECB quotes into any home currency", () => {
+    const krw = cross(q, "KRW", ["USD", "EUR", "JPY"]);
+    expect(krw.EUR).toBe(1484.25);
+    expect(krw.USD).toBeCloseTo(1324.63, 2);
+    expect(krw.JPY).toBeCloseTo(8.4347, 4);
+    const usd = cross(q, "USD", ["EUR", "GBP", "USD"]);
+    expect(usd.EUR).toBeCloseTo(1.1205, 6);
+    expect(usd.GBP).toBeCloseTo(1.1205 / 0.86, 6);
+    expect(usd.USD).toBe(1);
+    expect(cross(q, "EUR", ["USD"]).USD).toBeCloseTo(1 / 1.1205, 6);
   });
 
-  it("returns nothing rather than a wrong number when KRW is missing", () => {
-    expect(crossToKrw({ USD: 1.12 }, ["USD"])).toEqual({});
+  it("returns nothing rather than a wrong number when the home currency is missing", () => {
+    expect(cross({ USD: 1.12 }, "KRW", ["USD"])).toEqual({});
+  });
+
+  it("uses the last ECB fixing on or before a day (weekends, holidays)", () => {
+    const e: EcbQuotes = { date: "2026-10-09", latest: q, history: { "2026-10-08": { USD: 1.1 }, "2026-10-09": { USD: 1.2 } } };
+    expect(rateOn(e, "USD", "EUR", "2026-10-11")).toEqual({ date: "2026-10-09", rate: 1.2 });
+    expect(rateOn(e, "USD", "EUR", "2026-10-08")?.rate).toBe(1.1);
+    expect(rateOn(e, "USD", "EUR", "2026-10-01")).toBeNull();
   });
 
   it("needs enough history before giving a volatility", () => {
@@ -100,38 +113,7 @@ describe("fx helpers", () => {
   });
 
   it("scales the swing with the square root of time", () => {
-    expect(oneSigmaKrw(1_000_000, 0.01, 4)).toBeCloseTo(20_000);
-    expect(oneSigmaKrw(1_000_000, 0.01, 0)).toBe(0);
-  });
-});
-
-describe("buildProposals", () => {
-  const book = [
-    inv({ id: "late", number: "L1", currency: "USD", amountDue: 2000, dueDate: "2026-10-13" }),
-    inv({ id: "far", number: "F1", currency: "EUR", amountDue: 3000, dueDate: "2026-11-30" }),
-    inv({ id: "near", number: "N1", currency: "EUR", amountDue: 3000, dueDate: "2026-10-28" }),
-    inv({ id: "small", number: "S1", currency: "USD", amountDue: 100, dueDate: "2026-10-01" }),
-  ];
-
-  it("proposes reminders for overdue invoices and discounts for distant ones, overdue first", () => {
-    const p = buildProposals(book, RATES, AS_OF, { dailyVols: { EUR: 0.005 } });
-    expect(p.map((x) => `${x.kind}:${x.invoiceId}`)).toEqual(["reminder:late", "early_pay_discount:far"]);
-    const r = p[0];
-    expect(r.kind === "reminder" && r.daysOverdue).toBe(10);
-  });
-
-  it("prices the discount and shows both swings without picking a side", () => {
-    const p = buildProposals(book, RATES, AS_OF, { dailyVols: { EUR: 0.005 } });
-    const d = p.find((x) => x.kind === "early_pay_discount")!;
-    if (d.kind !== "early_pay_discount") throw new Error("unexpected");
-    expect(d.costKrw).toBe(45_000); // 1% of 4.5M KRW
-    expect(d.swingNowKrw!).toBeGreaterThan(d.swingIfEarlyKrw!);
-  });
-
-  it("leaves the swing empty when volatility is unknown", () => {
-    const p = buildProposals(book, RATES, AS_OF);
-    const d = p.find((x) => x.kind === "early_pay_discount")!;
-    if (d.kind !== "early_pay_discount") throw new Error("unexpected");
-    expect(d.swingNowKrw).toBeNull();
+    expect(oneSigma(1_000_000, 0.01, 4)).toBeCloseTo(20_000);
+    expect(oneSigma(1_000_000, 0.01, 0)).toBe(0);
   });
 });

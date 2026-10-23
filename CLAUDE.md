@@ -19,11 +19,19 @@ actions that shorten that exposure (payment reminders, early-payment discount te
 - **No FX direction calls.** Shocks are symmetric (±3%). The 1-sigma swing is a size of uncertainty, not an
   expected loss. The app shows costs and swings side by side and never says which choice is better.
 - **Nothing silently dropped.** Invoices that cannot be valued go to `skipped` with a reason.
-- **Rates source:** ECB euro reference rates via Frankfurter, EUR base crossed into KRW (`src/lib/fx.ts`).
+- **Rates source:** ECB euro reference rates via Frankfurter, EUR base crossed into the home currency (`src/lib/fx.ts`).
   Do not query `base=KRW` — it returns rounded quotes (0.7% error, measured 2026-10-23). Show the source on screen.
 - **Every agent action needs an explicit approve click.** The model proposes; the user decides.
-- **Model text is gated** (`src/lib/explain.ts`): every number must come from the facts we pass, and forecast/advice
-  wording is rejected; failures fall back to a fixed template and the reason is shown. Model: `FXA_EXPLAIN_MODEL`
-  (default claude-haiku-5-5, effort low), one call per book state, cached for days; the demo snapshot stores them.
+- **The agent is checked by code** (`src/lib/agent.ts`, `src/lib/checks.ts`): code decides eligibility and every
+  number; every text the model writes must use only numbers from the facts, keep each figure under its own label
+  (3% stress test vs 1σ typical swing), avoid forecasts/advice/"benefit"/"pays for itself", and (client text) links
+  and conditional promises. Rejections go back to the model to rewrite. The approve action re-checks on the server.
+  Model: `FXA_AGENT_MODEL` (default claude-haiku-5-5, effort medium), one run per book state and home currency,
+  cached for days; the demo snapshot stores one run per home currency. No key or an error → rule-based fallback.
+- **Home currency** is chosen on screen (`?base=`), default `FXA_DEFAULT_BASE` or USD. Raw ECB quotes are stored, so any
+  of USD/EUR/GBP/JPY/KRW works in live and demo mode.
+- **What the agent puts in front of the seller** follows a stated rule of thumb: an offer is proposed only if its
+  reduction in 1σ swing is larger than its cost; both numbers are shown and the seller decides. Change the rule in the
+  prompt *and* this line together.
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.
