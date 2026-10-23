@@ -26,7 +26,7 @@ export type BookInputs = {
 };
 
 export const RATE_SOURCE = "ECB euro foreign exchange reference rates via Frankfurter";
-export const HISTORY_DAYS = 200; // covers the 120-day volatility window and 90 days of paid invoices
+export const HISTORY_DAYS = 830; // two years of start days for the evidence replay, plus the longest 90-day wait
 const PAID = new Set(["PAID", "MARKED_AS_PAID", "PARTIALLY_PAID"]);
 
 export function demoMode(): boolean {
@@ -38,7 +38,7 @@ export async function loadLiveInputs(asOf = new Date().toISOString().slice(0, 10
   const [raw, ecb] = await Promise.all([pp.listInvoices(), fetchEcbQuotes(addDays(asOf, -HISTORY_DAYS), asOf)]);
 
   // The list endpoint carries no payment dates; fetch them for recently paid invoices only.
-  const since = addDays(asOf, -HISTORY_DAYS);
+  const since = addDays(asOf, -200); // payment dates are needed for the last 90 days of payments only
   const isRetired = retired(raw);
   const needDetail = raw.filter((i) => !isRetired(i) && PAID.has(i.status) && (i.detail.invoice_date ?? "") >= since);
   const detailed = new Map<string, PPInvoice>();

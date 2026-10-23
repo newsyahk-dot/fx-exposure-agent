@@ -10,7 +10,11 @@ import { cell, compact, full, money } from "@/lib/format";
 import { BUCKETS, type Bucket } from "@/lib/types";
 import { pickBase, SHOCK_PCT, TIMING_DAYS, VOL_LOOKBACK_DAYS, viewFor, type BookView } from "@/lib/view";
 import { clientViewUrl } from "@/lib/paypal";
+import { ASSUME, bandsByWait, LOOKBACK_DAYS, replayBook, timelines } from "@/lib/evidence";
+import type { EcbQuotes } from "@/lib/fx";
+import type { AgentInput } from "@/lib/agent";
 import { ApproveForm } from "./approve-button";
+import { WaitChart } from "./wait-chart";
 import { SimulatePayment } from "./client-pay";
 import styles from "./page.module.css";
 
@@ -181,6 +185,8 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
         )}
       </section>
 
+      <Evidence ecb={inputs.ecb} base={base} asOf={inputs.asOf} ccys={e.rows.map((r) => r.currency)} lead={e.rows.slice().sort((a, b) => b.value - a.value)[0]?.currency} />
+
       <section aria-labelledby="actions-h">
         <h2 id="actions-h">What the agent proposes</h2>
         <p className={styles.muted}>
@@ -188,7 +194,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
           number and word before you see it, and nothing runs in PayPal until you approve.
         </p>
         <Suspense fallback={<p className={styles.why}>The agent is reading your invoices…</p>}>
-          <AgentPlan run={run} base={base} readOnly={readOnly} />
+          <AgentPlan run={run} base={base} readOnly={readOnly} ecb={inputs.ecb} input={view.agentInput} />
         </Suspense>
       </section>
 
@@ -354,7 +360,61 @@ function Timing({ view }: { view: BookView }) {
   );
 }
 
-async function AgentPlan({ run, base, readOnly }: { run: Promise<AgentRun>; base: string; readOnly: boolean }) {
+function Evidence({ ecb, base, asOf, ccys, lead }: { ecb: EcbQuotes; base: string; asOf: string; ccys: string[]; lead?: string }) {
+  const bands = bandsByWait(ecb, base, ccys, asOf);
+  if (!bands.length || bands.every((b) => b.n === 0)) return null;
+  const pct = (x: number) => `${x >= 0 ? "+" : "−"}${Math.abs(x * 100).toFixed(1)}%`;
+  const at = (h: number) => bands.find((b) => b.currency === lead && b.horizon === h);
+  const b7 = at(7);
+  const b60 = at(60);
+  return (
+    <section aria-labelledby="evidence-h">
+      <h2 id="evidence-h">How far rates moved while money waited — two years of ECB rates</h2>
+      {b7 && b60 && b60.n > 0 && (
+        <p className={styles.evidenceLead}>
+          Over the last two years, {lead} money that waited 60 days moved between <strong>{pct(b60.p5)}</strong> and{" "}
+          <strong>{pct(b60.p95)}</strong> against {base} nine times out of ten. Waiting 7 days: {pct(b7.p5)} to {pct(b7.p95)}.
+        </p>
+      )}
+      <p className={styles.muted}>
+        Half-width of the range each currency moved within, nine times out of ten, by days waited. Every ECB fixing in the
+        last {LOOKBACK_DAYS} days is a start day. History, not a forecast — the longer money waits, the wider the range.
+      </p>
+      <WaitChart bands={bands} base={base} />
+    </section>
+  );
+}
+
+function Replay({ r, ecb, input }: { r: AgentRun; ecb: EcbQuotes; input: AgentInput }) {
+  if (!r.proposals.length || !input.candidates.length) return null;
+  const { asInvoiced, withProposals } = timelines(input, r);
+  const a = replayBook(ecb, input.base, asInvoiced, input.asOf);
+  const b = replayBook(ecb, input.base, withProposals, input.asOf);
+  if (!(a.n > 0 && b.n > 0)) return null;
+  const c = (n: number) => compact(input.base, n);
+  const signed = (n: number) => `${n >= 0 ? "+" : "−"}${c(Math.abs(n))}`;
+  const wa = a.p95 - a.p5;
+  const wb = b.p95 - b.p5;
+  const cost = r.proposals.reduce((s, p) => s + (p.kind === "early_pay_discount" ? p.cost : 0), 0);
+  return (
+    <div className={styles.replay}>
+      <p>
+        <strong>Your open book, replayed over two years of ECB rates.</strong> If clients pay on the current dates, the
+        total in {input.base} would have moved between {signed(a.p5)} and {signed(a.p95)} nine times out of ten. If they
+        pay as these proposals ask, between {signed(b.p5)} and {signed(b.p95)}
+        {wa > 0 && <> — a range {Math.round((1 - wb / wa) * 100)}% narrower</>}.
+        {cost > 0 && <> The discounts offered cost {c(cost)} whichever way rates move.</>}
+      </p>
+      <p className={styles.muted}>
+        Assumptions: an overdue invoice is paid {ASSUME.overdueWaitDays} days from today without a reminder and{" "}
+        {ASSUME.afterReminderDays} days after one; a discounted invoice is paid on its new due date; others on their due
+        date. {a.n} historical start days, {a.from} to {a.to}. History, not a forecast.
+      </p>
+    </div>
+  );
+}
+
+async function AgentPlan({ run, base, readOnly, ecb, input }: { run: Promise<AgentRun>; base: string; readOnly: boolean; ecb: EcbQuotes; input: AgentInput }) {
   const r = await run;
   const reminders = r.proposals.filter((p) => p.kind === "reminder");
   const offers = r.proposals.filter((p) => p.kind === "early_pay_discount");
@@ -387,6 +447,8 @@ async function AgentPlan({ run, base, readOnly }: { run: Promise<AgentRun>; base
           </details>
         )}
       </div>
+
+      <Replay r={r} ecb={ecb} input={input} />
 
       {reminders.length > 0 && (
         <>
