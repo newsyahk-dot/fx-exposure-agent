@@ -1,3 +1,5 @@
+import type { AgentLogEntry } from "./agent-log";
+
 // Shared types. Amounts are in the invoice's own currency unless the name says KRW.
 
 export type Invoice = {
@@ -9,6 +11,7 @@ export type Invoice = {
   dueDate: string; // YYYY-MM-DD
   invoiceDate: string; // YYYY-MM-DD
   recipient?: string;
+  agentLog?: AgentLogEntry[]; // actions the agent already took on this invoice (from the memo)
 };
 
 // KRW per 1 unit of each currency, e.g. { USD: 1324.63, JPY: 8.43 }.

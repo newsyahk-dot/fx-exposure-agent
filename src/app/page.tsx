@@ -5,6 +5,7 @@ import { computeExposure, OPEN_STATUSES } from "@/lib/exposure";
 import { cell, krwCompact, krwFull, money } from "@/lib/format";
 import { buildProposals, type Proposal } from "@/lib/proposals";
 import { BUCKETS, type Bucket } from "@/lib/types";
+import { ApproveButton } from "./approve-button";
 import styles from "./page.module.css";
 
 const SHOCK_PCT = 3;
@@ -48,7 +49,12 @@ async function Book() {
     );
   }
   const e = computeExposure(inputs.invoices, inputs.rates, inputs.asOf, { shockPct: SHOCK_PCT });
-  const proposals = buildProposals(inputs.invoices, inputs.rates, inputs.asOf, { dailyVols: inputs.dailyVols });
+  const proposals = buildProposals(inputs.invoices, inputs.rates, inputs.asOf, { dailyVols: inputs.dailyVols, now: new Date() });
+  const readOnly = inputs.source === "demo";
+  // Actions on invoices still open. Ones on invoices since paid or cancelled are counted, not listed.
+  const allDone = inputs.invoices.flatMap((i) => (i.agentLog ?? []).map((a) => ({ ...a, inv: i })));
+  const done = allDone.filter((d) => OPEN_STATUSES.has(d.inv.status)).sort((a, b) => b.at.localeCompare(a.at));
+  const doneClosed = allDone.length - done.length;
   const open = inputs.invoices.filter((i) => OPEN_STATUSES.has(i.status) && i.amountDue > 0);
   const overdueKrw = e.rows.reduce((s, r) => s + r.buckets.overdue * inputs.rates[r.currency], 0);
   const skipped = [...inputs.skipped, ...e.skipped];
@@ -151,7 +157,7 @@ async function Book() {
           {proposals
             .filter((p) => p.kind === "reminder")
             .map((p) => (
-              <ProposalCard key={`${p.kind}-${p.invoiceId}`} p={p} />
+              <ProposalCard key={`${p.kind}-${p.invoiceId}`} p={p} readOnly={readOnly} />
             ))}
         </ul>
         <h3 className={styles.groupH}>Pull large, distant invoices closer</h3>
@@ -163,9 +169,34 @@ async function Book() {
           {proposals
             .filter((p) => p.kind === "early_pay_discount")
             .map((p) => (
-              <ProposalCard key={`${p.kind}-${p.invoiceId}`} p={p} />
+              <ProposalCard key={`${p.kind}-${p.invoiceId}`} p={p} readOnly={readOnly} />
             ))}
         </ul>
+      </section>
+
+      <section aria-labelledby="done-h">
+        <h2 id="done-h">Done by the agent</h2>
+        {done.length === 0 ? (
+          <p className={styles.muted}>Nothing yet. Approved actions show up here and stay recorded on the invoice.</p>
+        ) : (
+          <ul className={styles.doneList}>
+            {done.map((d) => (
+              <li key={`${d.inv.id}-${d.kind}-${d.at}`}>
+                <time dateTime={d.at}>{d.at.slice(0, 16).replace("T", " ")} UTC</time>
+                <span>{d.kind === "reminder" ? "Reminder sent" : "Early-payment discount applied"}</span>
+                <span>
+                  {d.inv.number} · {money(d.inv.currency, d.inv.amountDue)} still owed, due {d.inv.dueDate}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {doneClosed > 0 && (
+          <p className={styles.muted}>
+            {doneClosed} earlier {doneClosed === 1 ? "action" : "actions"} on invoices that have since been paid or
+            cancelled {doneClosed === 1 ? "is" : "are"} not listed.
+          </p>
+        )}
       </section>
 
       <footer className={styles.footer}>
@@ -189,7 +220,8 @@ function Tile({ label, value, note }: { label: string; value: string; note: stri
   );
 }
 
-function ProposalCard({ p }: { p: Proposal }) {
+function ProposalCard({ p, readOnly }: { p: Proposal; readOnly: boolean }) {
+  const demoReason = readOnly ? "Read-only demo snapshot" : undefined;
   if (p.kind === "reminder") {
     return (
       <li className={styles.card}>
@@ -198,6 +230,15 @@ function ProposalCard({ p }: { p: Proposal }) {
           {p.invoiceNumber} · {money(p.currency, p.amount)} <span className={styles.muted}>≈ {krwCompact(p.krw)}</span>
         </p>
         <p>{p.daysOverdue} days overdue. Every extra day is another day this amount moves with the rate.</p>
+        {p.lastReminderAt && (
+          <p className={styles.muted}>Last reminder: {p.lastReminderAt.slice(0, 16).replace("T", " ")} UTC</p>
+        )}
+        <ApproveButton
+          kind="reminder"
+          invoiceId={p.invoiceId}
+          label="Approve: send reminder"
+          disabledReason={demoReason ?? (p.canAct ? undefined : "Sent recently — available again in a few days")}
+        />
       </li>
     );
   }
@@ -221,6 +262,12 @@ function ProposalCard({ p }: { p: Proposal }) {
           <dd>{p.swingIfEarlyKrw == null ? "n/a" : `±${krwCompact(p.swingIfEarlyKrw)}`}</dd>
         </div>
       </dl>
+      <ApproveButton
+        kind="early_pay_discount"
+        invoiceId={p.invoiceId}
+        label={`Approve: apply ${p.discountPct}% and move due date in`}
+        disabledReason={demoReason}
+      />
     </li>
   );
 }

@@ -28,7 +28,10 @@ It never predicts which way rates will go.
 - [ ] Agent: propose → approve → execute → recalculate
 - [x] Exposure screen — hero ±3% figure, currency × due-week heat table, proposal cards (`src/app/page.tsx`)
 - [x] Demo mode — `DEMO_MODE=1` (or no PayPal keys) serves `src/data/demo-snapshot.json`; refresh it with `npm run sandbox:snapshot`
-- [ ] Approve buttons + hosted demo
+- [x] Approve → execute → recalculate — server action re-derives the proposal from the live book, runs it in PayPal,
+  re-renders; each action is logged in the invoice's private memo (`src/lib/agent-log.ts`), so it survives redeploys
+- [x] Demo reset — `npm run sandbox:seed -- --reset --apply` closes the open seed invoices and seeds a new generation
+- [ ] AI explanations (Claude) · hosted demo
 
 ## Run locally
 ```bash

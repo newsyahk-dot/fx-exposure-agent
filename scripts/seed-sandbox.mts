@@ -1,60 +1,35 @@
 // Seeds the PayPal sandbox seller account with the demo book in src/lib/seed-data.ts.
 //
-//   npx tsx scripts/seed-sandbox.mts            # dry run: shows what would be created
-//   npx tsx scripts/seed-sandbox.mts --apply    # creates, sends and records payments
+//   npx tsx scripts/seed-sandbox.mts                  # dry run: shows what would be created
+//   npx tsx scripts/seed-sandbox.mts --apply          # fills in the current generation (idempotent)
+//   npx tsx scripts/seed-sandbox.mts --reset --apply  # closes every open seed invoice, seeds a new generation
 //
-// Idempotent: invoice numbers that already exist on the account are skipped.
-// Sandbox only (PayPalClient refuses any other host). Never prints credentials.
+// Use --reset after a demo run: approved actions change invoices (discounts, due dates) for good.
+// Sandbox only. Never prints credentials.
 
-import { PayPalClient, PayPalError } from "../src/lib/paypal";
-import { addDays, draftBody, money, SEED_INVOICES, SEED_PREFIX } from "../src/lib/seed-data";
+import { PayPalClient } from "../src/lib/paypal";
+import { closeSeedInvoices, currentGeneration, seedGeneration } from "../src/lib/seed";
+import { parseSeedNumber } from "../src/lib/seed-data";
 
 const apply = process.argv.includes("--apply");
+const reset = process.argv.includes("--reset");
 const recipient = process.env.SEED_RECIPIENT_EMAIL ?? "sb-lhwuh53492948@personal.example.com";
 const seedDay = process.env.SEED_DAY ?? new Date().toISOString().slice(0, 10);
+const log = (l: string) => console.log(l);
 
 const pp = new PayPalClient();
-const existing = new Map((await pp.listInvoices()).map((i) => [i.detail.invoice_number, i]));
-console.log(`seed day ${seedDay} · recipient ${recipient} · ${existing.size} invoices already on the account`);
+const gen0 = currentGeneration(await pp.listInvoices());
+let gen = Math.max(1, gen0);
+console.log(`seed day ${seedDay} · recipient ${recipient} · current generation ${gen0 || "none"}${apply ? "" : " · DRY RUN"}`);
 
-let created = 0;
-for (const s of SEED_INVOICES) {
-  const line = `${s.number} ${s.currency} ${s.amount} due ${addDays(seedDay, s.dueOffset)} (${s.outcome.kind}) — ${s.why}`;
-  // A leftover draft means an earlier run failed half-way: remove it and start that invoice again.
-  const prev = existing.get(s.number);
-  if (prev?.status === "DRAFT" && apply) {
-    await pp.deleteDraft(prev.id);
-    existing.delete(s.number);
-  }
-  if (existing.has(s.number)) {
-    console.log(`skip   ${line} [exists: ${existing.get(s.number)!.status}]`);
-    continue;
-  }
-  if (!apply) {
-    console.log(`would  ${line}`);
-    continue;
-  }
-  try {
-    const draft = await pp.createDraftInvoice(draftBody(s, seedDay, recipient));
-    await pp.sendInvoice(draft.id, { send_to_recipient: true });
-    if (s.outcome.kind !== "open") {
-      const paid = s.outcome.kind === "paid" ? s.amount : s.outcome.paid;
-      await pp.recordPayment(draft.id, {
-        method: "BANK_TRANSFER",
-        payment_date: addDays(seedDay, s.outcome.paidOffset),
-        amount: money(s.currency, paid),
-        note: "Demo payment recorded by seed script",
-      });
-    }
-    const after = await pp.getInvoice(draft.id);
-    created++;
-    console.log(`made   ${line} -> ${draft.id} ${after.status} due_amount ${after.due_amount?.value ?? "?"}`);
-  } catch (e) {
-    console.log(`FAIL   ${line} -> ${e instanceof PayPalError ? e.message : String(e)}`);
-  }
+if (reset) {
+  const n = await closeSeedInvoices(pp, { apply, log, today: seedDay });
+  gen = gen0 + 1;
+  console.log(`${apply ? "closed" : "would close"} ${apply ? n : "the open seed invoices above"}; new generation ${gen}`);
 }
 
-const now = await pp.listInvoices();
-const ours = now.filter((i) => i.detail.invoice_number?.startsWith(SEED_PREFIX));
+const created = await seedGeneration(pp, gen, { seedDay, recipient, apply, log });
+
+const ours = (await pp.listInvoices()).filter((i) => parseSeedNumber(i.detail.invoice_number)?.gen === gen);
 const byStatus = ours.reduce<Record<string, number>>((m, i) => ((m[i.status] = (m[i.status] ?? 0) + 1), m), {});
-console.log(`${apply ? "created" : "dry run, would create"} ${apply ? created : SEED_INVOICES.filter((s) => !existing.has(s.number)).length}; seed invoices on account by status:`, byStatus);
+console.log(`${apply ? `created ${created}` : "dry run"}; generation ${gen} on account by status:`, byStatus);

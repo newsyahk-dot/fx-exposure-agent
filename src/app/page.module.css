@@ -8,6 +8,7 @@
   --accent: #2a78d6;
   --warning: #9a6200;
   --critical: #c2302f;
+  --good: #1d7a3e;
   /* Sequential blue (magnitude), light steps so primary ink stays readable. */
   --seq-1: #cde2fb;
   --seq-2: #b7d3f6;
@@ -41,6 +42,7 @@
     --accent: #3987e5;
     --warning: #e0a83a;
     --critical: #e66767;
+    --good: #4cbb72;
     --seq-1: #0d366b;
     --seq-2: #104281;
     --seq-3: #184f95;
@@ -258,4 +260,64 @@
   font-weight: 600;
   margin-top: 18px;
   color: var(--text-secondary);
+}
+
+.approveRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: auto;
+  padding-top: 6px;
+  font-size: 13px;
+}
+
+.approve {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.approve:disabled {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border);
+  cursor: default;
+}
+
+.approve:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ok {
+  color: var(--good);
+}
+
+.doneList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.doneList li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+.doneList time {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }

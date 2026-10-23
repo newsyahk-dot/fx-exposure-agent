@@ -46,6 +46,17 @@ export const SEED_INVOICES: SeedInvoice[] = [
   { number: "FXA-3005", currency: "JPY", amount: 760000, item: "Game UI assets", issueOffset: -2, dueOffset: 58, outcome: { kind: "open" }, why: "large, far out -> early-pay candidate" },
 ];
 
+// PayPal never frees an invoice number, even after cancelling, so each demo reset seeds a new
+// generation: FXA-1001 (gen 1), FXA-1001-r2 (gen 2), ...
+export function seedNumber(base: string, gen: number): string {
+  return gen <= 1 ? base : `${base}-r${gen}`;
+}
+
+export function parseSeedNumber(n: string | undefined): { base: string; gen: number } | null {
+  const m = /^(FXA-\d{4})(?:-r(\d+))?$/.exec(n ?? "");
+  return m ? { base: m[1], gen: m[2] ? Number(m[2]) : 1 } : null;
+}
+
 export function addDays(day: string, n: number): string {
   const t = Date.parse(day + "T00:00:00Z") + n * 86_400_000;
   return new Date(t).toISOString().slice(0, 10);
@@ -57,11 +68,11 @@ export function money(currency: string, value: number): { currency_code: string;
 }
 
 // PayPal Invoicing v2 draft body for one seed invoice.
-export function draftBody(s: SeedInvoice, seedDay: string, recipientEmail: string) {
+export function draftBody(s: SeedInvoice, seedDay: string, recipientEmail: string, gen = 1) {
   return {
     detail: {
       currency_code: s.currency,
-      invoice_number: s.number,
+      invoice_number: seedNumber(s.number, gen),
       invoice_date: addDays(seedDay, s.issueOffset),
       payment_term: { term_type: "DUE_ON_DATE_SPECIFIED", due_date: addDays(seedDay, s.dueOffset) },
       note: "Demo invoice (PayPal sandbox) — FX Exposure Agent",

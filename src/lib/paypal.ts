@@ -3,6 +3,7 @@
 // We call the REST API directly instead of @paypal/agent-toolkit (1.11.0 pins ai@^4 / zod@^3).
 // Endpoint shapes follow the toolkit's own calls so the agent tools keep the same names and scope.
 
+import { appendAgentLog, parseAgentLog, type AgentActionKind } from "./agent-log";
 import type { Invoice } from "./types";
 
 const SANDBOX_BASE = "https://api-m.sandbox.paypal.com";
@@ -146,18 +147,35 @@ export class PayPalClient {
   // USD/EUR/JPY, even AUTO_CANCEL). Editing a sent invoice does work: this puts a flat percent
   // discount on it, moves the due date to `newDueDate` and re-sends it with a note.
   // ⚠️ Not the same offer: the discount is unconditional (the buyer keeps it even if they pay late).
-  async offerEarlyPaymentByUpdate(id: string, percent: number, newDueDate: string, note: string) {
-    const cur = (await this.getInvoice(id)) as PPInvoice & { links?: unknown; amount?: unknown };
-    const { links: _links, ...rest } = cur;
-    void _links;
-    const body = {
-      ...rest,
-      detail: { ...cur.detail, payment_term: { term_type: "DUE_ON_DATE_SPECIFIED", due_date: newDueDate }, note },
+  async offerEarlyPaymentByUpdate(id: string, percent: number, newDueDate: string, note: string, logAt?: Date) {
+    const cur = await this.getInvoice(id);
+    return this.putInvoice(id, cur, true, {
+      detail: {
+        ...cur.detail,
+        payment_term: { term_type: "DUE_ON_DATE_SPECIFIED", due_date: newDueDate },
+        note,
+        ...(logAt ? { memo: appendAgentLog(cur.detail.memo, "early_pay_discount", logAt) } : {}),
+      },
       amount: { breakdown: { discount: { invoice_discount: { percent: String(percent) } } } },
-    };
-    return this.request<PPInvoice>("PUT", `/v2/invoicing/invoices/${id}?send_to_recipient=true&send_to_invoicer=false`, body, {
-      Prefer: "return=representation",
     });
+  }
+
+  // Records an agent action in the invoice's private memo without e-mailing anyone.
+  async logAgentAction(id: string, kind: AgentActionKind, at: Date) {
+    const cur = await this.getInvoice(id);
+    return this.putInvoice(id, cur, false, { detail: { ...cur.detail, memo: appendAgentLog(cur.detail.memo, kind, at) } });
+  }
+
+  // Full-replace update (PUT). `links` is read-only and must not be sent back.
+  private putInvoice(id: string, cur: PPInvoice, notifyRecipient: boolean, patch: Record<string, unknown>) {
+    const { links: _links, ...rest } = cur as PPInvoice & { links?: unknown };
+    void _links;
+    return this.request<PPInvoice>(
+      "PUT",
+      `/v2/invoicing/invoices/${id}?send_to_recipient=${notifyRecipient}&send_to_invoicer=false`,
+      { ...rest, ...patch },
+      { Prefer: "return=representation" },
+    );
   }
 
   cancelInvoice(id: string) {
@@ -186,6 +204,8 @@ export type PPInvoice = {
   detail: {
     invoice_number?: string;
     reference?: string;
+    memo?: string; // private to the merchant
+    note?: string; // shown to the buyer
     currency_code: string;
     invoice_date?: string;
     payment_term?: { term_type?: string; due_date?: string };
@@ -218,6 +238,7 @@ export function toInvoice(pp: PPInvoice): { invoice: Invoice } | { skipped: { id
       dueDate: due,
       invoiceDate: pp.detail.invoice_date ?? due,
       recipient: r?.email_address,
+      agentLog: parseAgentLog(pp.detail.memo),
     },
   };
 }

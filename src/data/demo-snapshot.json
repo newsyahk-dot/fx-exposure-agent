@@ -13,13 +13,224 @@
   },
   "invoices": [
     {
+      "id": "INV2-C2CZ-34H9-T7LP-539N",
+      "number": "FXA-3005-r2",
+      "status": "SENT",
+      "currency": "JPY",
+      "amountDue": 760000,
+      "dueDate": "2026-12-20",
+      "invoiceDate": "2026-10-21",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-FWVM-8MPA-4GYV-C536",
+      "number": "FXA-3004-r2",
+      "status": "MARKED_AS_PAID",
+      "currency": "JPY",
+      "amountDue": 0,
+      "dueDate": "2026-09-29",
+      "invoiceDate": "2026-08-30",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-NX6B-48MU-ETKX-GPVJ",
+      "number": "FXA-3003-r2",
+      "status": "SENT",
+      "currency": "JPY",
+      "amountDue": 150000,
+      "dueDate": "2026-10-30",
+      "invoiceDate": "2026-10-16",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-N4PL-ECJZ-JN3C-P8CJ",
+      "number": "FXA-3002-r2",
+      "status": "SENT",
+      "currency": "JPY",
+      "amountDue": 480000,
+      "dueDate": "2026-11-11",
+      "invoiceDate": "2026-10-12",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-WU2D-W6PT-KRWR-JQXL",
+      "number": "FXA-3001-r2",
+      "status": "SENT",
+      "currency": "JPY",
+      "amountDue": 310000,
+      "dueDate": "2026-10-15",
+      "invoiceDate": "2026-09-15",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-RX6V-NWJQ-SMAD-KCD8",
+      "number": "FXA-2006-r2",
+      "status": "MARKED_AS_PAID",
+      "currency": "EUR",
+      "amountDue": 0,
+      "dueDate": "2026-10-20",
+      "invoiceDate": "2026-09-20",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-GH7C-ENZC-PRYL-87C9",
+      "number": "FXA-2005-r2",
+      "status": "SENT",
+      "currency": "EUR",
+      "amountDue": 5000,
+      "dueDate": "2026-12-21",
+      "invoiceDate": "2026-10-22",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-AQX3-VK44-Z7JX-KJ2V",
+      "number": "FXA-2004-r2",
+      "status": "MARKED_AS_PAID",
+      "currency": "EUR",
+      "amountDue": 0,
+      "dueDate": "2026-09-14",
+      "invoiceDate": "2026-08-15",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-DG9B-9J9M-NW5V-HXSN",
+      "number": "FXA-2003-r2",
+      "status": "SENT",
+      "currency": "EUR",
+      "amountDue": 950,
+      "dueDate": "2026-11-02",
+      "invoiceDate": "2026-10-18",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-VRM3-CW6G-6R9A-5BR8",
+      "number": "FXA-2002-r2",
+      "status": "SENT",
+      "currency": "EUR",
+      "amountDue": 2400,
+      "dueDate": "2026-11-09",
+      "invoiceDate": "2026-10-10",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-L4R5-3UPD-XKMG-E6DU",
+      "number": "FXA-2001-r2",
+      "status": "SENT",
+      "currency": "EUR",
+      "amountDue": 1800,
+      "dueDate": "2026-10-05",
+      "invoiceDate": "2026-09-05",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-U8N8-VRA5-MZ25-2SEC",
+      "number": "FXA-1007-r2",
+      "status": "SENT",
+      "currency": "USD",
+      "amountDue": 350,
+      "dueDate": "2026-10-31",
+      "invoiceDate": "2026-10-01",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-YGJA-5PZT-WWE4-GMZB",
+      "number": "FXA-1006-r2",
+      "status": "PARTIALLY_PAID",
+      "currency": "USD",
+      "amountDue": 1800,
+      "dueDate": "2026-10-01",
+      "invoiceDate": "2026-09-01",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-RCMS-MCHZ-CBN2-BAC8",
+      "number": "FXA-1005-r2",
+      "status": "MARKED_AS_PAID",
+      "currency": "USD",
+      "amountDue": 0,
+      "dueDate": "2026-09-19",
+      "invoiceDate": "2026-08-20",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-LEPZ-AMC8-7JKW-ABT5",
+      "number": "FXA-1004-r2",
+      "status": "SENT",
+      "currency": "USD",
+      "amountDue": 6500,
+      "dueDate": "2026-12-04",
+      "invoiceDate": "2026-10-20",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-5DLE-XLLN-BJNN-ASS9",
+      "number": "FXA-1003-r2",
+      "status": "SENT",
+      "currency": "USD",
+      "amountDue": 2600,
+      "dueDate": "2026-11-14",
+      "invoiceDate": "2026-10-15",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-87DV-6RUT-T3VS-C9RM",
+      "number": "FXA-1002-r2",
+      "status": "SENT",
+      "currency": "USD",
+      "amountDue": 1850,
+      "dueDate": "2026-10-25",
+      "invoiceDate": "2026-09-25",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-Y9G5-HDYC-ENY4-PH24",
+      "number": "FXA-1001-r2",
+      "status": "SENT",
+      "currency": "USD",
+      "amountDue": 4200,
+      "dueDate": "2026-10-10",
+      "invoiceDate": "2026-09-10",
+      "agentLog": []
+    },
+    {
+      "id": "INV2-ZHYJ-7363-5DXZ-KQ6F",
+      "number": "CHK-MVKLTLWS-MP",
+      "status": "MARKED_AS_PAID",
+      "currency": "USD",
+      "amountDue": 0,
+      "dueDate": "2026-10-13",
+      "invoiceDate": "2026-09-13",
+      "agentLog": [
+        {
+          "kind": "reminder",
+          "at": "2026-10-23T06:44:05.910Z"
+        }
+      ]
+    },
+    {
+      "id": "INV2-HWFT-UZT5-DEXU-N59U",
+      "number": "CHK-MVKLTLWS-M",
+      "status": "CANCELLED",
+      "currency": "USD",
+      "amountDue": 1000,
+      "dueDate": "2026-10-13",
+      "invoiceDate": "2026-09-13",
+      "agentLog": [
+        {
+          "kind": "reminder",
+          "at": "2026-10-23T06:44:02.325Z"
+        }
+      ]
+    },
+    {
       "id": "INV2-SC57-XURC-UEPS-EB4V",
       "number": "CHK-MVKKO3BY-F2",
       "status": "CANCELLED",
       "currency": "JPY",
       "amountDue": 297000,
       "dueDate": "2026-10-30",
-      "invoiceDate": "2026-10-21"
+      "invoiceDate": "2026-10-21",
+      "agentLog": []
     },
     {
       "id": "INV2-M258-SUS8-NUXM-46H2",
@@ -28,7 +239,8 @@
       "currency": "EUR",
       "amountDue": 1980,
       "dueDate": "2026-10-30",
-      "invoiceDate": "2026-10-21"
+      "invoiceDate": "2026-10-21",
+      "agentLog": []
     },
     {
       "id": "INV2-XF9U-62XY-4MFV-66QN",
@@ -37,7 +249,8 @@
       "currency": "JPY",
       "amountDue": 300000,
       "dueDate": "2026-11-22",
-      "invoiceDate": "2026-10-21"
+      "invoiceDate": "2026-10-21",
+      "agentLog": []
     },
     {
       "id": "INV2-A95Z-J87E-BMP9-4CCB",
@@ -46,7 +259,8 @@
       "currency": "EUR",
       "amountDue": 2000,
       "dueDate": "2026-11-22",
-      "invoiceDate": "2026-10-21"
+      "invoiceDate": "2026-10-21",
+      "agentLog": []
     },
     {
       "id": "INV2-7MRE-PMJJ-R8JB-C8DM",
@@ -55,7 +269,8 @@
       "currency": "USD",
       "amountDue": 1500,
       "dueDate": "2026-10-13",
-      "invoiceDate": "2026-09-13"
+      "invoiceDate": "2026-09-13",
+      "agentLog": []
     },
     {
       "id": "INV2-5V4L-JFZF-WMAA-KMNX",
@@ -64,7 +279,8 @@
       "currency": "USD",
       "amountDue": 1980,
       "dueDate": "2026-11-30",
-      "invoiceDate": "2026-10-23"
+      "invoiceDate": "2026-10-23",
+      "agentLog": []
     },
     {
       "id": "INV2-XVZN-PF85-PVC7-AHH3",
@@ -73,7 +289,8 @@
       "currency": "JPY",
       "amountDue": 297000,
       "dueDate": "2026-10-30",
-      "invoiceDate": "2026-10-21"
+      "invoiceDate": "2026-10-21",
+      "agentLog": []
     },
     {
       "id": "INV2-D6MP-D2VD-RMWZ-FK4T",
@@ -82,7 +299,8 @@
       "currency": "EUR",
       "amountDue": 1980,
       "dueDate": "2026-10-30",
-      "invoiceDate": "2026-10-21"
+      "invoiceDate": "2026-10-21",
+      "agentLog": []
     },
     {
       "id": "INV2-KGDN-CAUP-YJML-QVWT",
@@ -91,7 +309,8 @@
       "currency": "JPY",
       "amountDue": 310000,
       "dueDate": "2026-11-30",
-      "invoiceDate": "2026-10-20"
+      "invoiceDate": "2026-10-20",
+      "agentLog": []
     },
     {
       "id": "INV2-JAU5-WZ46-HCMJ-TTML",
@@ -100,7 +319,8 @@
       "currency": "USD",
       "amountDue": 1000,
       "dueDate": "2026-11-22",
-      "invoiceDate": "2026-10-23"
+      "invoiceDate": "2026-10-23",
+      "agentLog": []
     },
     {
       "id": "INV2-434A-VFBE-BYZH-99PF",
@@ -109,7 +329,8 @@
       "currency": "EUR",
       "amountDue": 1234.5,
       "dueDate": "2026-10-05",
-      "invoiceDate": "2026-09-20"
+      "invoiceDate": "2026-09-20",
+      "agentLog": []
     },
     {
       "id": "INV2-NMRH-AEWD-GXMN-LT8F",
@@ -118,7 +339,8 @@
       "currency": "USD",
       "amountDue": 1000,
       "dueDate": "2026-11-22",
-      "invoiceDate": "2026-10-23"
+      "invoiceDate": "2026-10-23",
+      "agentLog": []
     },
     {
       "id": "INV2-Y9P5-SMTU-JW8H-7VG2",
@@ -127,7 +349,8 @@
       "currency": "USD",
       "amountDue": 1000,
       "dueDate": "2026-11-22",
-      "invoiceDate": "2026-10-23"
+      "invoiceDate": "2026-10-23",
+      "agentLog": []
     },
     {
       "id": "INV2-YPCR-HUJN-ZBAB-L267",
@@ -136,7 +359,8 @@
       "currency": "JPY",
       "amountDue": 300000,
       "dueDate": "2026-11-22",
-      "invoiceDate": "2026-10-21"
+      "invoiceDate": "2026-10-21",
+      "agentLog": []
     },
     {
       "id": "INV2-FQS4-M5UX-NVY5-W7S5",
@@ -145,7 +369,8 @@
       "currency": "EUR",
       "amountDue": 2000,
       "dueDate": "2026-11-22",
-      "invoiceDate": "2026-10-21"
+      "invoiceDate": "2026-10-21",
+      "agentLog": []
     },
     {
       "id": "INV2-7F56-L767-5665-LTBE",
@@ -154,16 +379,18 @@
       "currency": "USD",
       "amountDue": 1500,
       "dueDate": "2026-10-13",
-      "invoiceDate": "2026-09-13"
+      "invoiceDate": "2026-09-13",
+      "agentLog": []
     },
     {
       "id": "INV2-2G75-PP6K-JCDZ-UZHJ",
       "number": "FXA-3005",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "JPY",
       "amountDue": 760000,
       "dueDate": "2026-12-20",
-      "invoiceDate": "2026-10-21"
+      "invoiceDate": "2026-10-21",
+      "agentLog": []
     },
     {
       "id": "INV2-5NF9-YRBZ-2VQ5-DZEN",
@@ -172,34 +399,38 @@
       "currency": "JPY",
       "amountDue": 0,
       "dueDate": "2026-09-29",
-      "invoiceDate": "2026-08-30"
+      "invoiceDate": "2026-08-30",
+      "agentLog": []
     },
     {
       "id": "INV2-G72Q-5Y46-TH7W-5MH9",
       "number": "FXA-3003",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "JPY",
       "amountDue": 150000,
       "dueDate": "2026-10-30",
-      "invoiceDate": "2026-10-16"
+      "invoiceDate": "2026-10-16",
+      "agentLog": []
     },
     {
       "id": "INV2-6SBG-4DZ8-VXF8-PMMT",
       "number": "FXA-3002",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "JPY",
       "amountDue": 480000,
       "dueDate": "2026-11-11",
-      "invoiceDate": "2026-10-12"
+      "invoiceDate": "2026-10-12",
+      "agentLog": []
     },
     {
       "id": "INV2-M3L6-G5E6-6WSK-E2SZ",
       "number": "FXA-3001",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "JPY",
       "amountDue": 310000,
       "dueDate": "2026-10-15",
-      "invoiceDate": "2026-09-15"
+      "invoiceDate": "2026-09-15",
+      "agentLog": []
     },
     {
       "id": "INV2-X9KN-NNNX-XHJ8-CZBT",
@@ -208,16 +439,18 @@
       "currency": "EUR",
       "amountDue": 0,
       "dueDate": "2026-10-20",
-      "invoiceDate": "2026-09-20"
+      "invoiceDate": "2026-09-20",
+      "agentLog": []
     },
     {
       "id": "INV2-5WV4-2239-H4RK-3TPY",
       "number": "FXA-2005",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "EUR",
       "amountDue": 5000,
       "dueDate": "2026-12-21",
-      "invoiceDate": "2026-10-22"
+      "invoiceDate": "2026-10-22",
+      "agentLog": []
     },
     {
       "id": "INV2-6ZXW-66MC-E95E-3HK8",
@@ -226,52 +459,58 @@
       "currency": "EUR",
       "amountDue": 0,
       "dueDate": "2026-09-14",
-      "invoiceDate": "2026-08-15"
+      "invoiceDate": "2026-08-15",
+      "agentLog": []
     },
     {
       "id": "INV2-TBNS-4HME-HVCA-2SAP",
       "number": "FXA-2003",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "EUR",
       "amountDue": 950,
       "dueDate": "2026-11-02",
-      "invoiceDate": "2026-10-18"
+      "invoiceDate": "2026-10-18",
+      "agentLog": []
     },
     {
       "id": "INV2-22KS-T78W-UNLM-A5BW",
       "number": "FXA-2002",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "EUR",
       "amountDue": 2400,
       "dueDate": "2026-11-09",
-      "invoiceDate": "2026-10-10"
+      "invoiceDate": "2026-10-10",
+      "agentLog": []
     },
     {
       "id": "INV2-U9KP-G2AD-G296-MU2J",
       "number": "FXA-2001",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "EUR",
       "amountDue": 1800,
       "dueDate": "2026-10-05",
-      "invoiceDate": "2026-09-05"
+      "invoiceDate": "2026-09-05",
+      "agentLog": []
     },
     {
       "id": "INV2-67G2-TX4F-UGT7-7ZA2",
       "number": "FXA-1007",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "USD",
       "amountDue": 350,
       "dueDate": "2026-10-31",
-      "invoiceDate": "2026-10-01"
+      "invoiceDate": "2026-10-01",
+      "agentLog": []
     },
     {
       "id": "INV2-VS4T-397Y-VU2W-2E6G",
       "number": "FXA-1006",
-      "status": "PARTIALLY_PAID",
+      "status": "MARKED_AS_PAID",
       "currency": "USD",
-      "amountDue": 1800,
+      "amountDue": 0,
       "dueDate": "2026-10-01",
-      "invoiceDate": "2026-09-01"
+      "invoiceDate": "2026-09-01",
+      "agentLog": []
     },
     {
       "id": "INV2-LDYJ-9YAU-KKD5-NJAX",
@@ -280,45 +519,60 @@
       "currency": "USD",
       "amountDue": 0,
       "dueDate": "2026-09-19",
-      "invoiceDate": "2026-08-20"
+      "invoiceDate": "2026-08-20",
+      "agentLog": []
     },
     {
       "id": "INV2-V5T9-VLFH-GE2F-U8EY",
       "number": "FXA-1004",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "USD",
       "amountDue": 6500,
       "dueDate": "2026-12-04",
-      "invoiceDate": "2026-10-20"
+      "invoiceDate": "2026-10-20",
+      "agentLog": []
     },
     {
       "id": "INV2-Y7JP-LBJS-EQ8Q-L463",
       "number": "FXA-1003",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "USD",
-      "amountDue": 2600,
-      "dueDate": "2026-11-14",
-      "invoiceDate": "2026-10-15"
+      "amountDue": 2574,
+      "dueDate": "2026-10-30",
+      "invoiceDate": "2026-10-15",
+      "agentLog": [
+        {
+          "kind": "early_pay_discount",
+          "at": "2026-10-23T06:47:05.208Z"
+        }
+      ]
     },
     {
       "id": "INV2-XE57-KD2Y-2Z59-7N6R",
       "number": "FXA-1002",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "USD",
       "amountDue": 1850,
       "dueDate": "2026-10-25",
-      "invoiceDate": "2026-09-25"
+      "invoiceDate": "2026-09-25",
+      "agentLog": []
     },
     {
       "id": "INV2-FYMD-FGD8-6NUL-5RZ6",
       "number": "FXA-1001",
-      "status": "SENT",
+      "status": "CANCELLED",
       "currency": "USD",
       "amountDue": 4200,
       "dueDate": "2026-10-10",
-      "invoiceDate": "2026-09-10"
+      "invoiceDate": "2026-09-10",
+      "agentLog": [
+        {
+          "kind": "reminder",
+          "at": "2026-10-23T06:47:00.804Z"
+        }
+      ]
     }
   ],
   "skipped": [],
-  "fetchedAt": "2026-10-23T06:36:43.449Z"
+  "fetchedAt": "2026-10-23T06:48:33.433Z"
 }
