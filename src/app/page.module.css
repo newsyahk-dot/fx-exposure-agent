@@ -321,3 +321,17 @@
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
+
+.why {
+  font-size: 14px;
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.whySource {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}

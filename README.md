@@ -31,7 +31,9 @@ It never predicts which way rates will go.
 - [x] Approve → execute → recalculate — server action re-derives the proposal from the live book, runs it in PayPal,
   re-renders; each action is logged in the invoice's private memo (`src/lib/agent-log.ts`), so it survives redeploys
 - [x] Demo reset — `npm run sandbox:seed -- --reset --apply` closes the open seed invoices and seeds a new generation
-- [ ] AI explanations (Claude) · hosted demo
+- [x] AI explanations — Claude writes one or two sentences per proposal; a deterministic gate rejects any number not
+  in the facts and any forecast/advice wording, falling back to a template (`src/lib/explain.ts`)
+- [ ] Hosted demo
 
 ## Run locally
 ```bash

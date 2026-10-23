@@ -11,6 +11,7 @@ import demo from "../data/demo-snapshot.json";
 import { dailyVol, latestRates, rateHistory } from "./fx";
 import { PayPalClient, toInvoice } from "./paypal";
 import { addDays } from "./seed-data";
+import type { Explanation } from "./explain";
 import type { Invoice, Rates } from "./types";
 
 export type BookInputs = {
@@ -22,6 +23,7 @@ export type BookInputs = {
   invoices: Invoice[];
   skipped: { id: string; reason: string }[];
   fetchedAt: string; // ISO timestamp
+  explanations?: Record<string, Explanation>; // demo snapshot only: saved so the demo never calls the model
 };
 
 export const RATE_SOURCE = "ECB euro foreign exchange reference rates via Frankfurter";

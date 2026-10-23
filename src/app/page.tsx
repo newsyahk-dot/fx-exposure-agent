@@ -1,6 +1,8 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { loadInputs, RATE_SOURCE, type BookInputs } from "@/lib/book";
+import { factsFor, proposalKey, type Explanation } from "@/lib/explain";
+import { cachedExplanations } from "@/lib/explanations";
 import { computeExposure, OPEN_STATUSES } from "@/lib/exposure";
 import { cell, krwCompact, krwFull, money } from "@/lib/format";
 import { buildProposals, type Proposal } from "@/lib/proposals";
@@ -51,6 +53,10 @@ async function Book() {
   const e = computeExposure(inputs.invoices, inputs.rates, inputs.asOf, { shockPct: SHOCK_PCT });
   const proposals = buildProposals(inputs.invoices, inputs.rates, inputs.asOf, { dailyVols: inputs.dailyVols, now: new Date() });
   const readOnly = inputs.source === "demo";
+  // Started now, awaited inside each card's Suspense boundary: the page never waits on the model.
+  const explanations: Promise<Record<string, Explanation>> = inputs.explanations
+    ? Promise.resolve(inputs.explanations)
+    : cachedExplanations(proposals.map(factsFor));
   // Actions on invoices still open. Ones on invoices since paid or cancelled are counted, not listed.
   const allDone = inputs.invoices.flatMap((i) => (i.agentLog ?? []).map((a) => ({ ...a, inv: i })));
   const done = allDone.filter((d) => OPEN_STATUSES.has(d.inv.status)).sort((a, b) => b.at.localeCompare(a.at));
@@ -157,7 +163,7 @@ async function Book() {
           {proposals
             .filter((p) => p.kind === "reminder")
             .map((p) => (
-              <ProposalCard key={`${p.kind}-${p.invoiceId}`} p={p} readOnly={readOnly} />
+              <ProposalCard key={`${p.kind}-${p.invoiceId}`} p={p} readOnly={readOnly} explanations={explanations} />
             ))}
         </ul>
         <h3 className={styles.groupH}>Pull large, distant invoices closer</h3>
@@ -169,7 +175,7 @@ async function Book() {
           {proposals
             .filter((p) => p.kind === "early_pay_discount")
             .map((p) => (
-              <ProposalCard key={`${p.kind}-${p.invoiceId}`} p={p} readOnly={readOnly} />
+              <ProposalCard key={`${p.kind}-${p.invoiceId}`} p={p} readOnly={readOnly} explanations={explanations} />
             ))}
         </ul>
       </section>
@@ -220,7 +226,20 @@ function Tile({ label, value, note }: { label: string; value: string; note: stri
   );
 }
 
-function ProposalCard({ p, readOnly }: { p: Proposal; readOnly: boolean }) {
+function ProposalCard({
+  p,
+  readOnly,
+  explanations,
+}: {
+  p: Proposal;
+  readOnly: boolean;
+  explanations: Promise<Record<string, Explanation>>;
+}) {
+  const why = (
+    <Suspense fallback={<p className={styles.why}>Claude is writing a short explanation…</p>}>
+      <Why explanations={explanations} k={proposalKey(p)} />
+    </Suspense>
+  );
   const demoReason = readOnly ? "Read-only demo snapshot" : undefined;
   if (p.kind === "reminder") {
     return (
@@ -229,7 +248,8 @@ function ProposalCard({ p, readOnly }: { p: Proposal; readOnly: boolean }) {
         <p className={styles.cardTitle}>
           {p.invoiceNumber} · {money(p.currency, p.amount)} <span className={styles.muted}>≈ {krwCompact(p.krw)}</span>
         </p>
-        <p>{p.daysOverdue} days overdue. Every extra day is another day this amount moves with the rate.</p>
+        <p>{p.daysOverdue} days overdue.</p>
+        {why}
         {p.lastReminderAt && (
           <p className={styles.muted}>Last reminder: {p.lastReminderAt.slice(0, 16).replace("T", " ")} UTC</p>
         )}
@@ -262,6 +282,7 @@ function ProposalCard({ p, readOnly }: { p: Proposal; readOnly: boolean }) {
           <dd>{p.swingIfEarlyKrw == null ? "n/a" : `±${krwCompact(p.swingIfEarlyKrw)}`}</dd>
         </div>
       </dl>
+      {why}
       <ApproveButton
         kind="early_pay_discount"
         invoiceId={p.invoiceId}
@@ -269,5 +290,27 @@ function ProposalCard({ p, readOnly }: { p: Proposal; readOnly: boolean }) {
         disabledReason={demoReason}
       />
     </li>
+  );
+}
+
+async function Why({ explanations, k }: { explanations: Promise<Record<string, Explanation>>; k: string }) {
+  let e: Explanation | undefined;
+  try {
+    e = (await explanations)[k];
+  } catch {
+    e = undefined;
+  }
+  if (!e) return null;
+  return (
+    <div className={styles.why}>
+      <p>{e.text}</p>
+      <p className={styles.whySource}>
+        {e.source === "claude"
+          ? "Written by Claude from the numbers above · checked: no new figures, no forecasts"
+          : e.reason && e.reason !== "no API key"
+            ? `Standard wording — Claude's sentence was withheld (${e.reason})`
+            : "Standard wording"}
+      </p>
+    </div>
   );
 }
