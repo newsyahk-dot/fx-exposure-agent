@@ -206,9 +206,9 @@ const Fields = z.object({
 
 export type ParseResult = { fields: Partial<InvoiceRequest>; by: "claude" | "rules"; note?: string };
 
-export async function parseRequest(text: string, knownClients: string[], base: string, asOf: string): Promise<ParseResult> {
+export async function parseRequest(text: string, knownClients: string[], base: string, asOf: string, useModel = true): Promise<ParseResult> {
   const t = text.trim().slice(0, 500);
-  const api = client();
+  const api = useModel ? client() : null;
   if (api && t) {
     try {
       const m = await api.messages.parse({
@@ -228,7 +228,7 @@ export async function parseRequest(text: string, knownClients: string[], base: s
       // fall through to the rules
     }
   }
-  return { fields: parseByRules(t, knownClients), by: "rules", note: api ? "the model did not answer" : "no API key" };
+  return { fields: parseByRules(t, knownClients), by: "rules", note: !useModel ? "no access code" : api ? "the model did not answer" : "no API key" };
 }
 
 const SYMBOL: Record<string, string> = { $: "USD", "€": "EUR", "£": "GBP", "¥": "JPY", "₩": "KRW" };
@@ -272,14 +272,14 @@ export function availabilityFact(req: InvoiceRequest, base: string, options: Inv
     .join(" ");
 }
 
-export async function writeComparison(req: InvoiceRequest, h: ClientHistory, options: InvoiceOption[], base: string): Promise<Comparison> {
+export async function writeComparison(req: InvoiceRequest, h: ClientHistory, options: InvoiceOption[], base: string, useModel = true): Promise<Comparison> {
   if (options.length < 2) return { text: options[0]?.facts.replace(/^As asked: /, "") ?? "", by: "rules", rejected: [] };
   const facts = [historyFact(h), availabilityFact(req, base, options), ...options.map((o) => o.facts)].join("\n");
   const allowed = `${facts} ${options.length}`;
   const swings = options.flatMap((o) => (o.swing ? [compact(base, o.swing)] : []));
   const ctx = { stress: [], swings, others: [] };
   const rejected: string[] = [];
-  const api = client();
+  const api = useModel ? client() : null;
   if (api) {
     const messages: Anthropic.MessageParam[] = [{ role: "user", content: `Invoice for ${req.client}. Facts:\n${facts}` }];
     for (let attempt = 0; attempt < 3; attempt++) {

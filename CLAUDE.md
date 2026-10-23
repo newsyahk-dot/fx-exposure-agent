@@ -42,5 +42,8 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   history and ECB rates; the create action re-validates and recomputes before calling PayPal. No KRW invoices (PayPal).
 - **Evidence** (`src/lib/evidence.ts`) is history over two years of ECB fixings, always labelled "not a forecast",
   with the payment-timing assumptions shown on screen.
+- **Hosted demo access**: with `FXA_ACCESS_CODE` set, every write action and every on-demand model call needs the code
+  (httpOnly cookie holding a hash, `src/lib/access.ts`); every server action checks it. Without the code the planner
+  uses rules only. The agent plan itself is cached per book state, so visitors cannot multiply model calls.
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.

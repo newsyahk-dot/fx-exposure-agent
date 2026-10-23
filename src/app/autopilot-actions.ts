@@ -4,6 +4,7 @@
 // the same autopilot the daily schedule runs.
 
 import { refresh } from "next/cache";
+import { LOCKED_MESSAGE, writesAllowed } from "@/lib/access";
 import { runAutopilot, type AutopilotResult } from "@/lib/autopilot";
 import { demoMode, loadPolicy } from "@/lib/book";
 import { errorText } from "@/lib/execute";
@@ -15,6 +16,7 @@ const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 export async function savePolicy(_prev: PolicyState, form: FormData): Promise<PolicyState> {
   if (demoMode()) return { ok: false, message: "This is a read-only demo snapshot." };
+  if (!(await writesAllowed())) return { ok: false, message: LOCKED_MESSAGE };
   const intent = str(form, "intent");
   if (!["approve", "off", "notes"].includes(intent)) return { ok: false, message: "Unknown request." };
   const pp = new PayPalClient();
@@ -56,6 +58,7 @@ export type RunState = AutopilotResult | { ran: false; reason: string; at: strin
 
 export async function runAutopilotNow(): Promise<RunState> {
   if (demoMode()) return { ran: false, reason: "read-only demo snapshot", at: new Date().toISOString(), executed: [], left: [] };
+  if (!(await writesAllowed())) return { ran: false, reason: LOCKED_MESSAGE.replace(/\.$/, ""), at: new Date().toISOString(), executed: [], left: [] };
   try {
     const r = await runAutopilot();
     if (r.executed.some((x) => x.ok)) refresh();

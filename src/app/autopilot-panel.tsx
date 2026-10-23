@@ -70,7 +70,7 @@ export function AutopilotPanel({ policy, base, readOnly }: { policy: Policy; bas
               Turn autopilot off
             </button>
           )}
-          {readOnly && <span className={styles.muted}>Read-only demo</span>}
+          {readOnly && <span className={styles.muted}>Read-only</span>}
           {saved && (
             <span role="status" className={saved.ok ? styles.ok : styles.error}>
               {saved.message}

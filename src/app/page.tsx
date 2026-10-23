@@ -16,6 +16,8 @@ import type { AgentInput } from "@/lib/agent";
 import { ApproveForm } from "./approve-button";
 import { WaitChart } from "./wait-chart";
 import { InvoiceAssistant } from "./invoice-assistant";
+import { UnlockForm } from "./unlock-form";
+import { writesAllowed } from "@/lib/access";
 import { AutopilotPanel } from "./autopilot-panel";
 import { DEFAULT_POLICY } from "@/lib/policy";
 import { SimulatePayment } from "./client-pay";
@@ -70,9 +72,12 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   const paidToday = inputs.invoices.filter((i) => !OPEN_STATUSES.has(i.status) && i.payments?.some((p) => p.date === inputs.asOf));
   const overdue = e.rows.reduce((s, r) => s + r.buckets.overdue * rates[r.currency], 0);
   const skipped = [...inputs.skipped, ...e.skipped];
-  const readOnly = inputs.source === "demo";
+  const demo = inputs.source === "demo";
+  const locked = !demo && !(await writesAllowed());
+  const readOnly = demo || locked;
+  const lockReason = demo ? "Read-only demo snapshot" : locked ? "Needs the access code" : undefined;
   // The demo never calls the model: it shows the saved run for this currency, or rule-based proposals.
-  const run: Promise<AgentRun> = readOnly
+  const run: Promise<AgentRun> = demo
     ? Promise.resolve(inputs.agentRuns?.[base] ?? rulesRun(view.agentInput, "demo snapshot"))
     : cachedAgentRun(view.agentInput);
 
@@ -98,6 +103,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
           {inputs.source === "live" ? "Live · PayPal sandbox" : "Demo snapshot"} · as of {inputs.asOf}
         </span>
       </nav>
+      {locked && <UnlockForm />}
 
       <section className={styles.hero} aria-label="Headline">
         <p className={styles.heroLabel}>
@@ -197,7 +203,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
           number and word before you see it, and nothing runs in PayPal until you approve.
         </p>
         <Suspense fallback={<p className={styles.why}>The agent is reading your invoices…</p>}>
-          <AgentPlan run={run} base={base} readOnly={readOnly} ecb={inputs.ecb} input={view.agentInput} />
+          <AgentPlan run={run} base={base} lockReason={lockReason} ecb={inputs.ecb} input={view.agentInput} />
         </Suspense>
       </section>
 
@@ -286,7 +292,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
                           <a href={clientViewUrl(i.id)} target="_blank" rel="noopener noreferrer" className={styles.link}>
                             Open as client ↗
                           </a>
-                          <SimulatePayment invoiceId={i.id} disabledReason={readOnly ? "demo" : undefined} />
+                          <SimulatePayment invoiceId={i.id} disabledReason={lockReason} />
                         </div>
                       )}
                     </td>
@@ -440,7 +446,7 @@ function Replay({ r, ecb, input }: { r: AgentRun; ecb: EcbQuotes; input: AgentIn
   );
 }
 
-async function AgentPlan({ run, base, readOnly, ecb, input }: { run: Promise<AgentRun>; base: string; readOnly: boolean; ecb: EcbQuotes; input: AgentInput }) {
+async function AgentPlan({ run, base, lockReason, ecb, input }: { run: Promise<AgentRun>; base: string; lockReason?: string; ecb: EcbQuotes; input: AgentInput }) {
   const r = await run;
   const reminders = r.proposals.filter((p) => p.kind === "reminder");
   const offers = r.proposals.filter((p) => p.kind === "early_pay_discount");
@@ -481,7 +487,7 @@ async function AgentPlan({ run, base, readOnly, ecb, input }: { run: Promise<Age
           <h3 className={styles.groupH}>Chase what is already late</h3>
           <ul className={styles.cards}>
             {reminders.map((p) => (
-              <ProposalCard key={p.invoiceId} p={p} base={base} readOnly={readOnly} agent={r.source === "agent"} />
+              <ProposalCard key={p.invoiceId} p={p} base={base} lockReason={lockReason} agent={r.source === "agent"} />
             ))}
           </ul>
         </>
@@ -495,7 +501,7 @@ async function AgentPlan({ run, base, readOnly, ecb, input }: { run: Promise<Age
           </p>
           <ul className={styles.cards}>
             {offers.map((p) => (
-              <ProposalCard key={p.invoiceId} p={p} base={base} readOnly={readOnly} agent={r.source === "agent"} />
+              <ProposalCard key={p.invoiceId} p={p} base={base} lockReason={lockReason} agent={r.source === "agent"} />
             ))}
           </ul>
         </>
@@ -517,7 +523,7 @@ async function AgentPlan({ run, base, readOnly, ecb, input }: { run: Promise<Age
   );
 }
 
-function ProposalCard({ p, base, readOnly, agent }: { p: AgentProposal; base: string; readOnly: boolean; agent: boolean }) {
+function ProposalCard({ p, base, lockReason, agent }: { p: AgentProposal; base: string; lockReason?: string; agent: boolean }) {
   const c = (n: number) => compact(base, n);
   return (
     <li className={styles.card}>
@@ -554,7 +560,7 @@ function ProposalCard({ p, base, readOnly, agent }: { p: AgentProposal; base: st
           {agent ? "Written by Claude · checked: only our numbers, no forecasts or advice" : "Standard wording"}
         </p>
       </div>
-      <ApproveForm p={p} base={base} disabledReason={readOnly ? "Read-only demo snapshot" : undefined} />
+      <ApproveForm p={p} base={base} disabledReason={lockReason} />
     </li>
   );
 }

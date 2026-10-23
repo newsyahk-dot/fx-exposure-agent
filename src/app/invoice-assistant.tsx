@@ -143,7 +143,7 @@ function CreateButton({ option, request, base, readOnly }: { option: InvoiceOpti
       <button type="submit" className={styles.approve} disabled={locked}>
         {pending ? "Creating in PayPal…" : option.parts.length > 1 ? "Approve: create and send both" : "Approve: create and send"}
       </button>
-      {readOnly && !state && <span className={styles.muted}>Read-only demo</span>}
+      {readOnly && !state && <span className={styles.muted}>Read-only</span>}
       {state && (
         <span role="status" className={state.ok ? styles.ok : styles.error}>
           {state.message}

@@ -8,6 +8,7 @@
 // allowed bounds and runs the same text checks the agent had to pass. Only then is PayPal called.
 
 import { refresh } from "next/cache";
+import { LOCKED_MESSAGE, writesAllowed } from "@/lib/access";
 import { demoMode, loadLiveInputs } from "@/lib/book";
 import { errorText, executeAction, type ActionRequest } from "@/lib/execute";
 import { PayPalClient } from "@/lib/paypal";
@@ -23,6 +24,7 @@ export async function approve(_prev: ApproveState, form: FormData): Promise<Appr
   const invoiceId = str(form, "invoiceId");
   if (!["reminder", "early_pay_discount"].includes(kind) || !INVOICE_ID.test(invoiceId)) return { ok: false, message: "Unknown action." };
   if (demoMode()) return { ok: false, message: "This is a read-only demo snapshot. Actions run on the live sandbox only." };
+  if (!(await writesAllowed())) return { ok: false, message: LOCKED_MESSAGE };
 
   const now = new Date();
   const inputs = await loadLiveInputs();
@@ -46,6 +48,7 @@ export async function simulateClientPayment(_prev: ApproveState, form: FormData)
   const invoiceId = str(form, "invoiceId");
   if (!INVOICE_ID.test(invoiceId)) return { ok: false, message: "Unknown invoice." };
   if (demoMode()) return { ok: false, message: "This is a read-only demo snapshot." };
+  if (!(await writesAllowed())) return { ok: false, message: LOCKED_MESSAGE };
   const pp = new PayPalClient();
   try {
     const inv = await pp.getInvoice(invoiceId);

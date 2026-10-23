@@ -7,6 +7,7 @@
 
 import { randomBytes } from "node:crypto";
 import { refresh } from "next/cache";
+import { LOCKED_MESSAGE, writesAllowed } from "@/lib/access";
 import { demoMode, loadInputs, loadLiveInputs } from "@/lib/book";
 import {
   clientHistory,
@@ -44,7 +45,8 @@ const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 export async function planInvoice(_prev: PlanState, form: FormData): Promise<PlanState> {
   const base = pickBase(str(form, "base"));
-  const readOnly = demoMode();
+  const useModel = await writesAllowed(); // without the access code: rules only, no model call
+  const readOnly = demoMode() || !useModel;
   const inputs = await loadInputs();
   const view = viewFor(inputs, base, new Date());
   const known = [...new Set(inputs.invoices.map((i) => i.recipientName).filter((n): n is string => !!n))];
@@ -63,7 +65,7 @@ export async function planInvoice(_prev: PlanState, form: FormData): Promise<Pla
   let parseNote: string | undefined;
   const text = str(form, "text");
   if (text && str(form, "useText") === "1") {
-    const p = await parseRequest(text, known, base, inputs.asOf);
+    const p = await parseRequest(text, known, base, inputs.asOf, useModel);
     parsedBy = p.by;
     parseNote = p.note;
     fields = { ...typed, ...cleanParsed(p.fields) };
@@ -75,7 +77,7 @@ export async function planInvoice(_prev: PlanState, form: FormData): Promise<Pla
   const h = clientHistory(inputs.invoices, req.client);
   const options = planOptions(req, h, { base, asOf: inputs.asOf, rates: view.rates, vols: view.vols, ecb: inputs.ecb });
   if (!options.length) return { text, fields: req, error: `No exchange rate for ${req.currency} today.`, parsedBy, parseNote, readOnly };
-  const cmp = await writeComparison(req, h, options, base);
+  const cmp = await writeComparison(req, h, options, base, useModel);
   return {
     text,
     fields: req,
@@ -103,6 +105,7 @@ const SANDBOX_BUYER = process.env.SEED_RECIPIENT_EMAIL ?? "sb-lhwuh53492948@pers
 
 export async function createPlannedInvoice(_prev: CreateState, form: FormData): Promise<CreateState> {
   if (demoMode()) return { ok: false, message: "This is a read-only demo snapshot. Invoices are created on the live sandbox only." };
+  if (!(await writesAllowed())) return { ok: false, message: LOCKED_MESSAGE };
   const optionId = str(form, "optionId") as OptionId;
   if (!OPTION_IDS.includes(optionId)) return { ok: false, message: "Unknown option." };
   const req = validateRequest({
