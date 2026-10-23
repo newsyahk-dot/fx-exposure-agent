@@ -16,7 +16,9 @@ import type { Proposal } from "./proposals";
 export type Explanation = { text: string; source: "claude" | "template"; reason?: string };
 export type ProposalFacts = { key: string; kind: Proposal["kind"]; facts: string; template: string };
 
-export const EXPLAIN_MODEL = process.env.FXA_EXPLAIN_MODEL || "claude-opus-5-5";
+export const EXPLAIN_MODEL = process.env.FXA_EXPLAIN_MODEL || "claude-haiku-5-5";
+// Server-side refusal fallback exists only on some models; Haiku 5.5 has none, so only send it where it applies.
+const FALLBACK_MODELS = new Set(["claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
 const SHOCK_PCT = 3;
 
 export const proposalKey = (p: Proposal) => `${p.kind}:${p.invoiceId}`;
@@ -28,7 +30,7 @@ export function factsFor(p: Proposal): ProposalFacts {
     const facts = [
       `Invoice ${p.invoiceNumber}: ${money(p.currency, p.amount)} still owed, worth about ${krwCompact(p.krw)}.`,
       `It is ${p.daysOverdue} days overdue.`,
-      `A ${SHOCK_PCT}% move in the won either way changes its won value by about ${shock}.`,
+      `A ${SHOCK_PCT}% stress-test move in the won, either way, changes its won value by about ${shock}.`,
       p.lastReminderAt ? `A reminder was already sent on ${p.lastReminderAt.slice(0, 10)}.` : `No reminder has been sent by this app yet.`,
       `Action: send the client a PayPal payment reminder.`,
     ].join(" ");
@@ -42,7 +44,7 @@ export function factsFor(p: Proposal): ProposalFacts {
     `Action: give the client ${p.discountPct}% off and move the due date to ${p.discountWithinDays} days from today.`,
     `The discount costs about ${krwCompact(p.costKrw)}.`,
     now && early
-      ? `A 1-standard-deviation won move until the due date is about ${now}; if paid within ${p.discountWithinDays} days it is about ${early}.`
+      ? `A typical swing either way (one standard deviation) in the won value until the due date is about ${now}; if paid within ${p.discountWithinDays} days it is about ${early}.`
       : `There is not enough rate history to size the swing.`,
     `The discount stays even if the client pays late (PayPal sandbox limitation).`,
   ].join(" ");
@@ -87,9 +89,9 @@ const SYSTEM = `You write one or two short sentences for each proposed action in
 Rules:
 - Use only the facts given for that action. Every number you write must appear in its facts, written the same way.
 - Explain what the action changes for the seller's exposure to exchange rates, in plain English for a non-specialist.
-- Never say or imply which way any exchange rate will move.
+- Never say or imply which way any exchange rate will move. Two different sizes appear in the facts: the 3% figure is a stress-test move either way, and the one-standard-deviation figure is a typical swing either way. Keep them distinct, and present neither as a loss.
 - Never recommend, advise or rank. Do not say the action is worth it, better, or what the seller should do. The seller decides.
-- No greetings, no markdown, no lists.`;
+- At most two sentences per action. No greetings, no markdown, no lists.`;
 
 const Output = z.object({ items: z.array(z.object({ key: z.string(), text: z.string() })) });
 
@@ -111,18 +113,21 @@ export async function explain(facts: ProposalFacts[]): Promise<Record<string, Ex
     const res = await client.beta.messages.parse({
       model: EXPLAIN_MODEL,
       max_tokens: 8000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
+      ...(FALLBACK_MODELS.has(EXPLAIN_MODEL)
+        ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const }
+        : {}),
       output_config: { effort: "low", format: betaZodOutputFormat(Output) },
       system: SYSTEM,
       messages: [{ role: "user", content: JSON.stringify(facts.map(({ key, kind, facts }) => ({ key, kind, facts }))) }],
     });
+    if (process.env.FXA_EXPLAIN_DEBUG) console.error(`[explain] ${res.model} stop=${res.stop_reason} usage=${JSON.stringify(res.usage)}`);
     if (res.stop_reason === "refusal") return fallbackAll("model declined");
     parsed = res.parsed_output ?? null;
   } catch (e) {
     return fallbackAll(e instanceof Anthropic.APIError ? `API error ${e.status ?? ""}`.trim() : "API call failed");
   }
   if (!parsed) return fallbackAll("unreadable model output");
+
 
   const byKey = new Map(parsed.items.map((i) => [i.key, i.text.trim()]));
   for (const f of facts) {

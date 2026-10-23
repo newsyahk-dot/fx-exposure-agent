@@ -574,5 +574,47 @@
     }
   ],
   "skipped": [],
-  "fetchedAt": "2026-10-23T06:48:33.433Z"
+  "fetchedAt": "2026-10-23T07:14:15.439Z",
+  "explanations": {
+    "reminder:INV2-Y9G5-HDYC-ENY4-PH24": {
+      "text": "Sending a PayPal reminder asks the client to pay the USD 4,200.00 now, which shortens how long this invoice stays open to won exchange-rate moves. A 3% stress-test move in the won, either way, would change its won value by about ₩167K.",
+      "source": "claude"
+    },
+    "reminder:INV2-L4R5-3UPD-XKMG-E6DU": {
+      "text": "Sending a PayPal reminder asks the client to pay the EUR 1,800.00 now, which shortens how long this invoice stays exposed to won exchange-rate moves. A 3% stress-test move in the won, either way, would change its won value by about ₩80K.",
+      "source": "claude"
+    },
+    "reminder:INV2-WU2D-W6PT-KRWR-JQXL": {
+      "text": "Sending a PayPal reminder asks the client to pay the JPY 310,000 now, which shortens how long this invoice stays exposed to won exchange-rate moves. A 3% stress-test move in the won, either way, would change its won value by about ₩78K.",
+      "source": "claude"
+    },
+    "reminder:INV2-YGJA-5PZT-WWE4-GMZB": {
+      "text": "Sending a PayPal reminder asks the client to pay the USD 1,800.00 now, which shortens how long this invoice stays exposed to won exchange-rate moves. A 3% stress-test move in the won, either way, would change its won value by about ₩72K.",
+      "source": "claude"
+    },
+    "early_pay_discount:INV2-LEPZ-AMC8-7JKW-ABT5": {
+      "text": "Offering 1% off and a due date 7 days from today shortens the time the USD 6,500.00 stays open to exchange-rate moves, at a cost of about ₩86K. A typical swing either way (one standard deviation) in the won value until the due date is about ₩262K, or about ₩107K if paid within 7 days.",
+      "source": "claude"
+    },
+    "early_pay_discount:INV2-GH7C-ENZC-PRYL-87C9": {
+      "text": "Offering 1% off and a due date 7 days from today shortens the time the EUR 5,000.00 stays open to exchange-rate moves, at a cost of about ₩74K. A typical swing either way (one standard deviation) in the won value until the due date is about ₩254K, or about ₩88K if paid within 7 days.",
+      "source": "claude"
+    },
+    "early_pay_discount:INV2-C2CZ-34H9-T7LP-539N": {
+      "text": "Offering 1% off and a due date 7 days from today shortens the time the JPY 760,000 stays open to exchange-rate moves, at a cost of about ₩64K. A typical swing either way (one standard deviation) in the won value until the due date is about ₩261K, or about ₩91K if paid within 7 days.",
+      "source": "claude"
+    },
+    "early_pay_discount:INV2-N4PL-ECJZ-JN3C-P8CJ": {
+      "text": "Offering 1% off and a due date 7 days from today shortens the time the JPY 480,000 stays open to exchange-rate moves, at a cost of about ₩40K. A typical swing either way (one standard deviation) in the won value until the due date is about ₩96K, or about ₩58K if paid within 7 days.",
+      "source": "claude"
+    },
+    "early_pay_discount:INV2-VRM3-CW6G-6R9A-5BR8": {
+      "text": "Offering 1% off and a due date 7 days from today shortens the time the EUR 2,400.00 stays open to exchange-rate moves, at a cost of about ₩36K. A typical swing either way (one standard deviation) in the won value until the due date is about ₩65K, or about ₩42K if paid within 7 days.",
+      "source": "claude"
+    },
+    "early_pay_discount:INV2-5DLE-XLLN-BJNN-ASS9": {
+      "text": "Offering 1% off and a due date 7 days from today shortens the time the USD 2,600.00 stays open to exchange-rate moves, at a cost of about ₩34K. A typical swing either way (one standard deviation) in the won value until the due date is about ₩77K, or about ₩43K if paid within 7 days.",
+      "source": "claude"
+    }
+  }
 }

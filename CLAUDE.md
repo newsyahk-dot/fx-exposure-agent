@@ -24,6 +24,6 @@ actions that shorten that exposure (payment reminders, early-payment discount te
 - **Every agent action needs an explicit approve click.** The model proposes; the user decides.
 - **Model text is gated** (`src/lib/explain.ts`): every number must come from the facts we pass, and forecast/advice
   wording is rejected; failures fall back to a fixed template and the reason is shown. Model: `FXA_EXPLAIN_MODEL`
-  (default claude-opus-5-5, effort low), one call per book state, cached for days; the demo snapshot stores them.
+  (default claude-haiku-5-5, effort low), one call per book state, cached for days; the demo snapshot stores them.
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.
