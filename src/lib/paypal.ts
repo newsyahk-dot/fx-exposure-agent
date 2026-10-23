@@ -1,0 +1,223 @@
+// Minimal PayPal Invoicing v2 client. Sandbox only.
+//
+// We call the REST API directly instead of @paypal/agent-toolkit (1.11.0 pins ai@^4 / zod@^3).
+// Endpoint shapes follow the toolkit's own calls so the agent tools keep the same names and scope.
+
+import type { Invoice } from "./types";
+
+const SANDBOX_BASE = "https://api-m.sandbox.paypal.com";
+
+// Refuse anything that is not the sandbox host. This app never touches live money.
+export function sandboxBase(raw = process.env.PAYPAL_API_BASE): string {
+  const base = (raw || SANDBOX_BASE).replace(/\/+$/, "");
+  if (new URL(base).hostname !== "api-m.sandbox.paypal.com") {
+    throw new Error(`refusing non-sandbox PayPal base: ${new URL(base).hostname}`);
+  }
+  return base;
+}
+
+// Credentials pasted from the dashboard sometimes arrive wrapped in quotes, angle brackets or
+// parentheses (seen 2026-10-23: both values wrapped in "( )" -> 401 invalid_client).
+export function cleanCredential(v: string | undefined): string {
+  let s = (v ?? "").trim();
+  for (;;) {
+    const pair = s[0] + s[s.length - 1];
+    if (s.length >= 2 && ['""', "''", "<>", "()", "[]", "{}"].includes(pair)) s = s.slice(1, -1).trim();
+    else return s;
+  }
+}
+
+export class PayPalError extends Error {
+  constructor(
+    public status: number,
+    public body: unknown,
+    public debugId?: string,
+  ) {
+    super(`PayPal HTTP ${status}${debugId ? ` (debug_id ${debugId})` : ""}: ${describeBody(body)}`);
+  }
+}
+
+function describeBody(body: unknown): string {
+  if (!body || typeof body !== "object") return String(body ?? "");
+  const b = body as { name?: string; message?: string; error?: string; details?: { issue?: string; field?: string; description?: string }[] };
+  const head = b.name ?? b.error ?? "";
+  const details = (b.details ?? []).map((d) => [d.field, d.issue, d.description].filter(Boolean).join(" ")).join("; ");
+  return [head, b.message, details].filter(Boolean).join(" — ");
+}
+
+export class PayPalClient {
+  private token?: { value: string; expiresAt: number };
+  readonly base: string;
+
+  constructor(
+    private clientId = cleanCredential(process.env.PAYPAL_CLIENT_ID),
+    private clientSecret = cleanCredential(process.env.PAYPAL_CLIENT_SECRET),
+    base?: string,
+  ) {
+    this.base = sandboxBase(base);
+    if (!this.clientId || !this.clientSecret) throw new Error("PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET not set");
+  }
+
+  async accessToken(): Promise<string> {
+    if (this.token && Date.now() < this.token.expiresAt - 60_000) return this.token.value;
+    const res = await fetch(`${this.base}/v1/oauth2/token`, {
+      method: "POST",
+      headers: {
+        Authorization: "Basic " + Buffer.from(`${this.clientId}:${this.clientSecret}`).toString("base64"),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: "grant_type=client_credentials",
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) throw new PayPalError(res.status, body);
+    this.token = { value: body.access_token, expiresAt: Date.now() + body.expires_in * 1000 };
+    return this.token.value;
+  }
+
+  async request<T = unknown>(method: string, path: string, body?: unknown, headers: Record<string, string> = {}): Promise<T> {
+    const res = await fetch(`${this.base}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${await this.accessToken()}`,
+        "Content-Type": "application/json",
+        ...headers,
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    if (res.status === 204) return undefined as T;
+    const text = await res.text();
+    const parsed = text ? safeJson(text) : null;
+    if (!res.ok) throw new PayPalError(res.status, parsed, res.headers.get("paypal-debug-id") ?? undefined);
+    return parsed as T;
+  }
+
+  // --- Invoicing v2 -------------------------------------------------------------------------
+
+  createDraftInvoice(invoice: unknown) {
+    return this.request<PPInvoice>("POST", "/v2/invoicing/invoices", invoice, { Prefer: "return=representation" });
+  }
+
+  sendInvoice(id: string, opts: { send_to_recipient?: boolean; subject?: string; note?: string } = {}) {
+    return this.request("POST", `/v2/invoicing/invoices/${id}/send`, { send_to_recipient: true, ...opts });
+  }
+
+  getInvoice(id: string) {
+    return this.request<PPInvoice>("GET", `/v2/invoicing/invoices/${id}`);
+  }
+
+  async listInvoices(pageSize = 100): Promise<PPInvoice[]> {
+    const out: PPInvoice[] = [];
+    for (let page = 1; page <= 20; page++) {
+      const r = await this.request<{ items?: PPInvoice[]; total_pages?: number }>(
+        "GET",
+        `/v2/invoicing/invoices?page=${page}&page_size=${pageSize}&total_required=true`,
+      );
+      out.push(...(r.items ?? []));
+      if (!r.total_pages || page >= r.total_pages) break;
+    }
+    return out;
+  }
+
+  // Records a payment made outside PayPal. Status becomes MARKED_AS_PAID (or PARTIALLY_PAID).
+  recordPayment(id: string, p: { method: string; payment_date: string; amount: { currency_code: string; value: string }; note?: string }) {
+    return this.request("POST", `/v2/invoicing/invoices/${id}/payments`, p);
+  }
+
+  sendReminder(id: string, opts: { subject?: string; note?: string; send_to_invoicer?: boolean } = {}) {
+    return this.request("POST", `/v2/invoicing/invoices/${id}/remind`, opts);
+  }
+
+  // Early-payment discount: buyer pays less if they pay before `endDate` (YYYY-MM-DD).
+  createEarlyPaymentDiscount(id: string, percent: number, endDate: string) {
+    return this.request("POST", `/v2/invoicing/invoices/${id}/conditional-rules`, {
+      rules: [
+        {
+          conditional_rule_type: "EARLY_PAYMENT_DISCOUNT",
+          conditional_rule_value_type: "PERCENT",
+          conditional_rule_value: String(percent),
+          rule_expiry_terms: { rule_expiry_condition: "SPECIFIC_DATE", condition_rule_end_date: endDate },
+        },
+      ],
+    });
+  }
+
+  // Fallback for the discount above. In this sandbox the conditional-rules endpoint answers HTTP 500
+  // for every variant tried (2026-10-23: PERCENT/AMOUNT, SPECIFIC_DATE/SEVEN_DAYS, draft/sent,
+  // USD/EUR/JPY, even AUTO_CANCEL). Editing a sent invoice does work: this puts a flat percent
+  // discount on it, moves the due date to `newDueDate` and re-sends it with a note.
+  // ⚠️ Not the same offer: the discount is unconditional (the buyer keeps it even if they pay late).
+  async offerEarlyPaymentByUpdate(id: string, percent: number, newDueDate: string, note: string) {
+    const cur = (await this.getInvoice(id)) as PPInvoice & { links?: unknown; amount?: unknown };
+    const { links: _links, ...rest } = cur;
+    void _links;
+    const body = {
+      ...rest,
+      detail: { ...cur.detail, payment_term: { term_type: "DUE_ON_DATE_SPECIFIED", due_date: newDueDate }, note },
+      amount: { breakdown: { discount: { invoice_discount: { percent: String(percent) } } } },
+    };
+    return this.request<PPInvoice>("PUT", `/v2/invoicing/invoices/${id}?send_to_recipient=true&send_to_invoicer=false`, body, {
+      Prefer: "return=representation",
+    });
+  }
+
+  cancelInvoice(id: string) {
+    return this.request("POST", `/v2/invoicing/invoices/${id}/cancel`, { send_to_recipient: false, send_to_invoicer: false });
+  }
+
+  deleteDraft(id: string) {
+    return this.request("DELETE", `/v2/invoicing/invoices/${id}`);
+  }
+}
+
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+// --- Mapping PayPal -> engine ----------------------------------------------------------------
+
+export type PPMoney = { currency_code: string; value: string };
+export type PPInvoice = {
+  id: string;
+  status: string;
+  detail: {
+    invoice_number?: string;
+    reference?: string;
+    currency_code: string;
+    invoice_date?: string;
+    payment_term?: { term_type?: string; due_date?: string };
+  };
+  primary_recipients?: { billing_info?: { email_address?: string; name?: { given_name?: string; surname?: string } } }[];
+  amount?: PPMoney;
+  due_amount?: PPMoney;
+  payments?: { paid_amount?: PPMoney };
+};
+
+// Turns a PayPal invoice into the engine's shape. Returns null with a reason when it can't.
+export function toInvoice(pp: PPInvoice): { invoice: Invoice } | { skipped: { id: string; reason: string } } {
+  const ccy = pp.detail?.currency_code ?? pp.amount?.currency_code;
+  const due = pp.detail?.payment_term?.due_date ?? pp.detail?.invoice_date;
+  if (!ccy) return { skipped: { id: pp.id, reason: "no currency" } };
+  if (!due) return { skipped: { id: pp.id, reason: "no due date" } };
+  // due_amount is what is still owed; fall back to total minus paid.
+  const total = Number(pp.amount?.value ?? NaN);
+  const paid = Number(pp.payments?.paid_amount?.value ?? 0);
+  const dueAmount = pp.due_amount ? Number(pp.due_amount.value) : total - paid;
+  if (!Number.isFinite(dueAmount)) return { skipped: { id: pp.id, reason: "no amount" } };
+  const r = pp.primary_recipients?.[0]?.billing_info;
+  return {
+    invoice: {
+      id: pp.id,
+      number: pp.detail.invoice_number ?? pp.id,
+      status: pp.status,
+      currency: ccy,
+      amountDue: dueAmount,
+      dueDate: due,
+      invoiceDate: pp.detail.invoice_date ?? due,
+      recipient: r?.email_address,
+    },
+  };
+}

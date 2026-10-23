@@ -22,7 +22,9 @@ It never predicts which way rates will go.
 
 ## Status
 - [x] Exposure engine — currency × due-week table, symmetric shock, 1-sigma swing (`src/lib`)
-- [ ] PayPal sandbox integration (invoices, reminders, payment terms)
+- [x] PayPal sandbox integration — Invoicing v2 client (`src/lib/paypal.ts`), 18-invoice demo book (`src/lib/seed-data.ts`)
+  - Reminders work in sandbox. The early-payment-discount rule endpoint (`/conditional-rules`) returns HTTP 500
+    for every variant tried (2026-10-23), so the fallback edits the sent invoice: 1% off + earlier due date, re-sent.
 - [ ] Agent: propose → approve → execute → recalculate
 - [ ] UI and hosted demo
 
@@ -31,6 +33,9 @@ It never predicts which way rates will go.
 npm install
 cp .env.example .env.local   # fill in sandbox credentials
 npm test
+npm run sandbox:seed -- --apply   # seed the sandbox seller (idempotent; dry run without --apply)
+npm run sandbox:check             # reminder + discount checks on throw-away CHK- invoices
+npm run sandbox:exposure          # read-only: exposure table + proposals from the live sandbox
 npm run dev
 ```
 
