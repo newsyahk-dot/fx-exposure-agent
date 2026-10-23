@@ -22,7 +22,7 @@ import { BUCKETS, type Invoice, type Rates } from "./types";
 
 export const AGENT_MODEL = process.env.FXA_AGENT_MODEL || process.env.FXA_EXPLAIN_MODEL || "claude-haiku-5-5";
 // Server-side refusal fallback exists only on some models (Haiku 5.5 has none); send it only where it applies.
-const FALLBACK_MODELS = new Set(["claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
+export const FALLBACK_MODELS = new Set(["claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
 const SHOCK_PCT = 3;
 const MIN_DAYS_FOR_OFFER = 14;
 const REMIND_COOLDOWN_DAYS = 3;
@@ -63,7 +63,7 @@ export type AgentInput = {
   exposure: { currency: string; value: string; shock: string; buckets: Record<string, string> }[];
 };
 
-const toBusinessDays = (calendarDays: number) => Math.max(0, Math.round((calendarDays * 5) / 7));
+export const toBusinessDays = (calendarDays: number) => Math.max(0, Math.round((calendarDays * 5) / 7));
 
 export function buildAgentInput(
   invoices: Invoice[],

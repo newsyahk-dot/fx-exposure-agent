@@ -6,12 +6,13 @@
 //   fxa-agent: early_pay_discount 2026-10-23T07:01:10.000Z
 // Lines that are not ours are kept as they are.
 
+// "created" marks an invoice the new-invoice assistant created after the seller approved.
 // "archived" is written by the demo reset on retired seed invoices; the app leaves those out entirely.
-export type AgentActionKind = "reminder" | "early_pay_discount" | "archived";
+export type AgentActionKind = "reminder" | "early_pay_discount" | "created" | "archived";
 export type AgentLogEntry = { kind: AgentActionKind; at: string };
 
 const PREFIX = "fxa-agent:";
-const LINE = /^fxa-agent:\s+(reminder|early_pay_discount|archived)\s+(\S+)\s*$/;
+const LINE = /^fxa-agent:\s+(reminder|early_pay_discount|created|archived)\s+(\S+)\s*$/;
 
 export function parseAgentLog(memo: string | undefined): AgentLogEntry[] {
   if (!memo) return [];

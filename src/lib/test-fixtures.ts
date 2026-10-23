@@ -35,3 +35,23 @@ export function syntheticEcb(asOf = DAY, days = 200): EcbQuotes {
   const date = Object.keys(history).sort().at(-1)!;
   return { date, latest: history[date], history };
 }
+
+// A random-walk history (seeded), so ranges widen with the wait as they do in real data.
+export function walkEcb(asOf: string, days: number): EcbQuotes {
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647) - 0.5;
+  const history: Record<string, PerEur> = {};
+  let usd = 1.1, jpy = 160, krw = 1450;
+  for (let i = days; i >= 0; i--) {
+    const d = addDays(asOf, -i);
+    const wd = new Date(d + "T00:00:00Z").getUTCDay();
+    if (wd === 0 || wd === 6) continue;
+    usd *= 1 + 0.01 * rnd();
+    jpy *= 1 + 0.012 * rnd();
+    krw *= 1 + 0.008 * rnd();
+    history[d] = { USD: usd, JPY: jpy, KRW: krw, GBP: 0.86 };
+  }
+  const date = Object.keys(history).sort().at(-1)!;
+  return { date, latest: history[date], history };
+}
+

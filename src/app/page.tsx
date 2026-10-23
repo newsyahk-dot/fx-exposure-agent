@@ -15,6 +15,7 @@ import type { EcbQuotes } from "@/lib/fx";
 import type { AgentInput } from "@/lib/agent";
 import { ApproveForm } from "./approve-button";
 import { WaitChart } from "./wait-chart";
+import { InvoiceAssistant } from "./invoice-assistant";
 import { SimulatePayment } from "./client-pay";
 import styles from "./page.module.css";
 
@@ -198,6 +199,16 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
         </Suspense>
       </section>
 
+      <section aria-labelledby="new-h">
+        <h2 id="new-h">Before you send the next invoice</h2>
+        <p className={styles.muted}>
+          Describe it in a sentence. Claude reads it into fields; code prices each way of billing from this client&apos;s
+          payment history and the ECB rates; Claude compares them in plain words, checked like everything else. Nothing is
+          created until you approve one.
+        </p>
+        <InvoiceAssistant base={base} clients={[...new Set(inputs.invoices.map((i) => i.recipientName).filter((n): n is string => !!n))].sort()} />
+      </section>
+
       <section aria-labelledby="done-h">
         <h2 id="done-h">Done by the agent</h2>
         {done.length === 0 ? (
@@ -207,7 +218,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
             {done.map((d) => (
               <li key={`${d.inv.id}-${d.kind}-${d.at}`}>
                 <time dateTime={d.at}>{d.at.slice(0, 16).replace("T", " ")} UTC</time>
-                <span>{d.kind === "reminder" ? "Reminder sent" : "Early-payment discount applied"}</span>
+                <span>{d.kind === "reminder" ? "Reminder sent" : d.kind === "created" ? "Invoice created" : "Early-payment discount applied"}</span>
                 <span>
                   {d.inv.number} · {money(d.inv.currency, d.inv.amountDue)} still owed, due {d.inv.dueDate}
                 </span>
@@ -425,7 +436,7 @@ async function AgentPlan({ run, base, readOnly, ecb, input }: { run: Promise<Age
         {r.source === "agent" ? (
           <p>
             <strong>Planned by Claude</strong> ({r.model}) · {calls} tool calls ·{" "}
-            {r.rejections === 0 ? "every draft passed the checks first time" : `${r.rejections} drafts rejected by the checks and rewritten`}
+            {r.rejections === 0 ? "every draft passed the checks first time" : `${r.rejections} draft${r.rejections === 1 ? "" : "s"} rejected by the checks and rewritten`}
           </p>
         ) : (
           <p>

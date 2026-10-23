@@ -25,6 +25,14 @@ them *how much* is exposed, *in which currency*, and *for how long*.
    the reason, and it rewrites it — the screen shows how many drafts were rejected and every step it took.
 5. **Executes only what you approve** — you can edit the e-mail first — and the server re-checks everything before
    calling PayPal. Then it recalculates.
+6. **Shows the evidence from history, not a forecast.** Over two years of ECB fixings: how far each currency moved
+   against your home currency for money that waited 7 to 90 days (nine times out of ten), and your open book replayed
+   over the same history — once on the current due dates, once as the agent's proposals would have it, with the
+   payment-timing assumptions printed next to the result.
+7. **Helps before an invoice goes out.** Describe it in a sentence ("Bill Sakura Games ¥480,000 for the level art pack,
+   net 45"). Claude reads it into fields; code prices each way of billing — as asked, in your home currency, shorter
+   terms, half up front — from that client's payment history (average days late) and the ECB rates; Claude compares
+   them in plain words, under the same checks. You approve one and it is created and sent in PayPal.
 
 It never predicts which way rates will go.
 
@@ -40,6 +48,9 @@ It never predicts which way rates will go.
 - [x] Approve → execute → recalculate, with editable drafts re-checked on the server (`src/app/actions.ts`); every
   action is logged in the invoice's private memo (`src/lib/agent-log.ts`), so it survives redeploys
 - [x] Timing effect over the last 90 days (`src/lib/timing.ts`)
+- [x] Two-year evidence: range by wait and the book replayed under two payment timelines (`src/lib/evidence.ts`)
+- [x] New-invoice assistant (`src/lib/invoice-plan.ts`, `src/app/invoice-actions.ts`). PayPal does not invoice in
+  KRW, so a KRW seller bills in USD, EUR, GBP or JPY and the "bill in your home currency" option is not offered.
 - [x] Demo mode — `DEMO_MODE=1` (or no PayPal keys) serves `src/data/demo-snapshot.json`, which stores one agent run per
   home currency, so the demo never calls PayPal or the model
 - [x] Demo reset — `npm run sandbox:seed -- --reset --apply` closes the open seed invoices and seeds a new generation
