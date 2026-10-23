@@ -10,7 +10,8 @@
     "test": "vitest run",
     "sandbox:seed": "tsx scripts/seed-sandbox.mts",
     "sandbox:check": "tsx scripts/check-actions.mts",
-    "sandbox:exposure": "tsx scripts/show-exposure.mts"
+    "sandbox:exposure": "tsx scripts/show-exposure.mts",
+    "sandbox:snapshot": "tsx scripts/snapshot.mts"
   },
   "dependencies": {
     "next": "16.4.2",

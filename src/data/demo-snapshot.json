@@ -1,0 +1,324 @@
+{
+  "asOf": "2026-10-23",
+  "rateDate": "2026-10-22",
+  "rates": {
+    "JPY": 8.434676365289539,
+    "EUR": 1484.25,
+    "USD": 1324.631860776439
+  },
+  "dailyVols": {
+    "JPY": 0.0063627663925857544,
+    "EUR": 0.005283612296950279,
+    "USD": 0.0055557548000630735
+  },
+  "invoices": [
+    {
+      "id": "INV2-SC57-XURC-UEPS-EB4V",
+      "number": "CHK-MVKKO3BY-F2",
+      "status": "CANCELLED",
+      "currency": "JPY",
+      "amountDue": 297000,
+      "dueDate": "2026-10-30",
+      "invoiceDate": "2026-10-21"
+    },
+    {
+      "id": "INV2-M258-SUS8-NUXM-46H2",
+      "number": "CHK-MVKKO3BY-F1",
+      "status": "CANCELLED",
+      "currency": "EUR",
+      "amountDue": 1980,
+      "dueDate": "2026-10-30",
+      "invoiceDate": "2026-10-21"
+    },
+    {
+      "id": "INV2-XF9U-62XY-4MFV-66QN",
+      "number": "CHK-MVKKO3BY-D2",
+      "status": "CANCELLED",
+      "currency": "JPY",
+      "amountDue": 300000,
+      "dueDate": "2026-11-22",
+      "invoiceDate": "2026-10-21"
+    },
+    {
+      "id": "INV2-A95Z-J87E-BMP9-4CCB",
+      "number": "CHK-MVKKO3BY-D1",
+      "status": "CANCELLED",
+      "currency": "EUR",
+      "amountDue": 2000,
+      "dueDate": "2026-11-22",
+      "invoiceDate": "2026-10-21"
+    },
+    {
+      "id": "INV2-7MRE-PMJJ-R8JB-C8DM",
+      "number": "CHK-MVKKO3BY-R",
+      "status": "CANCELLED",
+      "currency": "USD",
+      "amountDue": 1500,
+      "dueDate": "2026-10-13",
+      "invoiceDate": "2026-09-13"
+    },
+    {
+      "id": "INV2-5V4L-JFZF-WMAA-KMNX",
+      "number": "PROBE-1792735867159870",
+      "status": "CANCELLED",
+      "currency": "USD",
+      "amountDue": 1980,
+      "dueDate": "2026-11-30",
+      "invoiceDate": "2026-10-23"
+    },
+    {
+      "id": "INV2-XVZN-PF85-PVC7-AHH3",
+      "number": "CHK-MVKKN5B8-UJPY",
+      "status": "CANCELLED",
+      "currency": "JPY",
+      "amountDue": 297000,
+      "dueDate": "2026-10-30",
+      "invoiceDate": "2026-10-21"
+    },
+    {
+      "id": "INV2-D6MP-D2VD-RMWZ-FK4T",
+      "number": "CHK-MVKKN5B8-UEUR",
+      "status": "CANCELLED",
+      "currency": "EUR",
+      "amountDue": 1980,
+      "dueDate": "2026-10-30",
+      "invoiceDate": "2026-10-21"
+    },
+    {
+      "id": "INV2-KGDN-CAUP-YJML-QVWT",
+      "number": "PROBE-1792735843646",
+      "status": "CANCELLED",
+      "currency": "JPY",
+      "amountDue": 310000,
+      "dueDate": "2026-11-30",
+      "invoiceDate": "2026-10-20"
+    },
+    {
+      "id": "INV2-JAU5-WZ46-HCMJ-TTML",
+      "number": "CHK-MVKKMNCZ-4",
+      "status": "CANCELLED",
+      "currency": "USD",
+      "amountDue": 1000,
+      "dueDate": "2026-11-22",
+      "invoiceDate": "2026-10-23"
+    },
+    {
+      "id": "INV2-434A-VFBE-BYZH-99PF",
+      "number": "PROBE-1792735839878",
+      "status": "CANCELLED",
+      "currency": "EUR",
+      "amountDue": 1234.5,
+      "dueDate": "2026-10-05",
+      "invoiceDate": "2026-09-20"
+    },
+    {
+      "id": "INV2-NMRH-AEWD-GXMN-LT8F",
+      "number": "CHK-MVKKMNCZ-3",
+      "status": "CANCELLED",
+      "currency": "USD",
+      "amountDue": 1000,
+      "dueDate": "2026-11-22",
+      "invoiceDate": "2026-10-23"
+    },
+    {
+      "id": "INV2-Y9P5-SMTU-JW8H-7VG2",
+      "number": "CHK-MVKKMNCZ-1",
+      "status": "CANCELLED",
+      "currency": "USD",
+      "amountDue": 1000,
+      "dueDate": "2026-11-22",
+      "invoiceDate": "2026-10-23"
+    },
+    {
+      "id": "INV2-YPCR-HUJN-ZBAB-L267",
+      "number": "CHK-MVKKM5MO-D2",
+      "status": "CANCELLED",
+      "currency": "JPY",
+      "amountDue": 300000,
+      "dueDate": "2026-11-22",
+      "invoiceDate": "2026-10-21"
+    },
+    {
+      "id": "INV2-FQS4-M5UX-NVY5-W7S5",
+      "number": "CHK-MVKKM5MO-D1",
+      "status": "CANCELLED",
+      "currency": "EUR",
+      "amountDue": 2000,
+      "dueDate": "2026-11-22",
+      "invoiceDate": "2026-10-21"
+    },
+    {
+      "id": "INV2-7F56-L767-5665-LTBE",
+      "number": "CHK-MVKKM5MO-R",
+      "status": "CANCELLED",
+      "currency": "USD",
+      "amountDue": 1500,
+      "dueDate": "2026-10-13",
+      "invoiceDate": "2026-09-13"
+    },
+    {
+      "id": "INV2-2G75-PP6K-JCDZ-UZHJ",
+      "number": "FXA-3005",
+      "status": "SENT",
+      "currency": "JPY",
+      "amountDue": 760000,
+      "dueDate": "2026-12-20",
+      "invoiceDate": "2026-10-21"
+    },
+    {
+      "id": "INV2-5NF9-YRBZ-2VQ5-DZEN",
+      "number": "FXA-3004",
+      "status": "MARKED_AS_PAID",
+      "currency": "JPY",
+      "amountDue": 0,
+      "dueDate": "2026-09-29",
+      "invoiceDate": "2026-08-30"
+    },
+    {
+      "id": "INV2-G72Q-5Y46-TH7W-5MH9",
+      "number": "FXA-3003",
+      "status": "SENT",
+      "currency": "JPY",
+      "amountDue": 150000,
+      "dueDate": "2026-10-30",
+      "invoiceDate": "2026-10-16"
+    },
+    {
+      "id": "INV2-6SBG-4DZ8-VXF8-PMMT",
+      "number": "FXA-3002",
+      "status": "SENT",
+      "currency": "JPY",
+      "amountDue": 480000,
+      "dueDate": "2026-11-11",
+      "invoiceDate": "2026-10-12"
+    },
+    {
+      "id": "INV2-M3L6-G5E6-6WSK-E2SZ",
+      "number": "FXA-3001",
+      "status": "SENT",
+      "currency": "JPY",
+      "amountDue": 310000,
+      "dueDate": "2026-10-15",
+      "invoiceDate": "2026-09-15"
+    },
+    {
+      "id": "INV2-X9KN-NNNX-XHJ8-CZBT",
+      "number": "FXA-2006",
+      "status": "MARKED_AS_PAID",
+      "currency": "EUR",
+      "amountDue": 0,
+      "dueDate": "2026-10-20",
+      "invoiceDate": "2026-09-20"
+    },
+    {
+      "id": "INV2-5WV4-2239-H4RK-3TPY",
+      "number": "FXA-2005",
+      "status": "SENT",
+      "currency": "EUR",
+      "amountDue": 5000,
+      "dueDate": "2026-12-21",
+      "invoiceDate": "2026-10-22"
+    },
+    {
+      "id": "INV2-6ZXW-66MC-E95E-3HK8",
+      "number": "FXA-2004",
+      "status": "MARKED_AS_PAID",
+      "currency": "EUR",
+      "amountDue": 0,
+      "dueDate": "2026-09-14",
+      "invoiceDate": "2026-08-15"
+    },
+    {
+      "id": "INV2-TBNS-4HME-HVCA-2SAP",
+      "number": "FXA-2003",
+      "status": "SENT",
+      "currency": "EUR",
+      "amountDue": 950,
+      "dueDate": "2026-11-02",
+      "invoiceDate": "2026-10-18"
+    },
+    {
+      "id": "INV2-22KS-T78W-UNLM-A5BW",
+      "number": "FXA-2002",
+      "status": "SENT",
+      "currency": "EUR",
+      "amountDue": 2400,
+      "dueDate": "2026-11-09",
+      "invoiceDate": "2026-10-10"
+    },
+    {
+      "id": "INV2-U9KP-G2AD-G296-MU2J",
+      "number": "FXA-2001",
+      "status": "SENT",
+      "currency": "EUR",
+      "amountDue": 1800,
+      "dueDate": "2026-10-05",
+      "invoiceDate": "2026-09-05"
+    },
+    {
+      "id": "INV2-67G2-TX4F-UGT7-7ZA2",
+      "number": "FXA-1007",
+      "status": "SENT",
+      "currency": "USD",
+      "amountDue": 350,
+      "dueDate": "2026-10-31",
+      "invoiceDate": "2026-10-01"
+    },
+    {
+      "id": "INV2-VS4T-397Y-VU2W-2E6G",
+      "number": "FXA-1006",
+      "status": "PARTIALLY_PAID",
+      "currency": "USD",
+      "amountDue": 1800,
+      "dueDate": "2026-10-01",
+      "invoiceDate": "2026-09-01"
+    },
+    {
+      "id": "INV2-LDYJ-9YAU-KKD5-NJAX",
+      "number": "FXA-1005",
+      "status": "MARKED_AS_PAID",
+      "currency": "USD",
+      "amountDue": 0,
+      "dueDate": "2026-09-19",
+      "invoiceDate": "2026-08-20"
+    },
+    {
+      "id": "INV2-V5T9-VLFH-GE2F-U8EY",
+      "number": "FXA-1004",
+      "status": "SENT",
+      "currency": "USD",
+      "amountDue": 6500,
+      "dueDate": "2026-12-04",
+      "invoiceDate": "2026-10-20"
+    },
+    {
+      "id": "INV2-Y7JP-LBJS-EQ8Q-L463",
+      "number": "FXA-1003",
+      "status": "SENT",
+      "currency": "USD",
+      "amountDue": 2600,
+      "dueDate": "2026-11-14",
+      "invoiceDate": "2026-10-15"
+    },
+    {
+      "id": "INV2-XE57-KD2Y-2Z59-7N6R",
+      "number": "FXA-1002",
+      "status": "SENT",
+      "currency": "USD",
+      "amountDue": 1850,
+      "dueDate": "2026-10-25",
+      "invoiceDate": "2026-09-25"
+    },
+    {
+      "id": "INV2-FYMD-FGD8-6NUL-5RZ6",
+      "number": "FXA-1001",
+      "status": "SENT",
+      "currency": "USD",
+      "amountDue": 4200,
+      "dueDate": "2026-10-10",
+      "invoiceDate": "2026-09-10"
+    }
+  ],
+  "skipped": [],
+  "fetchedAt": "2026-10-23T06:36:43.449Z"
+}

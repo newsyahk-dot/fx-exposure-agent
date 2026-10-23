@@ -26,7 +26,9 @@ It never predicts which way rates will go.
   - Reminders work in sandbox. The early-payment-discount rule endpoint (`/conditional-rules`) returns HTTP 500
     for every variant tried (2026-10-23), so the fallback edits the sent invoice: 1% off + earlier due date, re-sent.
 - [ ] Agent: propose → approve → execute → recalculate
-- [ ] UI and hosted demo
+- [x] Exposure screen — hero ±3% figure, currency × due-week heat table, proposal cards (`src/app/page.tsx`)
+- [x] Demo mode — `DEMO_MODE=1` (or no PayPal keys) serves `src/data/demo-snapshot.json`; refresh it with `npm run sandbox:snapshot`
+- [ ] Approve buttons + hosted demo
 
 ## Run locally
 ```bash
