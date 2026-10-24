@@ -45,5 +45,10 @@ actions that shorten that exposure (payment reminders, early-payment discount te
 - **Hosted demo access**: with `FXA_ACCESS_CODE` set, every write action and every on-demand model call needs the code
   (httpOnly cookie holding a hash, `src/lib/access.ts`); every server action checks it. Without the code the planner
   uses rules only. The agent plan itself is cached per book state, so visitors cannot multiply model calls.
+- **API cost** (measured 2026-10-24, Haiku 5.5 $0.10/$0.50 per MTok): one agent plan ≈ $0.004 with prompt caching
+  (≈ $0.005–0.012 without). Model calls happen only (1) for an agent plan when the book, home currency, notes or the
+  day's ECB rates change (so at most about 5 per day with an unchanged book) — shared cache (`"use cache: remote"`), so visits and the autopilot reuse it; (2) for the invoice planner
+  with the access code — the comparison is cached per request; (3) never from visitors without the code beyond (1). Each run logs `[agent-usage]` with tokens and cost to the host logs (`src/lib/usage.ts`; update
+  `PRICES` with the model). The hard ceiling is the Anthropic Console monthly spend limit, not code.
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.
