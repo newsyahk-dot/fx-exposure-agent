@@ -687,3 +687,96 @@
   padding: 4px 8px;
   width: 12em;
 }
+
+/* Story steps */
+.steps6 ol {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.steps6 a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 14px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.steps6 a[aria-current="step"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.stepNum {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.steps6 a[aria-current="step"] .stepNum {
+  background: #fff;
+  color: var(--accent);
+}
+
+.score {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.score strong {
+  color: var(--text-primary);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+}
+
+.stepFooter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  font-size: 14px;
+}
+
+.nextStep {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--accent);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.nextStep span {
+  font-weight: 400;
+  font-size: 13px;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
