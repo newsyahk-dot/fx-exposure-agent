@@ -18,6 +18,7 @@ import { daysBetween, OPEN_STATUSES, type Exposure } from "./exposure";
 import { oneSigma } from "./fx";
 import { compact, money, roundAsShown } from "./format";
 import { addDays } from "./seed-data";
+import { addUsage, costUsd, emptyUsage, type Usage } from "./usage";
 import { BUCKETS, type Invoice, type Rates } from "./types";
 
 export const AGENT_MODEL = process.env.FXA_AGENT_MODEL || process.env.FXA_EXPLAIN_MODEL || "claude-haiku-5-5";
@@ -231,7 +232,7 @@ export type AgentRun = {
   steps: AgentStep[];
   rejections: number;
   summary: string;
-  usage?: { input: number; output: number };
+  usage?: Usage & { costUsd: number | null };
 };
 
 // Fixed wording, used by the rules fallback and as the reference the checks are tested against.
@@ -496,12 +497,15 @@ export async function runAgent(input: AgentInput): Promise<AgentRun> {
 
   const client = new Anthropic({ apiKey, baseURL: "https://api.anthropic.com", timeout: 90_000, maxRetries: 1 });
   let summary = "";
-  const usage = { input: 0, output: 0 };
+  const usage = emptyUsage();
   try {
     const runner = client.beta.messages.toolRunner({
       model: AGENT_MODEL,
       max_tokens: 16000,
       max_iterations: 30,
+      // Each turn of the tool loop resends the tools, the system prompt and the history so far. Automatic
+      // caching marks the end of each request, so the next turn reads all of that at 0.1x the input price.
+      cache_control: { type: "ephemeral" },
       ...(FALLBACK_MODELS.has(AGENT_MODEL) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
       output_config: { effort: "medium" },
       system: SYSTEM,
@@ -520,10 +524,11 @@ export async function runAgent(input: AgentInput): Promise<AgentRun> {
     let last: Anthropic.Beta.BetaMessage | undefined;
     for await (const m of runner) {
       last = m;
-      usage.input += m.usage.input_tokens + (m.usage.cache_read_input_tokens ?? 0) + (m.usage.cache_creation_input_tokens ?? 0);
-      usage.output += m.usage.output_tokens;
+      addUsage(usage, m.usage);
     }
     if (process.env.FXA_EXPLAIN_DEBUG) console.error(`[agent] ${AGENT_MODEL} calls=${calls} rejections=${rejections} usage=${JSON.stringify(usage)}`);
+    // One line per run in the host's logs (Vercel → Logs), so spend can be checked without the Console.
+    console.log(`[agent-usage] base=${input.base} model=${AGENT_MODEL} ${JSON.stringify(usage)} cost=$${(costUsd(AGENT_MODEL, usage) ?? NaN).toFixed(4)}`);
     if (!last) return rulesRun(input, "no response");
     if (last.stop_reason === "refusal") return rulesRun(input, "model declined");
     summary = last.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join(" ").trim();
@@ -546,7 +551,7 @@ export async function runAgent(input: AgentInput): Promise<AgentRun> {
           ? { invoiceNumber: c.invoiceNumber, why: "eligible, but the agent did not propose an action", by: "agent" as const }
           : { invoiceNumber: c.invoiceNumber, why: c.notEligible.join("; "), by: "code" as const },
     );
-  return { base: input.base, asOf: input.asOf, source: "agent", model: AGENT_MODEL, proposals: props, notProposed, steps, rejections, summary, usage };
+  return { base: input.base, asOf: input.asOf, source: "agent", model: AGENT_MODEL, proposals: props, notProposed, steps, rejections, summary, usage: { ...usage, costUsd: costUsd(AGENT_MODEL, usage) } };
 }
 
 const prefix = (field: string, why: string | null) => (why ? `${field}: ${why}` : null);

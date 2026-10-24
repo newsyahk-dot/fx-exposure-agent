@@ -3,6 +3,7 @@
 // manual approval; each action is logged in the invoice memo with an "auto" mark.
 
 import { runAgent, type AgentRun } from "./agent";
+import { cachedAgentRun } from "./agent-cache";
 import { loadLiveInputs } from "./book";
 import { executeAction } from "./execute";
 import { PayPalClient } from "./paypal";
@@ -19,9 +20,9 @@ export type AutopilotResult = {
   agent?: AgentRun["source"];
 };
 
-// `planner` is injectable for tests; production uses the agent directly (the page's cached plan may be
-// for a different home currency or an older book).
-export async function runAutopilot(now = new Date(), planner: typeof runAgent = runAgent): Promise<AutopilotResult> {
+// The plan comes from the same shared cache as the page: the same book, home currency and notes give the
+// same plan the seller saw, at no extra model cost. Eligibility is re-checked per action in executeAction.
+export async function runAutopilot(now = new Date(), planner: typeof runAgent = cachedAgentRun): Promise<AutopilotResult> {
   const at = now.toISOString();
   const inputs = await loadLiveInputs();
   const policy: Policy | undefined = inputs.policy;

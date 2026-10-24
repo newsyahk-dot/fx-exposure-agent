@@ -22,6 +22,7 @@ import {
   type OptionId,
 } from "@/lib/invoice-plan";
 import { PayPalClient, PayPalError } from "@/lib/paypal";
+import { cachedComparison } from "@/lib/plan-cache";
 import { pickBase, viewFor } from "@/lib/view";
 
 export type PlanState = {
@@ -77,7 +78,7 @@ export async function planInvoice(_prev: PlanState, form: FormData): Promise<Pla
   const h = clientHistory(inputs.invoices, req.client);
   const options = planOptions(req, h, { base, asOf: inputs.asOf, rates: view.rates, vols: view.vols, ecb: inputs.ecb });
   if (!options.length) return { text, fields: req, error: `No exchange rate for ${req.currency} today.`, parsedBy, parseNote, readOnly };
-  const cmp = await writeComparison(req, h, options, base, useModel);
+  const cmp = useModel ? await cachedComparison(req, h, options, base) : await writeComparison(req, h, options, base, false);
   return {
     text,
     fields: req,
