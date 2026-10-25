@@ -6,9 +6,10 @@
 // fresh book and only then creates and sends the PayPal invoice(s).
 
 import { randomBytes } from "node:crypto";
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { LOCKED_MESSAGE, writesAllowed } from "@/lib/access";
-import { demoMode, loadInputs, loadLiveInputs } from "@/lib/book";
+import { demoMode, loadLiveInputs } from "@/lib/book";
+import { BOOK_TAG, loadInputs } from "@/lib/book-cache";
 import {
   clientHistory,
   draftsFor,
@@ -138,10 +139,12 @@ export async function createPlannedInvoice(_prev: CreateState, form: FormData): 
       done.push(d.detail.invoice_number);
     }
   } catch (e) {
+    updateTag(BOOK_TAG);
     refresh();
     const why = e instanceof PayPalError ? e.message : e instanceof Error ? e.message : String(e);
     return { ok: false, message: `${done.length ? `Sent ${done.join(", ")}, then ` : ""}PayPal refused: ${why}` };
   }
+  updateTag(BOOK_TAG);
   refresh();
   return { ok: true, message: `Sent ${done.join(" and ")} to ${req.client} (${option.title}).` };
 }

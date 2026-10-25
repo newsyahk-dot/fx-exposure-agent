@@ -7,7 +7,8 @@
 // server reloads the live book, re-derives eligibility and every number, keeps the terms inside the
 // allowed bounds and runs the same text checks the agent had to pass. Only then is PayPal called.
 
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
+import { BOOK_TAG } from "@/lib/book-cache";
 import { LOCKED_MESSAGE, writesAllowed } from "@/lib/access";
 import { demoMode, loadLiveInputs } from "@/lib/book";
 import { errorText, executeAction, type ActionRequest } from "@/lib/execute";
@@ -37,7 +38,10 @@ export async function approve(_prev: ApproveState, form: FormData): Promise<Appr
       ? { kind, subject: str(form, "subject"), message: str(form, "message") }
       : { kind: "early_pay_discount", percent: Number(str(form, "percent")), withinDays: Number(str(form, "withinDays")), clientNote: str(form, "clientNote") };
   const r = await executeAction(new PayPalClient(), cand, req, { base: view.base, asOf: inputs.asOf, now });
-  if (r.ok) refresh();
+  if (r.ok) {
+    updateTag(BOOK_TAG);
+    refresh();
+  }
   return r;
 }
 
@@ -60,6 +64,7 @@ export async function simulateClientPayment(_prev: ApproveState, form: FormData)
       amount: inv.due_amount,
       note: "Simulated client payment (sandbox demo)",
     });
+    updateTag(BOOK_TAG);
     refresh();
     return { ok: true, message: `Paid: ${inv.due_amount.currency_code} ${inv.due_amount.value} for ${inv.detail.invoice_number}.` };
   } catch (e) {

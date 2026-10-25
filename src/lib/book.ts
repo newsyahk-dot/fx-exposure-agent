@@ -91,7 +91,3 @@ export async function loadPolicy(pp: PayPalClient): Promise<Policy> {
 export function demoInputs(): BookInputs {
   return { ...(demo as unknown as Omit<BookInputs, "source">), source: "demo" };
 }
-
-export async function loadInputs(): Promise<BookInputs> {
-  return demoMode() ? demoInputs() : loadLiveInputs();
-}
