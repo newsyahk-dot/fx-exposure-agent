@@ -3,7 +3,8 @@
 // Saving the standing policy is the seller's explicit approval for everything inside it. "Run now" runs
 // the same autopilot the daily schedule runs.
 
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
+import { BOOK_TAG } from "@/lib/book-cache";
 import { LOCKED_MESSAGE, writesAllowed } from "@/lib/access";
 import { runAutopilot, type AutopilotResult } from "@/lib/autopilot";
 import { demoMode, loadPolicy } from "@/lib/book";
@@ -42,6 +43,7 @@ export async function savePolicy(_prev: PolicyState, form: FormData): Promise<Po
   } catch (e) {
     return { ok: false, message: `Not saved — PayPal refused: ${errorText(e)}` };
   }
+  updateTag(BOOK_TAG);
   refresh();
   return {
     ok: true,
@@ -61,7 +63,10 @@ export async function runAutopilotNow(): Promise<RunState> {
   if (!(await writesAllowed())) return { ran: false, reason: LOCKED_MESSAGE.replace(/\.$/, ""), at: new Date().toISOString(), executed: [], left: [] };
   try {
     const r = await runAutopilot();
-    if (r.executed.some((x) => x.ok)) refresh();
+    if (r.executed.some((x) => x.ok)) {
+      updateTag(BOOK_TAG);
+      refresh();
+    }
     return r;
   } catch (e) {
     return { ran: false, reason: errorText(e), at: new Date().toISOString(), executed: [], left: [] };
