@@ -242,6 +242,7 @@ export type PPInvoice = {
     currency_code: string;
     invoice_date?: string;
     payment_term?: { term_type?: string; due_date?: string };
+    metadata?: { create_time?: string };
   };
   primary_recipients?: { billing_info?: { email_address?: string; business_name?: string; name?: { given_name?: string; surname?: string; full_name?: string } } }[];
   amount?: PPMoney;

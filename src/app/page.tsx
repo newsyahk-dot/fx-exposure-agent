@@ -17,6 +17,7 @@ import { BUCKETS, type Bucket, type Invoice } from "@/lib/types";
 import { pickBase, SHOCK_PCT, TIMING_DAYS, VOL_LOOKBACK_DAYS, viewFor, type BookView } from "@/lib/view";
 import { AutopilotPanel } from "./autopilot-panel";
 import { SimulatePayment } from "./client-pay";
+import { ResetDemoButton } from "./reset-demo";
 import { InvoiceAssistant } from "./invoice-assistant";
 import { LiveRefresh } from "./live-refresh";
 import { TodayPlan } from "./today";
@@ -34,6 +35,9 @@ const BUCKET_LABEL: Record<Bucket, string> = {
 };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+// Server actions on this page include the demo reset (~20-40 s).
+export const maxDuration = 300;
 
 export default function Home({ searchParams }: { searchParams: SearchParams }) {
   return (
@@ -199,8 +203,9 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
             </Suspense>
           </section>
           <details className={styles.sandboxPanel}>
-            <summary>Act as the client for any open invoice (sandbox)</summary>
+            <summary>Sandbox controls: pay any open invoice as the client, or start the demo over</summary>
             <ClientTable open={open} rates={rates} lockReason={lockReason} />
+            <ResetDemoButton disabledReason={lockReason} />
           </details>
           {doneList}
         </>
