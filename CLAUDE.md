@@ -56,8 +56,8 @@ actions that shorten that exposure (payment reminders, early-payment discount te
 - **The loop and the demo**: Today screen = at risk now → proposals → approve → sent → pay as client → paid, with
   "start of today → now". PayPal webhooks (`/api/paypal/webhook`, verified with PayPal; register with
   `scripts/register-webhook.mts`) expire the cached book; the Today screen refreshes every 10 s. A payment recorded
-  through the API raised no webhook in the sandbox (2026-10-26); one made on PayPal's invoice page is expected to —
-  not yet verified (needs the sandbox buyer login). The demo book (US-based
+  through the API raised no webhook in the sandbox (2026-10-26); one made on PayPal's invoice page does — verified
+  2026-10-26 with the sandbox buyer login: the Today screen showed "Paid" in under 20 s. The demo book (US-based
   freelancer, clients in EUR/GBP/JPY + USD) resets nightly (`/api/warm?reset=1`) and from the "Reset the demo book"
   button; the reset turns the autopilot off.
 - **Writing for judges**: README, Devpost and the video start with the seller and what she gets; how it works and
