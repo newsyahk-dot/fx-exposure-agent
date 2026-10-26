@@ -21,61 +21,65 @@ uses "about" and placeholders in [brackets].
 > Note: the webhook was verified on 2026-10-26 ("Paid" in under 20 s after paying on PayPal's page). Log in to the
 > sandbox buyer in that browser before recording. Fallback if PayPal's page misbehaves: "Simulate client payment".
 
-## 0:30–0:50 — Who it's for and why it matters
+## 0:30–0:42 — Who it's for and why it matters
 
 | Time | Screen | Narration |
 |---|---|---|
-| 0:30 | Slow scroll back to the top of Today. | "Freelancers and small sellers who bill abroad wait weeks to be paid. While they wait, the exchange rate decides how much they actually earn — and late payers make the wait longer. Banks hedge this for big companies; a one-person business just finds out at the end." |
-| 0:42 | Hold on the hero line "Up or down — equally likely. The size of the risk, not a forecast." | "This app never predicts where rates go. It shows how much is at stake and helps her shorten the wait." |
+| 0:30 | Slow scroll back to the top of Today; hold on "Up or down — equally likely. The size of the risk, not a forecast." | "People who bill abroad wait weeks to be paid, and the exchange rate decides what they actually earn. Banks hedge this for big companies. This app never predicts rates — it shows what's at stake and helps her shorten the wait." |
 
-## 0:50–1:25 — How the agent decides (technical, AI)
-
-| Time | Screen | Narration |
-|---|---|---|
-| 0:50 | Card **"Offer 1% off to be paid within 10 days · Sakura Games · ¥760,000"**: cost [$48], typical swing [±$164 → ±$68]. | "For a large invoice that isn't due for two months, the agent can suggest a small early-payment discount. It shows the cost next to how much uncertainty it removes — and leaves the decision to her." |
-| 1:02 | Open **"How the agent planned this"**: tool calls, rejected drafts, the step list. | "Under the hood, Claude works as an agent with tools: it reads the exposure, lists the invoices, prices discount terms, and proposes actions. But code decides which invoices are eligible and computes every number. Every sentence Claude writes is checked — only numbers from the facts, no forecasts, no advice — and a draft that fails goes back to be rewritten." |
-| 1:18 | Back to the card's "Written by Claude, checked by code". | "Nothing runs in PayPal without her click." |
-
-## 1:25–1:45 — Where it sits (AG Grid)
+## 0:42–1:02 — How the agent decides (technical, AI)
 
 | Time | Screen | Narration |
 |---|---|---|
-| 1:25 | Step **Where it sits**: heat table, then the **AG Grid** list. | "Here's every open invoice, ranked by what it puts at risk, with what the agent is doing about each one." |
-| 1:33 | Type "GBP" in the search box — total row updates. Click **Download CSV**. | "She can search, sort, filter, and download it for her accountant." |
+| 0:42 | Card **"Offer 1% off to be paid within 10 days · Sakura Games · ¥760,000"**: cost [$48], typical swing [±$164 → ±$68]. | "For a large invoice due in two months, it can offer a small discount — cost next to the uncertainty it removes. She decides." |
+| 0:50 | Open **"How the agent planned this"**: "It read [3] invoices directly in PayPal through PayPal's own MCP server…", the step list with `paypal.get_invoice` and rejected drafts. | "Claude works as an agent with tools. It reads her invoices straight from PayPal through PayPal's MCP server. Code decides every number, every sentence is checked, and a draft that fails is rewritten." |
 
-## 1:45–2:05 — Evidence, not forecasts
-
-| Time | Screen | Narration |
-|---|---|---|
-| 1:45 | Step **Evidence**: the two-year chart. | "Why waiting matters: over the last two years of ECB rates, the longer money waited, the wider the range it moved." |
-| 1:55 | The replay paragraph "[narrows by 42%]". | "Replayed over that history, her open invoices paid the way the agent proposes would have moved in a range about [42] percent narrower. History — not a prediction." |
-
-## 2:05–2:30 — Before the next invoice
+## 1:02–1:22 — Ask the agent (new)
 
 | Time | Screen | Narration |
 |---|---|---|
-| 2:05 | Step **Next invoice**: type "Bill Sakura Games ¥480,000 for the level art pack, net 45" → **Read my request and compare**. | "Before she sends the next invoice, she can just describe it." |
-| 2:13 | The four option cards (as asked / bill in USD / 14-day terms / half up front) and Claude's comparison. | "Claude turns it into an invoice, and the app compares her options using this client's own payment history: bill in yen, in dollars, on shorter terms, or half up front." |
-| 2:23 | Click **Approve: create and send** on one option → "Sent … to Sakura Games". | "She picks one, and it's created and sent in PayPal." |
+| 1:02 | Today → **Ask the agent** → click the example **"Chase everyone more than 10 days late, gently"** (cut the wait in editing). Claude's answer appears with two reminder cards. | "She can also just tell it what she wants." |
+| 1:10 | Highlight the answer: *"…Hollis & Grey and Atelier Moreau… Sakura Games is only 8 days overdue, so I left it alone."* | "It does exactly that — and says what it left alone, and why." |
+| 1:15 | Click **"Tell my clients the yen will fall so they pay now"**. Answer: *"I can't tell your clients which way any exchange rate is headed, so I didn't write that message…"* | "Ask it to make a forecast, and it says no." |
 
-## 2:30–2:50 — Hand it over
+## 1:22–1:46 — Where it sits, and why waiting matters
 
 | Time | Screen | Narration |
 |---|---|---|
-| 2:30 | Step **Autopilot**: tick reminders, discounts up to 1%, **Approve this standing policy**, then **Run autopilot now** → "Reminder sent … autopilot". | "And for the routine work, she approves a standing policy once. Every weekday morning the agent runs what fits it — and anything outside it still waits for her." |
-| 2:42 | Back to **Today**. | "Know what exchange rates can take from your unpaid invoices — and shrink it in one click." |
-| 2:47 | End card: name, live URL, "PayPal Invoicing API · webhooks · invoice templates · Claude". | (silence or the line above) |
+| 1:22 | Step **Where it sits**: the **AG Grid** list; type "GBP" in the search box — the total row updates. | "Every open invoice, ranked by what it puts at risk — searchable, and ready to download for her accountant." |
+| 1:34 | Step **Evidence**: the two-year chart, then "[narrows by 42%]". | "Over two years of ECB rates, the longer money waited, the wider it moved. Paid the way the agent proposes, her book would have moved in a range about [42] percent narrower. History — not a prediction." |
+
+## 1:46–2:35 — Hand it over, and the agent acts on its own (new)
+
+| Time | Screen | Narration |
+|---|---|---|
+| 1:46 | Step **Autopilot**: the four-step picture; tick discounts up to 1%; **Approve this standing policy** → "Autopilot is on". | "For routine work, she approves a standing policy once. Anything outside it still waits for her click." |
+| 1:56 | Step **Next invoice**: click the example **"Bill Sakura Games ¥480,000 …, net 45"** → **Read my request and compare** → the four options and Claude's comparison. | "Before the next invoice, she describes it. The app compares billing in yen, in dollars, on shorter terms or half up front, using this client's payment history." |
+| 2:10 | **Approve: create and send** on "As asked" → "Sent … to Sakura Games". | "She sends it in PayPal." |
+| 2:15 | Cut (about a minute later, shown with an on-screen clock or a "1 minute later" caption) → **Today** → **New since today's plan**: *"✓ PayPal told the agent about FXA-N… · Sakura Games; the autopilot applied an early-payment discount at … — no click needed."* | "PayPal tells the agent a new invoice went out. It looks at it on its own — and because her policy covers it, the discount is already applied. Nobody pressed anything." |
+
+## 2:35–2:52 — Close
+
+| Time | Screen | Narration |
+|---|---|---|
+| 2:35 | Back to the top of **Today**; caption: "48 test runs · 283 proposals · 0 rule breaks in the final output". | "Every number from code, every action approved — by her click or her policy." |
+| 2:44 | End card: name, live URL, "PayPal Invoicing API · webhooks · invoice templates · PayPal MCP server · Claude". | "Know what exchange rates can take from your unpaid invoices — and shrink it in one click." |
 
 ---
 
 ## Before recording (checklist)
 
 1. On the live site, enter the access code, then **Today → Sandbox controls → Reset the demo book**. Wait until the agent's
-   plan appears (about 30 s). Open each step once so everything is cached.
-2. Autopilot must be **off** at the start (the reset turns it off).
-3. Browser at 1440×900, zoom 100–110%, light mode, no bookmarks bar, no other tabs visible.
-4. Record the screen in one take per section; cut in editing. Keep the cursor slow.
-5. No music, or royalty-free music you have the right to use (Official Rules forbid unlicensed music and third-party
+   plan appears (about a minute — it reads the invoices in PayPal). Open each step once so everything is cached.
+2. Autopilot must be **off** at the start (the reset turns it off); the 1:46 scene turns it on.
+3. Before recording, click both **Ask the agent** examples once (each takes 15–30 s the first time; afterwards the answer is
+   cached for hours and appears at once). Do this on the same day as the recording.
+4. The new-invoice scene (2:15) needs the policy on **before** the invoice is sent, and about 60–90 seconds for PayPal's
+   webhook and the agent. Keep recording or cut; refresh Today if the section has not appeared after two minutes.
+5. To record a section again, reset the demo book — but the reset button waits 5 minutes after the last reset.
+6. Browser at 1440×900, zoom 100–110%, light mode, no bookmarks bar, no other tabs visible.
+7. Record the screen in one take per section; cut in editing. Keep the cursor slow.
+8. No music, or royalty-free music you have the right to use (Official Rules forbid unlicensed music and third-party
    marks). PayPal is named as the platform used, not as an endorsement.
-6. English narration (or English captions). Captions are recommended either way.
-7. Upload to YouTube as **Public**; put the link in the Devpost form.
+9. English narration (or English captions). Captions are recommended either way.
+10. Upload to YouTube as **Public**; put the link in the Devpost form.
