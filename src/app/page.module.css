@@ -749,7 +749,7 @@
   font-size: 13px;
   color: var(--text-secondary);
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: 10px;
   background: color-mix(in srgb, var(--warning) 9%, transparent);
   border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent);
 }
