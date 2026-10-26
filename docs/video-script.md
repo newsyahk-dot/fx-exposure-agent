@@ -16,7 +16,7 @@ uses "about" and placeholders in [brackets].
 | 0:00 | **Today**, home currency USD. Big number "[$929]". | "Maya is a freelance designer in the US. Her clients in Europe, the UK and Japan pay her through PayPal invoices. Right now about [$31,000] of her income is waiting in euros, pounds and yen — and if rates move three percent, about [$929] of it moves with them. Nothing in her inbox tells her that." |
 | 0:12 | Scroll to the card **"Chase a late payment · Hollis & Grey · £2,100 · 15 days overdue"**. | "Every morning an AI agent goes through her open invoices and proposes the day's work." |
 | 0:17 | Click **Approve: send reminder**. Card turns to **"✓ Reminder sent in PayPal"**. | "One click, and the reminder goes out through PayPal." |
-| 0:21 | In the same card: **Simulate client payment** (or the real client page — see note). Card → **"✓ Paid"**; top shows **"Start of today [$929] → now [$845] (−[$84])"** and the green "Paid today" note. | "When the client pays, her number goes down — that money no longer depends on the exchange rate." |
+| 0:21 | In the same card: **Simulate client payment** (or the real client page — see note). Card → **"✓ Paid"**; top shows **"Start of today [$929] → now [$845] (−[$84] paid today)"** and the green "Paid today" note. | "When the client pays, her number goes down — that money no longer depends on the exchange rate." |
 
 > Note: use **"Open as client ↗"** and pay on PayPal's own page only after the webhook has been verified with a real
 > sandbox buyer payment. Until then, use "Simulate client payment" and say "the client pays".
