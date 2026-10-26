@@ -24,9 +24,11 @@ export function dayChange(invoices: Invoice[], paid: PaidToday[], rates: Rates, 
   const foreign = (i: Invoice) => i.currency !== base && rates[i.currency] > 0;
   const paidValue = paid.filter((p) => foreign(p.invoice)).reduce((s, p) => s + p.value, 0);
   const paidById = new Map(paid.map((p) => [p.invoice.id, p.amount]));
-  // An invoice issued today counts with what it was issued for: still owed plus anything already paid today.
+  // An invoice created today counts with what it was issued for: still owed plus anything already paid today.
+  // "Today" is the creation time (UTC) when PayPal gives it, so it matches asOf whatever date PayPal printed on it.
+  const createdToday = (i: Invoice) => (i.createdAt ?? i.invoiceDate).slice(0, 10) === asOf;
   const added = invoices
-    .filter((i) => foreign(i) && i.invoiceDate === asOf && (isOpen(i) || paidById.has(i.id)))
+    .filter((i) => foreign(i) && createdToday(i) && (isOpen(i) || paidById.has(i.id)))
     .reduce((s, i) => s + ((isOpen(i) ? i.amountDue : 0) + (paidById.get(i.id) ?? 0)) * rates[i.currency], 0);
   return { paid: paidValue, added };
 }

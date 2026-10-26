@@ -23,4 +23,9 @@ describe("today", () => {
     expect(d.paid).toBeCloseTo(550, 9);
     expect(d.added).toBeCloseTo(660 + 550, 9); // start of today = now + paid − added: neither existed this morning
   });
+  it("uses PayPal's creation time, not the printed invoice date", () => {
+    // Created 01:30 UTC on the 26th but dated the 25th by PayPal (still the 25th in California).
+    const open: Invoice = { ...inv("n", "JPY", []), status: "SENT", amountDue: 100000, invoiceDate: "2026-10-25", createdAt: "2026-10-26T01:30:00Z" };
+    expect(dayChange([open], [], { JPY: 0.0066 }, "USD", "2026-10-26").added).toBeCloseTo(660, 9);
+  });
 });

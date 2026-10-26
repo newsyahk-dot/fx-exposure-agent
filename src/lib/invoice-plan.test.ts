@@ -149,5 +149,7 @@ describe("draftsFor", () => {
     expect(d[0].items[0].unit_amount).toEqual({ currency_code: "JPY", value: "250000" });
     expect(d[0].detail.memo).toMatch(/^fxa-agent: created 2026-10-23T01:00:00.000Z$/m);
     expect(d[1].detail.payment_term.due_date).toBe(addDays(asOf, 45));
+    // PayPal dates it itself: our UTC date can be "tomorrow" for the merchant and the invoice would be held back.
+    expect("invoice_date" in d[0].detail).toBe(false);
   });
 });

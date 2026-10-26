@@ -322,7 +322,8 @@ export function draftsFor(req: InvoiceRequest, option: InvoiceOption, recipientE
     detail: {
       currency_code: p.currency,
       invoice_number: invoiceNumber(asOf, nonce, i, option.parts.length),
-      invoice_date: asOf,
+      // No invoice_date: PayPal then dates it by its own "today". Our date is UTC; when that is ahead of the
+      // merchant's day, PayPal would hold the invoice back as SCHEDULED instead of sending it (seen 2026-10-26).
       payment_term: { term_type: "DUE_ON_DATE_SPECIFIED", due_date: p.dueDate },
       note:
         option.parts.length > 1
