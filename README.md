@@ -55,6 +55,9 @@ side by side; she decides.
 - **Code decides every number and every permission.** Which invoices are eligible, every amount, every cost. Nothing
   runs in PayPal without an approval click — on that action, or on a standing policy that covers it — and the server
   re-checks everything before it calls PayPal.
+- **AG Grid (Community):** every open invoice in one grid, ranked by what it puts at risk, with what the agent proposed
+  or did for it today — sort and filter any column, search, a total row that follows the filter, and a CSV download for
+  the seller's own records. Themed from the page's colours, so it follows light and dark mode.
 - **Exchange rates:** ECB euro reference rates via [Frankfurter](https://frankfurter.dev), crossed into the home
   currency (USD, EUR, GBP, JPY or KRW). The typical swing (1σ) uses 120 days of daily moves, scaled by the square root
   of time; the 3% figure is a symmetric stress test.
