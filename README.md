@@ -1,80 +1,100 @@
 # FX Exposure Agent
 
-**Know how much of the money you're owed is riding on exchange rates — and shorten it with one approved click.**
+**Know what exchange rates can take from your unpaid PayPal invoices — and shrink it in one click.**
+
+Live demo: **https://fx-exposure-agent.vercel.app** (PayPal sandbox — no real money). Judges: the access code that
+lets you run the agent's actions is in the Devpost testing instructions; without it you can look around.
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
-> 🚧 Work in progress — submission due Nov 12, 2026.
+## Who it's for
 
-## The problem
-Solo sellers and freelancers who invoice clients abroad through PayPal are paid in USD, EUR or JPY weeks after
-they do the work. Until the money lands, every rate move changes what they actually earn — but no tool shows
-them *how much* is exposed, *in which currency*, and *for how long*.
+A freelance designer in the US invoices clients in Europe, the UK and Japan through PayPal. Right now about $31,000
+of her income is waiting in euros, pounds and yen, some of it already overdue. Every week it waits, a move in the
+exchange rate changes what she will actually be paid — and nothing tells her how much is at stake, or which invoice
+to deal with first.
 
-## What it does
-1. **Reads your PayPal invoices** (sandbox) and stacks the unpaid amounts by currency and by the week they fall due,
-   valued in **your home currency** (USD, EUR, GBP, JPY or KRW) at ECB reference rates, with a ±3% stress test.
-2. **Shows what the wait already did**: for money received in the last 90 days, how much more or less it was worth on
-   the day it arrived than on the day it was invoiced — and how much of that came from late payments.
-3. **An AI agent plans the actions.** Claude (Haiku 5.5) reads the book through tools — `get_exposure`,
-   `list_open_invoices`, `price_discount` — and decides what to propose: a payment reminder with an e-mail it writes
-   for that client, or an early-payment discount on terms it picks, or nothing (with its reason).
-4. **Code keeps the agent honest.** Code decides which invoices are eligible and computes every number. Every piece of
-   text the agent writes is checked before it is accepted: only numbers from the facts, each figure under its own
-   label, no forecasts, no advice, no links, no conditional promises. A rejected draft goes back to the agent with
-   the reason, and it rewrites it — the screen shows how many drafts were rejected and every step it took.
-5. **Executes only what you approve** — you can edit the e-mail first — and the server re-checks everything before
-   calling PayPal. Then it recalculates.
-6. **Shows the evidence from history, not a forecast.** Over two years of ECB fixings: how far each currency moved
-   against your home currency for money that waited 7 to 90 days (nine times out of ten), and your open book replayed
-   over the same history — once on the current due dates, once as the agent's proposals would have it, with the
-   payment-timing assumptions printed next to the result.
-7. **Helps before an invoice goes out.** Describe it in a sentence ("Bill Sakura Games ¥480,000 for the level art pack,
-   net 45"). Claude reads it into fields; code prices each way of billing — as asked, in your home currency, shorter
-   terms, half up front — from that client's payment history (average days late) and the ECB rates; Claude compares
-   them in plain words, under the same checks. You approve one and it is created and sent in PayPal.
-8. **Standing orders.** Approve a policy once — reminders yes/no, discounts up to 1/1.5/2%, at most N actions per run —
-   and the autopilot runs the agent's proposals that fit it, on weekday mornings (Vercel Cron) or when you press Run
-   now. Same agent, same checks, same PayPal calls; each action is marked "autopilot". Everything outside the policy
-   still waits for a click. Standing notes ("Kleinfeld pays on the 5th, don't chase before") go to the agent as
-   preferences. The policy lives in your PayPal account as an invoice template.
+## What she gets
 
-It never predicts which way rates will go.
+1. **One number to watch.** "If rates move 3% either way, your unpaid foreign invoices change by about $929" — up or
+   down, equally likely; the size of the risk, not a forecast.
+2. **The day's work, done with a click.** An AI agent reads her PayPal invoices and proposes today's actions:
+   a reminder for the overdue invoice from London, written for that client; a small early-payment discount on a
+   large invoice that isn't due for two months, with its cost next to how much risk it removes. She approves, and it
+   runs in PayPal.
+3. **The loop closes on its own.** When the client pays, PayPal notifies the app and the number on her screen goes
+   down, with "start of today → now" and a note of which payment did it.
+4. **Help before the next invoice.** She types "Bill Sakura Games ¥480,000 for the level art pack, net 45" and sees
+   what billing in yen, in dollars, on shorter terms or half up front would leave at risk, using that client's own
+   payment history. She picks one; it is created and sent in PayPal.
+5. **Routine work handed over.** She approves a standing policy once (for example: reminders yes, discounts no more
+   than 1%), and an autopilot runs the proposals that fit it every weekday morning. Anything else still waits for her.
 
-## Status
-- [x] Exposure engine — currency × due-week table, symmetric shock, 1-sigma swing, any home currency (`src/lib`)
-- [x] PayPal sandbox integration — Invoicing v2 client (`src/lib/paypal.ts`), 18-invoice demo book (`src/lib/seed-data.ts`)
-  - Reminders work in sandbox. The early-payment-discount rule endpoint (`/conditional-rules`) returns HTTP 500
-    for every variant tried (2026-10-23), so the agent edits the sent invoice instead: discount + earlier due date,
-    re-sent. The discount is then unconditional, and the screen and the client note say so.
-  - Transaction Search and Balances return 403 for this app, so the timing effect is computed from each paid
-    invoice's own payment dates.
-- [x] Agent with tools, text checks and a rule-based fallback (`src/lib/agent.ts`, `src/lib/checks.ts`)
-- [x] Approve → execute → recalculate, with editable drafts re-checked on the server (`src/app/actions.ts`); every
-  action is logged in the invoice's private memo (`src/lib/agent-log.ts`), so it survives redeploys
-- [x] Timing effect over the last 90 days (`src/lib/timing.ts`)
-- [x] Two-year evidence: range by wait and the book replayed under two payment timelines (`src/lib/evidence.ts`)
-- [x] Standing orders: policy, autopilot, notes (`src/lib/policy.ts`, `src/lib/autopilot.ts`, `src/app/api/autopilot`)
-- [x] New-invoice assistant (`src/lib/invoice-plan.ts`, `src/app/invoice-actions.ts`). PayPal does not invoice in
-  KRW, so a KRW seller bills in USD, EUR, GBP or JPY and the "bill in your home currency" option is not offered.
-- [x] Demo mode — `DEMO_MODE=1` (or no PayPal keys) serves `src/data/demo-snapshot.json`, which stores one agent run per
-  home currency, so the demo never calls PayPal or the model
-- [x] Demo reset — `npm run sandbox:seed -- --reset --apply` closes the open seed invoices and seeds a new generation
-- [ ] Hosted demo
+The app never says which way rates will go, and never says which option is better. It shows the cost and the risk
+side by side; she decides.
+
+## Try it (about two minutes)
+
+1. Open the live demo and enter the access code.
+2. **Today:** approve a proposal. It runs in the PayPal sandbox (a reminder e-mail or an edited invoice).
+3. In the same card, pay it as the client — "Open as client ↗" for the real PayPal invoice page, or
+   "Simulate client payment". Watch the number at the top go down.
+4. **Next invoice:** describe an invoice in a sentence and compare the options.
+5. **Autopilot:** approve a policy and press "Run autopilot now".
+
+"Reset the demo book" (under sandbox controls on Today) starts the story over; it also resets every night.
+
+## How it works
+
+- **PayPal (sandbox), Invoicing v2:** list, create, send, remind, update (discount and due date), record payments;
+  invoice templates store the seller's standing policy; webhooks (`INVOICING.INVOICE.PAID` and other invoice events,
+  each verified with PayPal) update the screen when a client pays.
+- **Claude as an agent with tools** (`get_exposure`, `list_open_invoices`, `price_discount`, `propose_reminder`,
+  `propose_early_payment_discount`, `skip_invoice`). It decides what to propose and writes the e-mails and the reasons.
+  It makes one plan per day; each proposal is then matched with what has happened to its invoice since (sent, paid).
+- **Code decides every number and every permission.** Which invoices are eligible, every amount, every cost. Nothing
+  runs in PayPal without an approval click — on that action, or on a standing policy that covers it — and the server
+  re-checks everything before it calls PayPal.
+- **Exchange rates:** ECB euro reference rates via [Frankfurter](https://frankfurter.dev), crossed into the home
+  currency (USD, EUR, GBP, JPY or KRW). The typical swing (1σ) uses 120 days of daily moves, scaled by the square root
+  of time; the 3% figure is a symmetric stress test.
+- **Evidence, not forecasts:** over two years of ECB fixings, how far each currency moved for money that waited 7 to 90
+  days, and the open book replayed on the current due dates versus the agent's proposals (assumptions on screen).
+
+## Reliability
+
+- Every text the model writes is checked by code before anyone sees it: only numbers that appear in the facts it was
+  given, each figure under its own label (3% stress test vs typical swing), no forecasts, no advice, no links, no
+  conditional promises to clients. A rejected draft goes back to the model with the reason and is rewritten.
+- Without an API key, or if the model fails, rule-based proposals with fixed wording take over.
+- Sandbox only: the PayPal client refuses any host but the sandbox. Secrets live in environment variables.
+- Cost: one daily plan per home currency costs about $0.004 (Claude Haiku 5.5 with prompt caching); visitors and the
+  autopilot reuse it.
+- Known sandbox limits: the early-payment-discount rule endpoint (`/conditional-rules`) returns HTTP 500 for every
+  variant tried, so the agent edits the sent invoice instead (the discount is then unconditional, and the screen and
+  the client note say so). A payment recorded through the API does not raise a webhook event in the sandbox; a payment
+  made on PayPal's invoice page does. Transaction Search and Balances return 403, so the timing effect is computed from
+  each invoice's own payment dates.
+- `npm test` covers the exposure maths, the agent's eligibility and fallbacks, every text check, the plan
+  reconciliation, the webhook verification and the demo book.
+
+## User tests
+
+Planned for Nov 7–9 with three freelancers and small sellers who invoice abroad. Results will be added here.
 
 ## Run locally
+
 ```bash
 npm install
-cp .env.example .env.local   # fill in sandbox credentials
+cp .env.example .env.local        # sandbox credentials, app-only Anthropic key
 npm test
 npm run sandbox:seed -- --apply   # seed the sandbox seller (idempotent; dry run without --apply)
-npm run sandbox:check             # reminder + discount checks on throw-away CHK- invoices
-npm run sandbox:exposure          # read-only: exposure table + proposals from the live sandbox
 npm run dev
 ```
 
-## Data
-Exchange rates: ECB euro foreign exchange reference rates, via [Frankfurter](https://frankfurter.dev).
+Other scripts: `npm run sandbox:exposure` (read-only check of the live book), `npm run sandbox:snapshot` (the demo
+snapshot used when no PayPal keys are set), `npx tsx scripts/register-webhook.mts https://your-site` (PayPal webhook).
 
 ## License
+
 MIT
