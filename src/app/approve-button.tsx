@@ -7,7 +7,7 @@ import styles from "./page.module.css";
 
 // The client-facing text is editable: the seller can change the agent's draft before approving.
 // Whatever is submitted is checked again on the server.
-export function ApproveForm({ p, base, disabledReason }: { p: AgentProposal; base: string; disabledReason?: string }) {
+export function ApproveForm({ p, base, disabledReason, openDraft = false }: { p: AgentProposal; base: string; disabledReason?: string; openDraft?: boolean }) {
   const [state, action, pending] = useActionState<ApproveState, FormData>(approve, null);
   const locked = pending || !!disabledReason || !!state?.ok;
   return (
@@ -15,7 +15,7 @@ export function ApproveForm({ p, base, disabledReason }: { p: AgentProposal; bas
       <input type="hidden" name="kind" value={p.kind} />
       <input type="hidden" name="invoiceId" value={p.invoiceId} />
       <input type="hidden" name="base" value={base} />
-      <details className={styles.draft}>
+      <details className={styles.draft} open={openDraft}>
         <summary>{p.kind === "reminder" ? "E-mail the agent wrote for this client" : "Note the client will see"}</summary>
         {p.kind === "reminder" ? (
           <>

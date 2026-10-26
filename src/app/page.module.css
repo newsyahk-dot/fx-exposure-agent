@@ -270,6 +270,7 @@
 .heat[data-level="5"] { background: var(--seq-5); color: var(--seq-ink); }
 
 .cards {
+  align-items: start;
   list-style: none;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
@@ -863,6 +864,66 @@
 }
 
 /* Today */
+.heroChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 2px;
+}
+
+.statChip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 15px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.statChip strong {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
+.statChip[data-tone="late"] {
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
+}
+
+.statChip[data-tone="late"] strong {
+  color: var(--warning);
+}
+
+.cardPitch {
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.cardPitch strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.checkBadge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-self: flex-start;
+  font-size: 13px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  color: var(--good);
+  background: color-mix(in srgb, var(--good) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--good) 30%, transparent);
+}
+
+.checkBadge[data-rewritten] {
+  color: var(--text-primary);
+}
+
 .heroDelta {
   font-size: 16px;
   font-variant-numeric: tabular-nums;
@@ -1263,7 +1324,7 @@
   outline-offset: 2px;
 }
 
-/* Phones: one swipeable row of steps, a smaller hero, tighter cards. */
+/* Phones: steps wrap so every tab stays visible, a smaller hero, tighter cards. */
 @media (max-width: 720px) {
   .page {
     gap: 22px;
@@ -1274,16 +1335,9 @@
     font-size: 18px;
   }
 
-  .steps6 ol {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    margin: 0 -16px;
-    padding: 2px 16px;
-  }
-
-  .steps6 ol::-webkit-scrollbar {
-    display: none;
+  .steps6 a {
+    font-size: 13px;
+    padding: 5px 10px 5px 6px;
   }
 
   .heroValue {

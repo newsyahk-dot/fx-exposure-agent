@@ -21,7 +21,7 @@ import { SimulatePayment } from "./client-pay";
 import { ResetDemoButton } from "./reset-demo";
 import { InvoiceAssistant } from "./invoice-assistant";
 import { LiveRefresh } from "./live-refresh";
-import { TodayPlan } from "./today";
+import { TodayPlan, widthPhrase } from "./today";
 import { UnlockForm } from "./unlock-form";
 import { WaitChart } from "./wait-chart";
 import { HeroValue } from "./hero-value";
@@ -58,7 +58,7 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
           <h1>FX Exposure Agent</h1>
         </div>
         <p className={styles.lede}>
-          Know what exchange rates can take from your unpaid PayPal invoices — and shrink it in one click.
+          Get paid sooner from clients abroad — and see what exchange rates can do to the money you&apos;re still waiting for.
         </p>
       </header>
       <Suspense fallback={<p className={styles.muted}>Loading your PayPal invoices…</p>}>
@@ -99,6 +99,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   const c = (n: number) => compact(base, n);
   const open = inputs.invoices.filter((i) => OPEN_STATUSES.has(i.status) && i.amountDue > 0);
   const overdue = e.rows.reduce((s, r) => s + r.buckets.overdue * rates[r.currency], 0);
+  const overdueCount = open.filter((i) => i.currency !== base && (rates[i.currency] ?? 0) > 0 && i.dueDate < inputs.asOf).length;
   const skipped = [...inputs.skipped, ...e.skipped];
   const demo = inputs.source === "demo";
   const locked = !demo && !(await writesAllowed());
@@ -115,10 +116,6 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   // Before/after for today: payments that arrived today no longer count as exposure.
   const paid = paidToday(inputs.invoices, rates, base, inputs.asOf);
   const day = dayChange(inputs.invoices, paid, rates, base, inputs.asOf);
-  const pct = (v: number) => (v * SHOCK_PCT) / 100;
-  const startShock = pct(e.totalValue + day.paid - day.added);
-  const paidOff = pct(day.paid);
-  const addedOn = pct(day.added);
 
   const allDone = inputs.invoices.flatMap((i) => (i.agentLog ?? []).filter((a) => a.kind !== "archived").map((a) => ({ ...a, inv: i })));
   const done = allDone.filter((d) => OPEN_STATUSES.has(d.inv.status)).sort((a, b) => b.at.localeCompare(a.at));
@@ -166,33 +163,41 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
 
       <div className={styles.stepBody}>
       {step === "today" ? (
-        <section className={styles.hero} aria-label="At risk now">
-          <p className={styles.heroLabel}>If exchange rates move {SHOCK_PCT}% either way, your unpaid foreign invoices change by about</p>
-          <HeroValue value={e.totalShock} base={base} />
-          {Math.round(paidOff) > 0 || Math.round(addedOn) > 0 ? (
+        <section className={styles.hero} aria-label="Waiting to be paid">
+          <p className={styles.heroLabel}>
+            Waiting to be paid from clients abroad, in {listAnd(e.rows.map((r) => r.currency)) || "foreign currencies"}
+          </p>
+          <HeroValue value={e.totalValue} base={base} collected={day.paid} />
+          <div className={styles.heroChips}>
+            {overdue > 0 && (
+              <span className={styles.statChip} data-tone="late">
+                <strong>{c(overdue)}</strong> overdue · {overdueCount} invoice{overdueCount === 1 ? "" : "s"}
+              </span>
+            )}
+            <span className={styles.statChip}>
+              <strong>±{c(e.totalShock)}</strong> if rates move {SHOCK_PCT}% before it arrives
+            </span>
+          </div>
+          {Math.round(day.paid) > 0 || Math.round(day.added) > 0 ? (
             <p className={styles.heroDelta}>
-              Start of today {c(startShock)} → now {c(e.totalShock)}
-              {Math.round(paidOff) > 0 && <strong> (−{c(paidOff)} paid today)</strong>}
-              {Math.round(addedOn) > 0 && <span className={styles.muted}> (+{c(addedOn)} new invoices today)</span>}
+              Start of today {c(e.totalValue + day.paid - day.added)} → now {c(e.totalValue)}
+              {Math.round(day.paid) > 0 && <strong> (+{c(day.paid)} collected today)</strong>}
+              {Math.round(day.added) > 0 && <span className={styles.muted}> (+{c(day.added)} new invoices today)</span>}
             </p>
           ) : null}
-          <p className={styles.muted}>
-            Up or down — equally likely. The size of the risk, not a forecast. {c(e.totalValue)} owed in{" "}
-            {listAnd(e.rows.map((r) => r.currency)) || "foreign currencies"}
-            {overdue > 0 ? <>; {c(overdue)} of it is overdue.</> : "."}
-          </p>
+          <p className={styles.muted}>Exchange rates: up or down, equally likely — the size of the risk, not a forecast.</p>
         </section>
       ) : (
-        <aside className={styles.score} aria-label="Exposure now">
+        <aside className={styles.score} aria-label="Waiting to be paid">
           <span>
-            At risk at ±{SHOCK_PCT}% <strong>{c(e.totalShock)}</strong>
-            {Math.round(paidOff) > 0 && <span className={styles.ok}> (−{c(paidOff)} paid today)</span>}
-          </span>
-          <span>
-            Owed in foreign currencies <strong>{c(e.totalValue)}</strong>
+            Waiting from clients abroad <strong>{c(e.totalValue)}</strong>
+            {Math.round(day.paid) > 0 && <span className={styles.ok}> (+{c(day.paid)} collected today)</span>}
           </span>
           <span>
             Overdue <strong>{c(overdue)}</strong>
+          </span>
+          <span>
+            If rates move ±{SHOCK_PCT}% <strong>±{c(e.totalShock)}</strong>
           </span>
         </aside>
       )}
@@ -217,7 +222,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
             <p className={styles.tryIt}>
               <strong>Try it:</strong> <span>① Approve a proposal below — it runs in PayPal</span>
               <span>② Pay it as the client</span>
-              <span>③ Watch the number above go down</span>
+              <span>③ Watch &ldquo;collected&rdquo; appear above</span>
             </p>
           )}
           <section aria-labelledby="actions-h">
@@ -234,10 +239,10 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
                 lockReason={lockReason}
                 evidenceHref={href("evidence")}
                 paidValue={Object.fromEntries(paid.map((p) => [p.invoice.id, p.value]))}
-                atRisk={open
+                waiting={open
                   .filter((i) => i.currency !== base && (rates[i.currency] ?? 0) > 0)
-                  .map((i) => ({ id: i.id, shock: pct(i.amountDue * rates[i.currency]) }))}
-                paidToday={{ shock: paidOff, count: paid.filter((p) => p.invoice.currency !== base).length }}
+                  .map((i) => ({ id: i.id, value: i.amountDue * rates[i.currency] }))}
+                paidToday={{ value: day.paid, count: paid.filter((p) => p.invoice.currency !== base).length }}
                 sharedDemo={demo ? undefined : { startedAt: inputs.startedAt }}
               />
             </Suspense>
@@ -371,7 +376,6 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
           daily moves, scaled by the square root of time.
         </p>
         <p>No exchange-rate forecasts. PayPal sandbox only — no real money moves.</p>
-        {inputs.archived > 0 && <p>Demo housekeeping: {inputs.archived} invoices from earlier demo resets are left out.</p>}
       </footer>
     </>
   );
@@ -652,7 +656,13 @@ function Replay({ r, ecb, input }: { r: AgentRun; ecb: EcbQuotes; input: AgentIn
         <strong>Your open book, replayed over two years of ECB rates.</strong> If clients pay on the current dates, the
         total in {input.base} would have moved between {signed(a.p5)} and {signed(a.p95)} nine times out of ten. If they
         pay as these proposals ask, between {signed(b.p5)} and {signed(b.p95)}
-        {wa > 0 && <> — a range {Math.round((1 - wb / wa) * 100)}% narrower</>}.
+        {wa > 0 && (
+          <>
+            {" "}
+            — {wb / wa < 0.8 ? `${widthPhrase(wb / wa)} (${Math.round((1 - wb / wa) * 100)}% narrower)` : `a range ${Math.round((1 - wb / wa) * 100)}% narrower`}
+          </>
+        )}
+        .
         {cost > 0 && <> The discounts offered cost {c(cost)} whichever way rates move.</>}
       </p>
       <p className={styles.muted}>

@@ -11,9 +11,9 @@ FX Exposure Agent
 
 ## Elevator pitch (max 200 characters)
 
-Know what exchange rates can take from your unpaid PayPal invoices — and shrink it in one click. An AI agent proposes the day's PayPal actions; you approve.
+Get paid sooner from clients abroad, and see what exchange rates can do to the money you're still waiting for. An AI agent proposes PayPal reminders and offers; you approve.
 
-*(156 characters)*
+*(173 characters)*
 
 ---
 
@@ -45,22 +45,22 @@ business the view a treasury desk has."]
 
 ### What it does
 
-**One number to watch.** The app reads the seller's open PayPal invoices and shows what a 3% move either way would do
-to the money still owed in foreign currencies — for the demo book, about [$929] on [$31,000]. It is the size of the
-risk, not a forecast.
+**What she's waiting for, at a glance.** The app reads the seller's open PayPal invoices and shows how much is still
+owed from clients abroad (about [$31,000] in the demo book), what is already overdue, and what a 3% move either way
+would do to it (about [$929]). That last figure is the size of the risk, not a forecast.
 
 **The day's work, done with a click.** An AI agent goes through the invoices and proposes today's actions: a reminder
 for an overdue invoice, written for that client, or a small early-payment discount on a large invoice that isn't due
 for two months — with its cost shown next to how much uncertainty it removes. The seller approves; the action runs in
-PayPal; the card shows "sent". When the client pays, the card shows "paid" and the number at the top goes down:
-"Start of today $929 → now $845".
+PayPal; the card shows "sent". When the client pays, the card shows "paid", the top of the screen shows
+"+[$2,807] collected", and what is still waiting goes down: "Start of today [$31K] → now [$28K]".
 
 **Where the risk sits.** Every open invoice in one grid, ranked by what it puts at risk, with what the agent is doing
 about each one — searchable, sortable, and downloadable as CSV.
 
 **Evidence, not forecasts.** Two years of ECB rates show how far each currency moved for money that waited 7 to 90
-days, and replay the seller's open book: paid the way the agent proposes, it would have moved in a range about [42]%
-narrower. History, labelled as history.
+days, and replay the seller's open book: paid the way the agent proposes, it would have moved in a range about half as
+wide ([42]% narrower). History, labelled as history.
 
 **Before the next invoice.** The seller types "Bill Sakura Games ¥480,000 for the level art pack, net 45". Claude turns
 it into an invoice; the app prices four ways to bill it — as asked, in dollars, on 14-day terms, half up front — using
@@ -120,7 +120,7 @@ by side; the seller decides.
   the real PayPal sandbox.
 - The AI is genuinely in charge of judgement (what to propose, how to say it) while code stays in charge of every
   number and every permission.
-- Measured over 48 agent runs (283 proposals): 0 problems in the final output, including 10 runs with seller notes that
+- Measured over 48 agent runs (283 proposals): 0 violations of our own checks in the final output, including 10 runs with seller notes that
   told the agent to break its rules and a request to tell clients "the yen will fall" (declined, with a reason); 128
   drafts were caught and rewritten. A daily plan costs about $0.01.
 

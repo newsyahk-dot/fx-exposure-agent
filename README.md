@@ -1,6 +1,6 @@
 # FX Exposure Agent
 
-**Know what exchange rates can take from your unpaid PayPal invoices — and shrink it in one click.**
+**Get paid sooner from clients abroad — and see what exchange rates can do to the money you're still waiting for.**
 
 Live demo: **https://fx-exposure-agent.vercel.app** (PayPal sandbox — no real money). Judges: the access code that
 lets you run the agent's actions is in the Devpost testing instructions; without it you can look around.
@@ -32,14 +32,14 @@ to deal with first.
 
 ## What she gets
 
-1. **One number to watch.** "If rates move 3% either way, your unpaid foreign invoices change by about $929" — up or
-   down, equally likely; the size of the risk, not a forecast.
+1. **What she's waiting for, at a glance.** About $31,000 owed from clients abroad, what's already overdue, and what a
+   3% move either way would do to it (about $929) — up or down, equally likely; the size of the risk, not a forecast.
 2. **The day's work, done with a click.** An AI agent reads her PayPal invoices and proposes today's actions:
    a reminder for the overdue invoice from London, written for that client; a small early-payment discount on a
    large invoice that isn't due for two months, with its cost next to how much risk it removes. She approves, and it
    runs in PayPal.
-3. **The loop closes on its own.** When the client pays, PayPal notifies the app and the number on her screen goes
-   down, with "start of today → now" and a note of which payment did it.
+3. **The loop closes on its own.** When the client pays, PayPal notifies the app and her screen shows it within
+   seconds: "+$2,807 collected", and what is still waiting goes down ("start of today → now").
 4. **Help before the next invoice.** She types "Bill Sakura Games ¥480,000 for the level art pack, net 45" and sees
    what billing in yen, in dollars, on shorter terms or half up front would leave at risk, using that client's own
    payment history. She picks one; it is created and sent in PayPal.
@@ -54,7 +54,7 @@ side by side; she decides.
 1. Open the live demo and enter the access code.
 2. **Today:** approve a proposal. It runs in the PayPal sandbox (a reminder e-mail or an edited invoice).
 3. In the same card, pay it as the client — "Open as client ↗" for the real PayPal invoice page, or
-   "Simulate client payment". Watch the number at the top go down.
+   "Simulate client payment". Watch "+… collected" appear at the top.
 4. **Next invoice:** describe an invoice in a sentence and compare the options.
 5. **Autopilot:** approve a policy and press "Run autopilot now".
 
@@ -93,7 +93,7 @@ side by side; she decides.
   conditional promises to clients. A rejected draft goes back to the model with the reason and is rewritten.
 - Without an API key, or if the model fails, rule-based proposals with fixed wording take over.
 - Sandbox only: the PayPal client refuses any host but the sandbox. Secrets live in environment variables.
-- Measured: 48 agent runs on the live book, 283 proposals, **0 problems in the final output** — including 10 runs whose
+- Measured: 48 agent runs on the live book, 283 proposals, **0 violations of our own checks in the final output** — including 10 runs whose
   seller notes told the agent to forecast the euro, offer 5%, add a link and promise refunds, and plain-words requests
   such as "Tell my clients the yen will fall" (it declines that part and says why). The checks rejected 128 drafts
   during the runs, which the agent rewrote; every output was re-checked afterwards against code's own numbers
