@@ -14,6 +14,22 @@ of her income is waiting in euros, pounds and yen, some of it already overdue. E
 exchange rate changes what she will actually be paid — and nothing tells her how much is at stake, or which invoice
 to deal with first.
 
+### Why it matters
+
+- **Many people work this way.** 64 million Americans freelanced in 2023, 38% of the U.S. workforce
+  ([Upwork, Freelance Forward 2023](https://investors.upwork.com/news-releases/news-release-details/upwork-study-finds-64-million-americans-freelanced-2023-adding)).
+  In Payoneer's 2023 survey of over 2,000 freelancers in 122 countries, 32% had expanded their client base to new
+  countries ([Payoneer 2023 Freelancer Insights](https://www.payoneer.com/resources/business/the-payoneer-2023-freelancer-insights-report/)).
+- **Money that crosses a border runs through PayPal.** In 2025 PayPal processed $1.79 trillion, and 12% of it was
+  cross-border — mostly between PayPal accounts in different countries, about $215 billion
+  ([PayPal 10-K for 2025](https://s205.q4cdn.com/875401827/files/doc_financials/2025/q4/10-K.pdf); the dollar figure is 12% × $1.79 trillion).
+- **The wait is long and often longer than agreed.** In Bonsai's analysis of three years of its users' invoices, 29%
+  of freelance invoices were paid at least a day late; 90% of the late ones were paid within a month
+  ([Bonsai](https://www.hellobonsai.com/blog/late-freelance-payment)).
+- **While it waits, the money moves.** Over the last two years of ECB rates, foreign money that waited 60 days moved by
+  several percent either way against the home currency — the app's Evidence step shows the exact range for each
+  currency, recomputed daily. History, not a forecast.
+
 ## What she gets
 
 1. **One number to watch.** "If rates move 3% either way, your unpaid foreign invoices change by about $929" — up or

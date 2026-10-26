@@ -83,5 +83,7 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   **A deploy empties the shared (`use cache: remote`) cache**, so each currency's first visit after a deploy waits ~30 s
   for a new plan (measured 2026-10-26). After every deploy, warm it: `/api/warm` with `CRON_SECRET`, or open
   `/?base=<B>&step=today` for all five currencies once. Avoid deploying during judging unless needed.
+  `vercel.json` `ignoreCommand` skips the build when a commit changes only `docs/` or `*.md` (exit 0 = skip), so
+  documentation edits do not redeploy and empty the cache. If the previous commit is missing the build runs (safe side).
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.
