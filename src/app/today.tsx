@@ -25,7 +25,7 @@ export async function TodayPlan({
   lockReason,
   evidenceHref,
   paidValue,
-  atRisk,
+  waiting,
   paidToday,
   sharedDemo,
 }: {
@@ -37,8 +37,8 @@ export async function TodayPlan({
   lockReason?: string;
   evidenceHref: string;
   paidValue: Record<string, number>; // invoice id -> value paid today, home currency
-  atRisk: { id: string; shock: number }[]; // open foreign invoices, ±3% figure in the home currency
-  paidToday: { shock: number; count: number }; // foreign payments today, ±3% figure
+  waiting: { id: string; value: number }[]; // open foreign invoices, value in the home currency
+  paidToday: { value: number; count: number }; // foreign payments today, home currency
   sharedDemo?: { startedAt?: string }; // the hosted demo book, shared by every visitor
 }) {
   const r = await run;
@@ -51,7 +51,7 @@ export async function TodayPlan({
     if (s.state === "done") states[p.invoiceId] = "sent";
     else if (s.state === "open" && !states[p.invoiceId]) states[p.invoiceId] = "proposed";
   }
-  const bar = todayBar(atRisk, states, paidToday);
+  const bar = todayBar(waiting, states, paidToday);
   const openCount = cards.filter((x) => x.s.state === "open").length;
   const ranCount = cards.length - openCount;
   // On screen: a count made by code (always matches the cards). Claude's own summary is under the details.
@@ -67,7 +67,7 @@ export async function TodayPlan({
   const { asInvoiced, withProposals } = timelines(input, r);
   const a = replayBook(ecb, base, asInvoiced, input.asOf);
   const b = replayBook(ecb, base, withProposals, input.asOf);
-  const narrower = a.n > 0 && b.n > 0 && a.p95 - a.p5 > 0 ? Math.round((1 - (b.p95 - b.p5) / (a.p95 - a.p5)) * 100) : null;
+  const ratio = a.n > 0 && b.n > 0 && a.p95 - a.p5 > 0 ? (b.p95 - b.p5) / (a.p95 - a.p5) : null;
 
   return (
     <>
@@ -81,11 +81,12 @@ export async function TodayPlan({
           {lead ? <>Proposes {lead}</> : "No actions proposed"}
           {r.notProposed.length > 0 && <>; leaves {r.notProposed.length} alone</>}.
         </p>
-        {narrower != null && narrower > 0 && (
+        {ratio != null && ratio < 0.95 && (
           <p className={styles.muted}>
-            If clients pay as proposed, the range your total moved over the last two years narrows by {narrower}%.{" "}
+            In a replay of the last two years, getting paid as proposed would have kept the range your total moved{" "}
+            {widthPhrase(ratio)}.{" "}
             <Link href={evidenceHref} className={styles.link}>
-              See the evidence →
+              See the evidence and its assumptions →
             </Link>
           </p>
         )}
@@ -110,9 +111,25 @@ export async function TodayPlan({
         <p className={styles.muted}>Nothing to do today: no overdue invoices to chase and no large distant ones worth an offer.</p>
       ) : (
         <ul className={styles.cards}>
-          {cards.map(({ p, s }) => (
-            <ProposalCard key={`${p.kind}-${p.invoiceId}`} p={p} s={s} client={invoices.find((i) => i.id === p.invoiceId)?.recipientName} paidToday={paidValue[p.invoiceId]} base={base} c={c} lockReason={lockReason} agent={r.source === "agent"} />
-          ))}
+          {cards.map(({ p, s }, i) => {
+            const inv = invoices.find((x) => x.id === p.invoiceId);
+            return (
+              <ProposalCard
+                key={`${p.kind}-${p.invoiceId}`}
+                p={p}
+                s={s}
+                client={inv?.recipientName}
+                due={inv?.dueDate}
+                paidToday={paidValue[p.invoiceId]}
+                base={base}
+                c={c}
+                lockReason={lockReason}
+                agent={r.source === "agent"}
+                rejected={rejectedFor(r, p.invoiceNumber)}
+                featured={i === 0}
+              />
+            );
+          })}
         </ul>
       )}
 
@@ -169,22 +186,29 @@ export function ProposalCard({
   p,
   s,
   client,
+  due,
   paidToday,
   base,
   c,
   lockReason,
   agent,
+  rejected = [],
+  featured = false,
 }: {
   p: AgentProposal;
   s: ProposalState;
   client?: string;
+  due?: string; // the invoice's current due date (before an offer moves it)
   paidToday?: number;
   base: string;
   c: (n: number) => string;
   lockReason?: string;
   agent: boolean;
+  rejected?: string[]; // why the checks rejected earlier drafts for this invoice (from the run's steps)
+  featured?: boolean; // the first card shows the agent's reason and draft without a click
 }) {
   const atRisk = (p.value * SHOCK_PCT) / 100;
+  const weeksSooner = p.kind === "early_pay_discount" ? Math.round((p.daysToDue - p.withinDays) / 7) : 0;
   return (
     <li className={styles.card} data-state={s.state}>
       <p className={styles.cardKind}>
@@ -194,20 +218,28 @@ export function ProposalCard({
         {p.invoiceNumber}
         {client && <> · {client}</>} · {money(p.currency, p.amount)} <span className={styles.muted}>≈ {c(p.value)}</span>
       </p>
+      {p.kind === "reminder" ? (
+        <p className={styles.cardPitch}>
+          Overdue {p.daysOverdue} days · <strong>{c(p.value)} waiting</strong>
+        </p>
+      ) : (
+        <p className={styles.cardPitch}>
+          Asks for payment by <strong>{shortDate(p.newDueDate)}</strong>
+          {due && <> instead of {shortDate(due)}</>}
+          {weeksSooner >= 1 && (
+            <>
+              {" "}
+              — about {weeksSooner} week{weeksSooner === 1 ? "" : "s"} sooner
+            </>
+          )}{" "}
+          — for {p.percent}% off (<strong>{c(p.cost)}</strong>)
+        </p>
+      )}
       <dl className={styles.compare}>
-        <div>
-          <dt>At risk at ±{SHOCK_PCT}%</dt>
-          <dd>±{c(atRisk)}</dd>
-        </div>
-        {p.kind === "reminder" ? (
-          <div>
-            <dt>Overdue</dt>
-            <dd>{p.daysOverdue} days</dd>
-          </div>
-        ) : (
+        {p.kind === "early_pay_discount" && (
           <>
             <div>
-              <dt>Cost to you if taken</dt>
+              <dt>Cost to you</dt>
               <dd>{c(p.cost)}</dd>
             </div>
             <div>
@@ -220,14 +252,32 @@ export function ProposalCard({
             </div>
           </>
         )}
+        <div>
+          <dt title="A stress test: what a 3% move either way would change. Up or down — not a forecast.">If rates move {SHOCK_PCT}%</dt>
+          <dd>±{c(atRisk)}</dd>
+        </div>
       </dl>
-      <details className={styles.draft}>
+      <p className={styles.checkBadge} data-rewritten={rejected.length > 0 || undefined}>
+        {agent ? (
+          <>
+            ✓ Written by Claude, checked by code
+            {rejected.length > 0 && (
+              <>
+                {" "}
+                · {rejected.length} draft{rejected.length === 1 ? "" : "s"} rejected ({[...new Set(rejected)].join("; ")}) and rewritten
+              </>
+            )}
+          </>
+        ) : (
+          "Standard wording"
+        )}
+      </p>
+      <details className={styles.draft} open={featured && s.state === "open"}>
         <summary>Why the agent proposes this</summary>
         <p>{p.rationale}</p>
-        <p className={styles.whySource}>{agent ? "Written by Claude, checked by code" : "Standard wording"}</p>
       </details>
 
-      {s.state === "open" && <ApproveForm p={p} base={base} disabledReason={lockReason} />}
+      {s.state === "open" && <ApproveForm p={p} base={base} disabledReason={lockReason} openDraft={featured} />}
       {s.state === "done" && (
         <div className={styles.cardDone}>
           <p className={styles.ok}>
@@ -244,10 +294,14 @@ export function ProposalCard({
         </div>
       )}
       {s.state === "paid" && (
-        <p className={`${styles.cardDone} ${styles.ok}`}>
-          ✓ Paid
-          {paidToday ? <> today — {c((paidToday * SHOCK_PCT) / 100)} no longer at risk at ±{SHOCK_PCT}%.</> : "."}
-        </p>
+        <div className={styles.cardDone}>
+          <p className={styles.ok}>
+            ✓ Paid{paidToday ? <> today — {c(paidToday)} collected, no longer waiting on the client.</> : "."}
+          </p>
+          <p className={styles.muted}>
+            If you keep it in {p.currency} in PayPal, it still moves with the exchange rate until you convert.
+          </p>
+        </div>
       )}
       {(s.state === "closed" || s.state === "changed") && (
         <p className={styles.muted}>This invoice changed since the plan was made; this proposal no longer applies.</p>
@@ -256,11 +310,38 @@ export function ProposalCard({
   );
 }
 
+const shortDate = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
+// "about half as wide" — a plain-words size for a replayed range, not a precise claim.
+export function widthPhrase(ratio: number): string {
+  if (ratio < 0.35) return "about a third as wide";
+  if (ratio < 0.6) return "about half as wide";
+  if (ratio < 0.8) return "about two-thirds as wide";
+  return "a little narrower";
+}
+
+// Why the checks rejected drafts for this invoice during the run, in plain words.
+function rejectedFor(r: AgentRun, invoiceNumber: string): string[] {
+  return r.steps
+    .filter((s) => !s.ok && s.invoice === invoiceNumber && s.tool.startsWith("propose"))
+    .map((s) =>
+      /forecast|advice/.test(s.detail)
+        ? "forecast or advice wording"
+        : /numbers? not in the facts/.test(s.detail)
+          ? "a number not in the facts"
+          : /link/.test(s.detail)
+            ? "a link"
+            : /label|swing|stress/.test(s.detail)
+              ? "a figure under the wrong label"
+              : "failed a check",
+    );
+}
+
 const BAR_LABEL: Record<BarKey, string> = {
-  paid: "Paid today — off the book",
-  sent: "Sent in PayPal — waiting for the client",
+  paid: "Collected today",
+  sent: "Reminder or offer sent — waiting for the client",
   proposed: "Proposed — waiting for your click",
-  none: "No move today",
+  none: "No action today",
 };
 
 // Today's total at risk as one bar: what was paid off today, what the agent has moving, what waits for a click.
@@ -270,13 +351,13 @@ function TodayBar({ bar, c }: { bar: ReturnType<typeof todayBar>; c: (n: number)
   const shown = bar.segments.filter((s) => s.value > 0);
   const plural = (n: number) => `${n} invoice${n === 1 ? "" : "s"}`;
   return (
-    <figure className={styles.todayBar} aria-label="Where today's risk stands">
+    <figure className={styles.todayBar} aria-label="Where today's money stands">
       <figcaption>
-        <strong>Where today&apos;s ±{c(total)} stands</strong>
+        <strong>Where today&apos;s {c(total)} stands</strong>
         {bar.morning > bar.now && (
           <span className={styles.ok}>
             {" "}
-            — ±{c(bar.now)} left after today&apos;s payments
+            — {c(bar.morning - bar.now)} collected, {c(bar.now)} still waiting
           </span>
         )}
       </figcaption>
@@ -286,7 +367,7 @@ function TodayBar({ bar, c }: { bar: ReturnType<typeof todayBar>; c: (n: number)
             key={s.key}
             data-key={s.key}
             style={{ width: `${(s.value / total) * 100}%` }}
-            title={`${BAR_LABEL[s.key]}: ±${c(s.value)}`}
+            title={`${BAR_LABEL[s.key]}: ${c(s.value)}`}
           />
         ))}
       </div>
@@ -296,7 +377,7 @@ function TodayBar({ bar, c }: { bar: ReturnType<typeof todayBar>; c: (n: number)
           .map((s) => (
             <li key={s.key} data-key={s.key}>
               <i aria-hidden="true" />
-              {BAR_LABEL[s.key]} <strong>±{c(s.value)}</strong>
+              {BAR_LABEL[s.key]} <strong>{c(s.value)}</strong>
               {s.count > 0 && <span className={styles.muted}> · {plural(s.count)}</span>}
             </li>
           ))}
