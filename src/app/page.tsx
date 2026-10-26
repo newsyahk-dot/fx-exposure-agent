@@ -382,7 +382,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
 function PlanPlaceholder() {
   return (
     <div className={styles.planPlaceholder} aria-busy="true">
-      <p className={`${styles.why} ${styles.slowNote}`}>The agent is planning today… (about 30 seconds, once a day)</p>
+      <p className={`${styles.why} ${styles.slowNote}`}>The agent is planning today — reading your invoices in PayPal… (about a minute, once a day)</p>
       <ul className={styles.cards} aria-hidden="true">
         <li className={styles.skeletonCard} />
         <li className={styles.skeletonCard} />
@@ -482,12 +482,31 @@ async function NewSincePlan({
   const r = await run.catch(() => null);
   if (!r) return null;
   const missing = notInPlan(r, input).map((m) => m.invoiceNumber);
-  if (!missing.length) return null;
+  // Invoices the plan never saw on which the autopilot already acted (after a PayPal event): shown as done.
+  const seen = new Set([...r.proposals.map((p) => p.invoiceNumber), ...r.notProposed.map((n) => n.invoiceNumber)]);
+  const autoDone = inputs.invoices.flatMap((i) =>
+    seen.has(i.number) || missing.includes(i.number)
+      ? []
+      : (i.agentLog ?? []).filter((a) => a.auto && a.kind !== "archived" && a.at >= (r.plannedAt ?? "")).map((a) => ({ inv: i, a })),
+  );
+  if (!missing.length && !autoDone.length) return null;
   const list = missing.join(", ");
   return (
     <section aria-labelledby="new-since-h" className={styles.newSince}>
       <h2 id="new-since-h">New since today&apos;s plan</h2>
-      {locked && !ownBase ? (
+      {autoDone.length > 0 && (
+        <ul className={styles.notices} aria-label="Done by the autopilot after a PayPal event">
+          {autoDone.map(({ inv, a }) => (
+            <li key={`${inv.id}-${a.kind}-${a.at}`}>
+              ✓ PayPal told the agent about <strong>{inv.number}</strong>
+              {inv.recipientName && <> · {inv.recipientName}</>}; the autopilot{" "}
+              {a.kind === "reminder" ? "sent a reminder" : "applied an early-payment discount"} at {a.at.slice(11, 16)} UTC, as your
+              approved policy allows — no click needed. Now {money(inv.currency, inv.amountDue)} owed, due {inv.dueDate}.
+            </li>
+          ))}
+        </ul>
+      )}
+      {!missing.length ? null : locked && !ownBase ? (
         <p className={styles.muted}>
           {list} arrived after the plan. The agent looks at new invoices in the seller&apos;s policy currency (
           {pickBase(inputs.policy?.base)}); switch to it, or enter the access code to ask here.

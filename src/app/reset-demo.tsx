@@ -9,7 +9,7 @@ export function ResetDemoButton({ disabledReason }: { disabledReason?: string })
   return (
     <form action={action} className={styles.approveRow}>
       <button type="submit" className={styles.secondaryButton} disabled={pending || !!disabledReason}>
-        {pending ? "Resetting the demo book… (about 30 s)" : "Reset the demo book"}
+        {pending ? "Resetting the demo book… (about a minute)" : "Reset the demo book"}
       </button>
       <span className={styles.muted}>Closes the demo invoices and starts the story over. Also happens every night (00:07 UTC).</span>
       {state && (
