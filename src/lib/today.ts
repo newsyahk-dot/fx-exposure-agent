@@ -1,6 +1,7 @@
 // What changed today: payments that arrived, and how much was at risk at the start of the day.
 // Derived from the invoices themselves (their payment dates), so nothing extra has to be stored.
 
+import { parseSeedNumber } from "./seed-data";
 import { OPEN_STATUSES } from "./exposure";
 import type { Invoice, Rates } from "./types";
 
@@ -26,7 +27,9 @@ export function dayChange(invoices: Invoice[], paid: PaidToday[], rates: Rates, 
   const paidById = new Map(paid.map((p) => [p.invoice.id, p.amount]));
   // An invoice created today counts with what it was issued for: still owed plus anything already paid today.
   // "Today" is the creation time (UTC) when PayPal gives it, so it matches asOf whatever date PayPal printed on it.
-  const createdToday = (i: Invoice) => (i.createdAt ?? i.invoiceDate).slice(0, 10) === asOf;
+  // Demo-book invoices (FXA-1234, FXA-1234-r5) are back-dated stand-ins re-created by a reset: they were "there"
+  // at the start of the story, so a reset does not show the whole book as new.
+  const createdToday = (i: Invoice) => !parseSeedNumber(i.number) && (i.createdAt ?? i.invoiceDate).slice(0, 10) === asOf;
   const added = invoices
     .filter((i) => foreign(i) && createdToday(i) && (isOpen(i) || paidById.has(i.id)))
     .reduce((s, i) => s + ((isOpen(i) ? i.amountDue : 0) + (paidById.get(i.id) ?? 0)) * rates[i.currency], 0);
