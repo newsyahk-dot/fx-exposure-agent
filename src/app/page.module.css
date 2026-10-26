@@ -65,8 +65,9 @@
 }
 
 .page h1 {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 650;
+  letter-spacing: -0.01em;
 }
 
 .page h2 {
@@ -82,8 +83,49 @@
 }
 
 .lede {
-  color: var(--text-secondary);
-  max-width: 62ch;
+  color: var(--text-primary);
+  font-size: 20px;
+  line-height: 1.35;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  max-width: 44ch;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contextRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.persona {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+}
+
+.avatar {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-weight: 650;
+  color: #fff;
+  background: linear-gradient(135deg, var(--series-2), var(--series-5));
 }
 
 .muted {
@@ -116,9 +158,43 @@
 }
 
 .heroValue {
-  font-size: 56px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  font-size: 64px;
   font-weight: 650;
-  line-height: 1.1;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.heroNumber {
+  font-variant-numeric: tabular-nums;
+}
+
+.dropBadge {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--good);
+  background: color-mix(in srgb, var(--good) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--good) 35%, transparent);
+  border-radius: 999px;
+  padding: 4px 12px;
+  animation: dropIn 0.4s ease-out both;
+}
+
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropBadge {
+    animation: none;
+  }
 }
 
 .tiles {
@@ -670,11 +746,16 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 10px;
-  font-size: 14px;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--warning);
-  border-radius: 8px;
-  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warning) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent);
+}
+
+.unlockText {
+  flex: 1 1 22em;
 }
 
 .unlock input {
@@ -832,7 +913,6 @@
   padding-top: 8px;
 }
 
-.card[data-state="paid"],
 .card[data-state="closed"],
 .card[data-state="changed"] {
   opacity: 0.75;
@@ -1059,5 +1139,163 @@
 @media (prefers-reduced-motion: reduce) {
   .barTrack span {
     transition: none;
+  }
+}
+
+/* Example requests on Next invoice. */
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.chip {
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* How the autopilot decides: four steps in a row (a column on phones). */
+.flow {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  margin: 12px 0 16px;
+  counter-reset: flow;
+}
+
+.flow li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 14px;
+}
+
+.flow li span {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.flow li[data-tone="good"] {
+  border-color: color-mix(in srgb, var(--good) 45%, var(--border));
+  background: color-mix(in srgb, var(--good) 8%, var(--surface-1));
+}
+
+.flow li[data-tone="wait"] {
+  border-style: dashed;
+}
+
+.flow li + li::before {
+  content: "→";
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.flow li[data-tone="wait"]::before {
+  content: "or";
+}
+
+@media (max-width: 720px) {
+  .flow {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .flow li + li::before {
+    left: 50%;
+    top: -9px;
+    content: "↓";
+  }
+
+  .flow li[data-tone="wait"]::before {
+    content: "or";
+  }
+}
+
+/* Finish: card depth, focus rings, hover. */
+.card {
+  background: var(--surface-1);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%), 0 2px 8px rgb(0 0 0 / 3%);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card[data-state="open"]:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.card[data-state="done"] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+
+.card[data-state="paid"] {
+  border-color: color-mix(in srgb, var(--good) 55%, var(--border));
+  background: color-mix(in srgb, var(--good) 5%, var(--surface-1));
+}
+
+.approve:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.page :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Phones: one swipeable row of steps, a smaller hero, tighter cards. */
+@media (max-width: 720px) {
+  .page {
+    gap: 22px;
+    padding-top: 20px;
+  }
+
+  .lede {
+    font-size: 18px;
+  }
+
+  .steps6 ol {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding: 2px 16px;
+  }
+
+  .steps6 ol::-webkit-scrollbar {
+    display: none;
+  }
+
+  .heroValue {
+    font-size: 48px;
+  }
+
+  .card {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .persona {
+    font-size: 14px;
   }
 }

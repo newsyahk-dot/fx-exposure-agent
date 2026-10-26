@@ -22,6 +22,8 @@ import { LiveRefresh } from "./live-refresh";
 import { TodayPlan } from "./today";
 import { UnlockForm } from "./unlock-form";
 import { WaitChart } from "./wait-chart";
+import { HeroValue } from "./hero-value";
+import { Logo } from "./logo";
 import { InvoiceGrid } from "./invoice-grid";
 import { NavLink } from "./nav-link";
 import { PreloadGrid } from "./preload-grid";
@@ -46,7 +48,10 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <h1>FX Exposure Agent</h1>
+        <div className={styles.brand}>
+          <Logo />
+          <h1>FX Exposure Agent</h1>
+        </div>
         <p className={styles.lede}>
           Know what exchange rates can take from your unpaid PayPal invoices — and shrink it in one click.
         </p>
@@ -115,16 +120,28 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <>
+      <div className={styles.contextRow}>
+        <p className={styles.persona}>
+          <span className={styles.avatar} aria-hidden="true">
+            M
+          </span>
+          <span>
+            <strong>Maya</strong>, freelance designer in the US
+            <span className={styles.muted}> · clients in Europe, the UK and Japan · demo book</span>
+          </span>
+        </p>
+        <span className={styles.sourceBadge} data-source={inputs.source}>
+          {inputs.source === "live" ? "Live · PayPal sandbox" : "Demo snapshot"} · as of {inputs.asOf}
+          {!readOnly && <span className={styles.ok}> · actions unlocked</span>}
+        </span>
+      </div>
       <nav className={styles.baseNav} aria-label="Home currency">
-        <span className={styles.muted}>Home currency</span>
+        <span className={styles.muted}>Show amounts in</span>
         {BASES.map((b) => (
           <NavLink key={b} href={href(step, b)} className={styles.basePill} aria-current={b === base ? "true" : undefined}>
             {b}
           </NavLink>
         ))}
-        <span className={styles.sourceBadge} data-source={inputs.source}>
-          {inputs.source === "live" ? "Live · PayPal sandbox" : "Demo snapshot"} · as of {inputs.asOf}
-        </span>
       </nav>
       {locked && <UnlockForm />}
 
@@ -145,7 +162,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
       {step === "today" ? (
         <section className={styles.hero} aria-label="At risk now">
           <p className={styles.heroLabel}>If exchange rates move {SHOCK_PCT}% either way, your unpaid foreign invoices change by about</p>
-          <p className={styles.heroValue}>{c(e.totalShock)}</p>
+          <HeroValue value={e.totalShock} base={base} />
           {Math.round(paidOff) > 0 || Math.round(addedOn) > 0 ? (
             <p className={styles.heroDelta}>
               Start of today {c(startShock)} → now {c(e.totalShock)}
@@ -229,16 +246,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
 
       {step === "exposure" && (
         <>
-          <section className={styles.tiles} aria-label="Summary">
-            <Tile
-              label="Owed to you in foreign currencies"
-              value={c(e.totalValue)}
-              note={`${open.filter((i) => i.currency !== base).length} open invoices · ${e.rows.map((r) => r.currency).join(" · ") || "none"}`}
-            />
-            <Tile label="Already overdue" value={c(overdue)} note="still exposed every day it stays unpaid" />
-            <Tile label={`Owed in ${base} (no FX risk)`} value={c(e.baseTotal)} note={`${open.filter((i) => i.currency === base).length} open invoices`} />
-          </section>
-          <ExposureTable view={view} skipped={skipped} archived={inputs.archived} />
+          <ExposureTable view={view} skipped={skipped} baseOpen={open.filter((i) => i.currency === base).length} />
           <section aria-labelledby="grid-h">
             <h2 id="grid-h">Every open invoice, by what it puts at risk</h2>
             <p className={styles.muted}>
@@ -282,6 +290,24 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
               PayPal calls, each one marked &ldquo;autopilot&rdquo; below. Anything outside the policy keeps waiting for your
               click. The policy is stored in your PayPal account as an invoice template.
             </p>
+            <ol className={styles.flow} aria-label="How the autopilot decides">
+              <li>
+                <strong>Every weekday morning</strong>
+                <span>the agent makes the day&apos;s plan</span>
+              </li>
+              <li>
+                <strong>Inside your policy?</strong>
+                <span>the kinds of action and limits you approved</span>
+              </li>
+              <li data-tone="good">
+                <strong>Yes — it runs in PayPal</strong>
+                <span>same checks, marked &ldquo;autopilot&rdquo;</span>
+              </li>
+              <li data-tone="wait">
+                <strong>No — it waits for you</strong>
+                <span>on the Today screen</span>
+              </li>
+            </ol>
             <AutopilotPanel policy={inputs.policy ?? DEFAULT_POLICY} base={base} readOnly={readOnly} />
           </section>
           {doneList}
@@ -298,6 +324,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
           daily moves, scaled by the square root of time.
         </p>
         <p>No exchange-rate forecasts. PayPal sandbox only — no real money moves.</p>
+        {inputs.archived > 0 && <p>Demo housekeeping: {inputs.archived} invoices from earlier demo resets are left out.</p>}
       </footer>
     </>
   );
@@ -391,16 +418,6 @@ async function GridSection({ run, invoices, view, asOf }: { run: Promise<AgentRu
 
 async function ReplayFor({ run, ecb, input }: { run: Promise<AgentRun>; ecb: EcbQuotes; input: AgentInput }) {
   return <Replay r={await run} ecb={ecb} input={input} />;
-}
-
-function Tile({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <div className={styles.tile}>
-      <p className={styles.tileLabel}>{label}</p>
-      <p className={styles.tileValue}>{value}</p>
-      <p className={styles.muted}>{note}</p>
-    </div>
-  );
 }
 
 function Timing({ view }: { view: BookView }) {
@@ -555,7 +572,7 @@ function DoneList({ done, closed }: { done: { kind: string; at: string; auto?: t
   );
 }
 
-function ExposureTable({ view, skipped, archived }: { view: BookView; skipped: { id: string; reason: string }[]; archived: number }) {
+function ExposureTable({ view, skipped, baseOpen }: { view: BookView; skipped: { id: string; reason: string }[]; baseOpen: number }) {
   const { exposure: e, rates, base } = view;
   const c = (n: number) => compact(base, n);
   const cellValue = e.rows.flatMap((r) => BUCKETS.map((b) => r.buckets[b] * rates[r.currency]));
@@ -619,16 +636,19 @@ function ExposureTable({ view, skipped, archived }: { view: BookView; skipped: {
           </tfoot>
         </table>
       </div>
-      {(skipped.length > 0 || archived > 0) && (
-        <p className={styles.muted}>
-          {skipped.length > 0 && (
-            <span className={styles.warn}>
-              Not counted ({skipped.length}): {skipped.map((s) => `${s.id} — ${s.reason}`).join("; ")}.{" "}
-            </span>
-          )}
-          {archived > 0 && <>{archived} retired demo invoices are left out on purpose.</>}
-        </p>
-      )}
+      <p className={styles.muted}>
+        {e.baseTotal > 0 && (
+          <>
+            Not in this table: {c(e.baseTotal)} owed in {base} across {baseOpen} open invoice{baseOpen === 1 ? "" : "s"} — no
+            exchange-rate risk.{" "}
+          </>
+        )}
+        {skipped.length > 0 && (
+          <span className={styles.warn}>
+            Not counted ({skipped.length}): {skipped.map((s) => `${s.id} — ${s.reason}`).join("; ")}.
+          </span>
+        )}
+      </p>
     </section>
   );
 }
