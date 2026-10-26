@@ -9,6 +9,7 @@ import { compact, money } from "@/lib/format";
 import { clientViewUrl } from "@/lib/paypal";
 import { notInPlan, proposalState, type ProposalState } from "@/lib/plan-state";
 import type { Invoice } from "@/lib/types";
+import { todayBar, type BarKey } from "@/lib/today-bar";
 import { SHOCK_PCT } from "@/lib/view";
 import { ApproveForm } from "./approve-button";
 import { SimulatePayment } from "./client-pay";
@@ -24,6 +25,8 @@ export async function TodayPlan({
   lockReason,
   evidenceHref,
   paidValue,
+  atRisk,
+  paidToday,
 }: {
   run: Promise<AgentRun>;
   base: string;
@@ -33,6 +36,8 @@ export async function TodayPlan({
   lockReason?: string;
   evidenceHref: string;
   paidValue: Record<string, number>; // invoice id -> value paid today, home currency
+  atRisk: { id: string; shock: number }[]; // open foreign invoices, ±3% figure in the home currency
+  paidToday: { shock: number; count: number }; // foreign payments today, ±3% figure
 }) {
   const r = await run;
   const c = (n: number) => compact(base, n);
@@ -40,6 +45,18 @@ export async function TodayPlan({
   // A fixed order (reminders first, then by value): a card stays where it is while it goes open → sent → paid.
   cards.sort((a, b) => (a.p.kind === b.p.kind ? b.p.value - a.p.value : a.p.kind === "reminder" ? -1 : 1));
   const missing = notInPlan(r, input);
+  const states: Record<string, "sent" | "proposed"> = {};
+  for (const { p, s } of cards) {
+    if (s.state === "done") states[p.invoiceId] = "sent";
+    else if (s.state === "open" && !states[p.invoiceId]) states[p.invoiceId] = "proposed";
+  }
+  const bar = todayBar(atRisk, states, paidToday);
+  // On screen: a count made by code (always matches the cards). Claude's own summary is under the details.
+  const nRem = r.proposals.filter((p) => p.kind === "reminder").length;
+  const nOff = r.proposals.length - nRem;
+  const lead = [nRem && `${nRem} payment reminder${nRem === 1 ? "" : "s"}`, nOff && `${nOff} early-payment offer${nOff === 1 ? "" : "s"}`]
+    .filter(Boolean)
+    .join(" and ");
   const calls = r.steps.filter((s) => s.tool !== "summary").length;
 
   // What the proposals would have done to the range of the whole book, over two years of ECB rates.
@@ -50,12 +67,16 @@ export async function TodayPlan({
 
   return (
     <>
+      <TodayBar bar={bar} c={c} />
       <div className={styles.agentStatus}>
         <p>
           <strong>{r.source === "agent" ? "Claude's plan for today" : "Today's plan (rule-based)"}</strong>
           {r.plannedAt && <span className={styles.muted}> · made {r.plannedAt.slice(11, 16)} UTC</span>}
         </p>
-        <p>{r.summary}</p>
+        <p>
+          {lead ? <>Proposes {lead}</> : "No actions proposed"}
+          {r.notProposed.length > 0 && <>; leaves {r.notProposed.length} alone</>}.
+        </p>
         {narrower != null && narrower > 0 && (
           <p className={styles.muted}>
             If clients pay as proposed, the range your total moved over the last two years narrows by {narrower}%.{" "}
@@ -86,6 +107,7 @@ export async function TodayPlan({
 
       <details className={styles.leftAlone}>
         <summary>How the agent planned this</summary>
+        {r.summary && <p>{r.summary}</p>}
         <p>
           {r.source === "agent" ? (
             <>
@@ -155,6 +177,10 @@ function ProposalCard({
         {client && <> · {client}</>} · {money(p.currency, p.amount)} <span className={styles.muted}>≈ {c(p.value)}</span>
       </p>
       <dl className={styles.compare}>
+        <div>
+          <dt>At risk at ±{SHOCK_PCT}%</dt>
+          <dd>±{c(atRisk)}</dd>
+        </div>
         {p.kind === "reminder" ? (
           <div>
             <dt>Overdue</dt>
@@ -163,26 +189,25 @@ function ProposalCard({
         ) : (
           <>
             <div>
-              <dt>Cost if the client takes it</dt>
+              <dt>Cost to you if taken</dt>
               <dd>{c(p.cost)}</dd>
             </div>
             <div>
-              <dt>Typical swing (1σ) until paid</dt>
+              <dt title="One standard deviation of the value until it is paid — a size of uncertainty, not a forecast">
+                Typical swing until paid
+              </dt>
               <dd>
                 {p.swingNow == null || p.swingIfEarly == null ? "n/a" : `±${c(p.swingNow)} → ±${c(p.swingIfEarly)}`}
               </dd>
             </div>
           </>
         )}
-        <div>
-          <dt>At risk at ±{SHOCK_PCT}% until it is paid</dt>
-          <dd>±{c(atRisk)}</dd>
-        </div>
       </dl>
-      <div className={styles.why}>
+      <details className={styles.draft}>
+        <summary>Why the agent proposes this</summary>
         <p>{p.rationale}</p>
         <p className={styles.whySource}>{agent ? "Written by Claude, checked by code" : "Standard wording"}</p>
-      </div>
+      </details>
 
       {s.state === "open" && <ApproveForm p={p} base={base} disabledReason={lockReason} />}
       {s.state === "done" && (
@@ -210,5 +235,54 @@ function ProposalCard({
         <p className={styles.muted}>This invoice changed since the plan was made; this proposal no longer applies.</p>
       )}
     </li>
+  );
+}
+
+const BAR_LABEL: Record<BarKey, string> = {
+  paid: "Paid today — off the book",
+  sent: "Sent in PayPal — waiting for the client",
+  proposed: "Proposed — waiting for your click",
+  none: "No move today",
+};
+
+// Today's total at risk as one bar: what was paid off today, what the agent has moving, what waits for a click.
+function TodayBar({ bar, c }: { bar: ReturnType<typeof todayBar>; c: (n: number) => string }) {
+  const total = bar.morning;
+  if (!(total > 0)) return null;
+  const shown = bar.segments.filter((s) => s.value > 0);
+  const plural = (n: number) => `${n} invoice${n === 1 ? "" : "s"}`;
+  return (
+    <figure className={styles.todayBar} aria-label="Where today's risk stands">
+      <figcaption>
+        <strong>Where today&apos;s ±{c(total)} stands</strong>
+        {bar.morning > bar.now && (
+          <span className={styles.ok}>
+            {" "}
+            — ±{c(bar.now)} left after today&apos;s payments
+          </span>
+        )}
+      </figcaption>
+      <div className={styles.barTrack}>
+        {shown.map((s) => (
+          <span
+            key={s.key}
+            data-key={s.key}
+            style={{ width: `${(s.value / total) * 100}%` }}
+            title={`${BAR_LABEL[s.key]}: ±${c(s.value)}`}
+          />
+        ))}
+      </div>
+      <ul className={styles.barLegend}>
+        {bar.segments
+          .filter((s) => s.value > 0)
+          .map((s) => (
+            <li key={s.key} data-key={s.key}>
+              <i aria-hidden="true" />
+              {BAR_LABEL[s.key]} <strong>±{c(s.value)}</strong>
+              {s.count > 0 && <span className={styles.muted}> · {plural(s.count)}</span>}
+            </li>
+          ))}
+      </ul>
+    </figure>
   );
 }

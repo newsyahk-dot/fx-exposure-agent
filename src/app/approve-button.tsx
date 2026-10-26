@@ -46,7 +46,7 @@ export function ApproveForm({ p, base, disabledReason }: { p: AgentProposal; bas
             ? "Running in PayPal…"
             : p.kind === "reminder"
               ? "Approve: send reminder"
-              : `Approve: apply ${p.percent}% and move due date to ${p.newDueDate}`}
+              : `Approve: ${p.percent}% off, due ${shortDate(p.newDueDate)}`}
         </button>
         {disabledReason && !state && <span className={styles.muted}>{disabledReason}</span>}
         {state && (
@@ -58,3 +58,5 @@ export function ApproveForm({ p, base, disabledReason }: { p: AgentProposal; bas
     </form>
   );
 }
+
+const shortDate = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
