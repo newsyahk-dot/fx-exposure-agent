@@ -1,4 +1,5 @@
-// Demo book for the PayPal sandbox seller account: 18 invoices in USD, EUR and JPY.
+// Demo book for the PayPal sandbox seller account: a US-based freelance designer paid through PayPal by clients
+// in the US, the euro area, the UK and Japan — 22 invoices in USD, EUR, GBP and JPY.
 //
 // Dates are offsets in days from the seeding day, so the shape of the book (what is overdue, what falls
 // in which week) is the same whenever it is re-seeded. `scripts/seed-sandbox.ts` turns this into
@@ -11,7 +12,7 @@ export type SeedOutcome =
 
 export type SeedInvoice = {
   number: string;
-  currency: "USD" | "EUR" | "JPY";
+  currency: "USD" | "EUR" | "GBP" | "JPY";
   amount: number;
   item: string;
   client: string; // fictional business name shown on the invoice
@@ -39,6 +40,11 @@ export const SEED_INVOICES: SeedInvoice[] = [
   { number: "FXA-2004", currency: "EUR", amount: 3200, item: "Packaging design", client: "Studio Verde", issueOffset: -69, dueOffset: -39, outcome: { kind: "paid", paidOffset: -41 }, why: "paid on time" },
   { number: "FXA-2005", currency: "EUR", amount: 5000, item: "Annual design support", client: "Kleinfeld GmbH", issueOffset: -1, dueOffset: 59, outcome: { kind: "open" }, why: "large, far out -> early-pay candidate" },
   { number: "FXA-2006", currency: "EUR", amount: 1200, item: "Newsletter templates", client: "Studio Verde", issueOffset: -33, dueOffset: -3, outcome: { kind: "paid", paidOffset: -1 }, why: "paid a little late" },
+  // GBP — UK clients
+  { number: "FXA-4001", currency: "GBP", amount: 2100, item: "Editorial illustrations", client: "Hollis & Grey", issueOffset: -45, dueOffset: -15, outcome: { kind: "open" }, why: "overdue -> reminder" },
+  { number: "FXA-4002", currency: "GBP", amount: 3800, item: "Book cover series", client: "Marlow Press", issueOffset: -4, dueOffset: 46, outcome: { kind: "open" }, why: "large, far out -> early-pay candidate" },
+  { number: "FXA-4003", currency: "GBP", amount: 1400, item: "Event poster set", client: "Hollis & Grey", issueOffset: -60, dueOffset: -30, outcome: { kind: "paid", paidOffset: -12 }, why: "paid 18 days late -> timing effect" },
+  { number: "FXA-4004", currency: "GBP", amount: 650, item: "Social media kit", client: "Marlow Press", issueOffset: -10, dueOffset: 20, outcome: { kind: "open" }, why: "small, due in week 3" },
   // JPY — Japanese clients
   { number: "FXA-3001", currency: "JPY", amount: 310000, item: "Illustration set (12)", client: "Sakura Games", issueOffset: -38, dueOffset: -8, outcome: { kind: "open" }, why: "overdue -> reminder" },
   { number: "FXA-3002", currency: "JPY", amount: 480000, item: "Character design", client: "Mori Design Office", issueOffset: -11, dueOffset: 19, outcome: { kind: "open" }, why: "week 3 -> early-pay candidate" },

@@ -71,10 +71,17 @@ export async function loadLiveInputs(asOf = new Date().toISOString().slice(0, 10
 // never match these patterns.
 function retired(raw: PPInvoice[]): (x: PPInvoice) => boolean {
   const newest = Math.max(0, ...raw.map((x) => parseSeedNumber(x.detail.invoice_number)?.gen ?? 0));
+  // Invoices the new-invoice assistant made before the latest demo reset belong to an older story too.
+  const resetAt = raw
+    .filter((x) => parseSeedNumber(x.detail.invoice_number)?.gen === newest)
+    .map((x) => x.detail.metadata?.create_time ?? "")
+    .filter(Boolean)
+    .sort()[0];
   return (x) => {
     const n = x.detail.invoice_number ?? "";
     const seed = parseSeedNumber(n);
-    return (seed !== null && seed.gen < newest) || n.startsWith("CHK-") || /^fxa-agent:\s+archived\b/m.test(x.detail.memo ?? "");
+    const oldAssistant = /^FXA-N\d{6}-/.test(n) && !!resetAt && (x.detail.metadata?.create_time ?? "") < resetAt;
+    return (seed !== null && seed.gen < newest) || oldAssistant || n.startsWith("CHK-") || n.startsWith("PROBE-") || /^fxa-agent:\s+archived\b/m.test(x.detail.memo ?? "");
   };
 }
 

@@ -19,7 +19,7 @@ export async function seedGeneration(
 ) {
   const existing = new Map((await pp.listInvoices()).map((i) => [i.detail.invoice_number, i]));
   let created = 0;
-  for (const s of SEED_INVOICES) {
+  await inBatches(SEED_INVOICES, async (s) => {
     const number = seedNumber(s.number, gen);
     const line = `${number} ${s.currency} ${s.amount} due ${addDays(o.seedDay, s.dueOffset)} (${s.outcome.kind}) — ${s.why}`;
     // A leftover draft means an earlier run failed half-way: remove it and start that invoice again.
@@ -30,11 +30,11 @@ export async function seedGeneration(
     }
     if (existing.has(number)) {
       o.log(`skip   ${line} [exists: ${existing.get(number)!.status}]`);
-      continue;
+      return;
     }
     if (!o.apply) {
       o.log(`would  ${line}`);
-      continue;
+      return;
     }
     try {
       const draft = await pp.createDraftInvoice(draftBody(s, o.seedDay, o.recipient, gen));
@@ -53,8 +53,16 @@ export async function seedGeneration(
     } catch (e) {
       o.log(`FAIL   ${line} -> ${e instanceof PayPalError ? e.message : String(e)}`);
     }
-  }
+  });
   return created;
+}
+
+// Invoices the new-invoice assistant created (src/lib/invoice-plan.ts invoiceNumber) are demo invoices too.
+const isAssistantInvoice = (n: string | undefined) => /^FXA-N\d{6}-/.test(n ?? "");
+
+// Four PayPal calls in flight at a time: a reset takes seconds instead of a minute, within sandbox rate limits.
+async function inBatches<T>(items: T[], f: (x: T) => Promise<void>, size = 4) {
+  for (let i = 0; i < items.length; i += size) await Promise.all(items.slice(i, i + size).map(f));
 }
 
 // Takes every open seed invoice off the book so a fresh generation can replace it.
@@ -62,12 +70,14 @@ export async function seedGeneration(
 // rest is recorded as paid. Returns how many were closed.
 export async function closeSeedInvoices(pp: PayPalClient, o: { apply: boolean; log: Log; today: string }) {
   let closed = 0;
-  for (const i of await pp.listInvoices()) {
-    if (!parseSeedNumber(i.detail.invoice_number) || CLOSED.has(i.status)) continue;
+  const open = (await pp.listInvoices()).filter(
+    (i) => (parseSeedNumber(i.detail.invoice_number) || isAssistantInvoice(i.detail.invoice_number)) && !CLOSED.has(i.status),
+  );
+  await inBatches(open, async (i) => {
     const what = `${i.detail.invoice_number} ${i.status}`;
     if (!o.apply) {
       o.log(`would close ${what}`);
-      continue;
+      return;
     }
     try {
       if (i.status === "DRAFT") await pp.deleteDraft(i.id);
@@ -79,6 +89,17 @@ export async function closeSeedInvoices(pp: PayPalClient, o: { apply: boolean; l
     } catch (e) {
       o.log(`FAIL close ${what} -> ${e instanceof PayPalError ? e.message : String(e)}`);
     }
-  }
+  });
   return closed;
 }
+
+// Puts the demo book back to its starting shape: closes the open demo invoices, seeds a new generation dated
+// today. Used by the "Reset demo" button and the nightly cron, so every visitor can run the whole loop.
+export async function resetDemoBook(pp: PayPalClient, o: { today: string; recipient: string; log: Log }) {
+  const gen = currentGeneration(await pp.listInvoices()) + 1;
+  const closed = await closeSeedInvoices(pp, { apply: true, log: o.log, today: o.today });
+  const created = await seedGeneration(pp, gen, { seedDay: o.today, recipient: o.recipient, apply: true, log: o.log });
+  return { gen, closed, created };
+}
+
+export const SEED_RECIPIENT = process.env.SEED_RECIPIENT_EMAIL ?? "sb-lhwuh53492948@personal.example.com";

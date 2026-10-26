@@ -109,8 +109,8 @@ describe("rules fallback", () => {
   it("proposes every eligible action with fixed wording, reminders first", () => {
     const r = rulesRun(inputFor("KRW"), "test");
     expect(r.source).toBe("rules");
-    expect(r.proposals.filter((p) => p.kind === "reminder")).toHaveLength(4);
-    expect(r.proposals.filter((p) => p.kind === "early_pay_discount")).toHaveLength(6);
+    expect(r.proposals.filter((p) => p.kind === "reminder")).toHaveLength(5);
+    expect(r.proposals.filter((p) => p.kind === "early_pay_discount")).toHaveLength(8);
     expect(r.proposals[0].kind).toBe("reminder");
     expect(r.notProposed.map((n) => n.invoiceNumber).sort()).toEqual(["FXA-1002", "FXA-1007", "FXA-2003", "FXA-3003"]);
   });

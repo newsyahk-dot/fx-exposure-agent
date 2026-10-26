@@ -50,7 +50,7 @@ describe("toInvoice", () => {
 
 describe("seed book", () => {
   const day = "2026-10-23";
-  const RATES = { USD: 1400, EUR: 1600, JPY: 9 };
+  const RATES = { USD: 1400, EUR: 1600, GBP: 1850, JPY: 9 };
   // What the sandbox holds right after seeding.
   const book: Invoice[] = SEED_INVOICES.map((s) => ({
     id: s.number,
@@ -62,10 +62,10 @@ describe("seed book", () => {
     invoiceDate: addDays(day, s.issueOffset),
   }));
 
-  it("has 15-20 invoices in USD, EUR and JPY with paid and overdue ones", () => {
-    expect(SEED_INVOICES.length).toBeGreaterThanOrEqual(15);
-    expect(SEED_INVOICES.length).toBeLessThanOrEqual(20);
-    expect(new Set(SEED_INVOICES.map((s) => s.currency))).toEqual(new Set(["USD", "EUR", "JPY"]));
+  it("has 20-24 invoices in USD, EUR, GBP and JPY with paid and overdue ones", () => {
+    expect(SEED_INVOICES.length).toBeGreaterThanOrEqual(20);
+    expect(SEED_INVOICES.length).toBeLessThanOrEqual(24);
+    expect(new Set(SEED_INVOICES.map((s) => s.currency))).toEqual(new Set(["USD", "EUR", "GBP", "JPY"]));
     expect(SEED_INVOICES.filter((s) => s.outcome.kind === "paid").length).toBeGreaterThan(0);
     expect(new Set(SEED_INVOICES.map((s) => s.number)).size).toBe(SEED_INVOICES.length);
     for (const s of SEED_INVOICES) expect(s.issueOffset).toBeLessThan(s.dueOffset);
@@ -73,11 +73,11 @@ describe("seed book", () => {
 
   it("gives the agent both kinds of action in every foreign currency (KRW home)", () => {
     const ecb = syntheticEcb();
-    const ccys = ["USD", "EUR", "JPY", "KRW"];
+    const ccys = ["USD", "EUR", "GBP", "JPY", "KRW"];
     const rates = ratesFor(ecb, "KRW", ccys);
     const vols = volsFor(ecb, "KRW", ccys, addDays(DAY, -120), DAY);
     const input = buildAgentInput(SEED_BOOK, rates, vols, computeExposure(SEED_BOOK, rates, DAY), "KRW", DAY, new Date(DAY + "T09:00:00Z"));
-    for (const ccy of ["USD", "EUR", "JPY"]) {
+    for (const ccy of ["USD", "EUR", "GBP", "JPY"]) {
       expect(input.candidates.some((x) => x.eligible.includes("reminder") && x.currency === ccy)).toBe(true);
       expect(input.candidates.some((x) => x.eligible.includes("early_pay_discount") && x.currency === ccy)).toBe(true);
     }
