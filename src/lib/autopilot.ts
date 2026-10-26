@@ -2,8 +2,8 @@
 // covers. Everything else stays a proposal on screen. Same agent, same checks, same execution path as a
 // manual approval; each action is logged in the invoice memo with an "auto" mark.
 
-import { runAgent, type AgentRun } from "./agent";
-import { cachedAgentRun } from "./agent-cache";
+import type { AgentRun } from "./agent";
+import { planFor } from "./agent-cache";
 import { loadLiveInputs } from "./book";
 import { executeAction } from "./execute";
 import { PayPalClient } from "./paypal";
@@ -20,9 +20,9 @@ export type AutopilotResult = {
   agent?: AgentRun["source"];
 };
 
-// The plan comes from the same shared cache as the page: the same book, home currency and notes give the
-// same plan the seller saw, at no extra model cost. Eligibility is re-checked per action in executeAction.
-export async function runAutopilot(now = new Date(), planner: typeof runAgent = cachedAgentRun): Promise<AutopilotResult> {
+// The plan is the day's plan the seller sees (src/lib/agent-cache.ts), at no extra model cost. Each action is
+// re-checked against the current book in executeAction, so a stale proposal cannot run.
+export async function runAutopilot(now = new Date()): Promise<AutopilotResult> {
   const at = now.toISOString();
   const inputs = await loadLiveInputs();
   const policy: Policy | undefined = inputs.policy;
@@ -30,7 +30,7 @@ export async function runAutopilot(now = new Date(), planner: typeof runAgent = 
   if (!policy.approvedAt) return { ran: false, reason: "the policy has not been approved", at, executed: [], left: [] };
 
   const view = viewFor(inputs, pickBase(policy.base), now);
-  const run = await planner(view.agentInput);
+  const run = await planFor(inputs, view.base);
   const pp = new PayPalClient();
   const executed: AutopilotResult["executed"] = [];
   const left: AutopilotResult["left"] = [];

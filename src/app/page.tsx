@@ -1,27 +1,26 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { rulesRun, type AgentProposal, type AgentRun } from "@/lib/agent";
-import { cachedAgentRun } from "@/lib/agent-cache";
+import { rulesRun, type AgentInput, type AgentRun } from "@/lib/agent";
+import { planFor } from "@/lib/agent-cache";
+import { writesAllowed } from "@/lib/access";
 import { RATE_SOURCE, type BookInputs } from "@/lib/book";
 import { loadInputs } from "@/lib/book-cache";
+import { ASSUME, bandsByWait, LOOKBACK_DAYS, replayBook, timelines } from "@/lib/evidence";
 import { OPEN_STATUSES } from "@/lib/exposure";
-import { BASES } from "@/lib/fx";
+import { BASES, type EcbQuotes } from "@/lib/fx";
 import { cell, compact, full, money } from "@/lib/format";
+import { clientViewUrl } from "@/lib/paypal";
+import { DEFAULT_POLICY } from "@/lib/policy";
+import { paidToday, startOfDayValue } from "@/lib/today";
 import { BUCKETS, type Bucket, type Invoice } from "@/lib/types";
 import { pickBase, SHOCK_PCT, TIMING_DAYS, VOL_LOOKBACK_DAYS, viewFor, type BookView } from "@/lib/view";
-import { clientViewUrl } from "@/lib/paypal";
-import { ASSUME, bandsByWait, LOOKBACK_DAYS, replayBook, timelines } from "@/lib/evidence";
-import type { EcbQuotes } from "@/lib/fx";
-import type { AgentInput } from "@/lib/agent";
-import { ApproveForm } from "./approve-button";
-import { WaitChart } from "./wait-chart";
-import { InvoiceAssistant } from "./invoice-assistant";
-import { UnlockForm } from "./unlock-form";
-import { writesAllowed } from "@/lib/access";
 import { AutopilotPanel } from "./autopilot-panel";
-import { DEFAULT_POLICY } from "@/lib/policy";
 import { SimulatePayment } from "./client-pay";
+import { InvoiceAssistant } from "./invoice-assistant";
+import { TodayPlan } from "./today";
+import { UnlockForm } from "./unlock-form";
+import { WaitChart } from "./wait-chart";
 import styles from "./page.module.css";
 
 const BUCKET_LABEL: Record<Bucket, string> = {
@@ -41,8 +40,7 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
       <header className={styles.header}>
         <h1>FX Exposure Agent</h1>
         <p className={styles.lede}>
-          How much of the money your clients still owe you is riding on exchange rates — and an AI agent that proposes
-          PayPal actions to shorten it, for you to approve.
+          Know what exchange rates can take from your unpaid PayPal invoices — and shrink it in one click.
         </p>
       </header>
       <Suspense fallback={<p className={styles.muted}>Loading your PayPal invoices…</p>}>
@@ -51,6 +49,18 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
     </main>
   );
 }
+
+type Step = "today" | "exposure" | "evidence" | "invoice" | "autopilot";
+// The order is the story: what to do today (the loop), where the risk sits, why waiting is the risk, then
+// prevention (the next invoice) and delegation (autopilot).
+const STEPS: { id: Step; label: string; next: string }[] = [
+  { id: "today", label: "Today", next: "See where the risk sits" },
+  { id: "exposure", label: "Where it sits", next: "See what waiting has done before" },
+  { id: "evidence", label: "Evidence", next: "Plan the next invoice" },
+  { id: "invoice", label: "Next invoice", next: "Hand routine work to the autopilot" },
+  { id: "autopilot", label: "Autopilot", next: "" },
+];
+const pickStep = (s: string | string[] | undefined): Step => STEPS.find((x) => x.id === s)?.id ?? "today";
 
 async function Book({ searchParams }: { searchParams: SearchParams }) {
   await connection();
@@ -66,12 +76,10 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
       </p>
     );
   }
-  const now = new Date();
-  const view = viewFor(inputs, base, now);
+  const view = viewFor(inputs, base, new Date());
   const { exposure: e, rates } = view;
   const c = (n: number) => compact(base, n);
   const open = inputs.invoices.filter((i) => OPEN_STATUSES.has(i.status) && i.amountDue > 0);
-  const paidToday = inputs.invoices.filter((i) => !OPEN_STATUSES.has(i.status) && i.payments?.some((p) => p.date === inputs.asOf));
   const overdue = e.rows.reduce((s, r) => s + r.buckets.overdue * rates[r.currency], 0);
   const skipped = [...inputs.skipped, ...e.skipped];
   const demo = inputs.source === "demo";
@@ -81,11 +89,19 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   const step = pickStep(sp.step);
   const href = (st: Step, b: string = base) => `/?base=${b}&step=${st}`;
 
-  // Actions on invoices still open; ones on invoices since paid or cancelled are counted, not listed.
+  // The day's plan (one per home currency); the demo shows the saved one.
+  const plan = (): Promise<AgentRun> =>
+    demo ? Promise.resolve(inputs.agentRuns?.[base] ?? rulesRun(view.agentInput, "demo snapshot")) : planFor(inputs, base);
+
+  // Before/after for today: payments that arrived today no longer count as exposure.
+  const paid = paidToday(inputs.invoices, rates, base, inputs.asOf);
+  const startValue = startOfDayValue(e.totalValue, paid, base);
+  const startShock = (startValue * SHOCK_PCT) / 100;
+  const dropped = startShock - e.totalShock;
+
   const allDone = inputs.invoices.flatMap((i) => (i.agentLog ?? []).filter((a) => a.kind !== "archived").map((a) => ({ ...a, inv: i })));
   const done = allDone.filter((d) => OPEN_STATUSES.has(d.inv.status)).sort((a, b) => b.at.localeCompare(a.at));
-  const doneClosed = allDone.length - done.length;
-  const doneList = <DoneList done={done} closed={doneClosed} />;
+  const doneList = <DoneList done={done} closed={allDone.length - done.length} />;
 
   return (
     <>
@@ -114,15 +130,82 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
         </ol>
       </nav>
 
-      {step === "exposure" ? (
-        <>
-          <section className={styles.hero} aria-label="Headline">
-            <p className={styles.heroLabel}>
-              If exchange rates move {SHOCK_PCT}% either way, what you are owed in foreign currencies changes by about
+      {step === "today" ? (
+        <section className={styles.hero} aria-label="At risk now">
+          <p className={styles.heroLabel}>If exchange rates move {SHOCK_PCT}% either way, your unpaid foreign invoices change by about</p>
+          <p className={styles.heroValue}>{c(e.totalShock)}</p>
+          {Math.round(dropped) > 0 ? (
+            <p className={styles.heroDelta}>
+              Start of today {c(startShock)} → now {c(e.totalShock)} <strong>(−{c(dropped)})</strong>
             </p>
-            <p className={styles.heroValue}>{c(e.totalShock)}</p>
-            <p className={styles.muted}>Up or down — equally likely. This is the size of the risk, not a forecast.</p>
+          ) : null}
+          <p className={styles.muted}>
+            Up or down — equally likely. The size of the risk, not a forecast. {c(e.totalValue)} owed in{" "}
+            {e.rows.map((r) => r.currency).join(", ") || "foreign currencies"}, {c(overdue)} of it overdue.
+          </p>
+        </section>
+      ) : (
+        <aside className={styles.score} aria-label="Exposure now">
+          <span>
+            At risk at ±{SHOCK_PCT}% <strong>{c(e.totalShock)}</strong>
+            {Math.round(dropped) > 0 && <span className={styles.ok}> (−{c(dropped)} today)</span>}
+          </span>
+          <span>
+            Owed in foreign currencies <strong>{c(e.totalValue)}</strong>
+          </span>
+          <span>
+            Overdue <strong>{c(overdue)}</strong>
+          </span>
+        </aside>
+      )}
+
+      {step === "today" && (
+        <>
+          {paid.filter((p) => p.invoice.currency !== base).length > 0 && (
+            <ul className={styles.notices} aria-label="Paid today">
+              {paid
+                .filter((p) => p.invoice.currency !== base)
+                .map((p) => (
+                  <li key={p.invoice.id}>
+                    ✓ Paid today: <strong>{p.invoice.number}</strong>
+                    {p.invoice.recipientName && <> · {p.invoice.recipientName}</>} · {money(p.invoice.currency, p.amount)} —{" "}
+                    {c((p.value * SHOCK_PCT) / 100)} no longer at risk at ±{SHOCK_PCT}%
+                  </li>
+                ))}
+            </ul>
+          )}
+          {!readOnly && (
+            <p className={styles.tryIt}>
+              <strong>Try it:</strong> <span>① Approve a proposal below — it runs in PayPal</span>
+              <span>② Pay it as the client</span>
+              <span>③ Watch the number above go down</span>
+            </p>
+          )}
+          <section aria-labelledby="actions-h">
+            <h2 id="actions-h">What the agent proposes today</h2>
+            <Suspense fallback={<p className={styles.why}>The agent is planning today… (about 30 seconds, once a day)</p>}>
+              <TodayPlan
+                run={plan()}
+                base={base}
+                input={view.agentInput}
+                invoices={inputs.invoices}
+                ecb={inputs.ecb}
+                lockReason={lockReason}
+                evidenceHref={href("evidence")}
+                paidValue={Object.fromEntries(paid.map((p) => [p.invoice.id, p.value]))}
+              />
+            </Suspense>
           </section>
+          <details className={styles.sandboxPanel}>
+            <summary>Act as the client for any open invoice (sandbox)</summary>
+            <ClientTable open={open} rates={rates} lockReason={lockReason} />
+          </details>
+          {doneList}
+        </>
+      )}
+
+      {step === "exposure" && (
+        <>
           <section className={styles.tiles} aria-label="Summary">
             <Tile
               label="Owed to you in foreign currencies"
@@ -135,96 +218,15 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
           <ExposureTable view={view} skipped={skipped} archived={inputs.archived} />
           <Timing view={view} />
         </>
-      ) : (
-        <aside className={styles.score} aria-label="Exposure now">
-          <span>
-            Owed in foreign currencies <strong>{c(e.totalValue)}</strong>
-          </span>
-          <span>
-            ±{SHOCK_PCT}% move <strong>±{c(e.totalShock)}</strong>
-          </span>
-          <span>
-            Overdue <strong>{c(overdue)}</strong>
-          </span>
-        </aside>
       )}
 
       {step === "evidence" && (
-        <Evidence ecb={inputs.ecb} base={base} asOf={inputs.asOf} ccys={e.rows.map((r) => r.currency)} lead={e.rows.slice().sort((a, b) => b.value - a.value)[0]?.currency} />
-      )}
-
-      {step === "agent" && (
         <>
-          <section aria-labelledby="actions-h">
-            <h2 id="actions-h">What the agent proposes</h2>
-            <p className={styles.muted}>
-              Claude reads your invoices through tools, decides what to propose and writes each e-mail. Code checks every
-              number and word before you see it, and nothing runs in PayPal until you approve.
-            </p>
-            <Suspense fallback={<p className={styles.why}>The agent is reading your invoices… (about 30 seconds the first time)</p>}>
-              <AgentPlan
-                run={demo ? Promise.resolve(inputs.agentRuns?.[base] ?? rulesRun(view.agentInput, "demo snapshot")) : cachedAgentRun(view.agentInput)}
-                base={base}
-                lockReason={lockReason}
-                ecb={inputs.ecb}
-                input={view.agentInput}
-              />
-            </Suspense>
-          </section>
-          {doneList}
+          <Evidence ecb={inputs.ecb} base={base} asOf={inputs.asOf} ccys={e.rows.map((r) => r.currency)} lead={e.rows.slice().sort((a, b) => b.value - a.value)[0]?.currency} />
+          <Suspense fallback={null}>
+            <ReplayFor run={plan()} ecb={inputs.ecb} input={view.agentInput} />
+          </Suspense>
         </>
-      )}
-
-      {step === "pay" && (
-        <section aria-labelledby="client-h" className={styles.sandboxPanel}>
-          <h2 id="client-h">Act as the client (sandbox)</h2>
-          <p className={styles.muted}>
-            Close the loop: pay an open invoice as the client and watch the numbers above shrink. &ldquo;Open as
-            client&rdquo; is the real PayPal invoice page (log in with the sandbox buyer account); &ldquo;Simulate client
-            payment&rdquo; records the same payment without a login and is labelled as a simulation. The payment then shows
-            under &ldquo;What the wait already did&rdquo; on step 1.
-          </p>
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">Invoice</th>
-                  <th scope="col">Client</th>
-                  <th scope="col" className={styles.num}>
-                    Still owed
-                  </th>
-                  <th scope="col">Due</th>
-                  <th scope="col">Pay it</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...paidToday, ...open.slice().sort((a, b) => (rates[b.currency] ?? 0) * b.amountDue - (rates[a.currency] ?? 0) * a.amountDue)].map((i) => {
-                  const paid = !OPEN_STATUSES.has(i.status);
-                  return (
-                    <tr key={i.id} className={paid ? styles.today : undefined}>
-                      <th scope="row">{i.number}</th>
-                      <td>{i.recipientName ?? ""}</td>
-                      <td className={styles.num}>{paid ? money(i.currency, i.total ?? 0) : money(i.currency, i.amountDue)}</td>
-                      <td>{i.dueDate}</td>
-                      <td>
-                        {paid ? (
-                          "Paid today ✓"
-                        ) : (
-                          <div className={styles.inlineForm}>
-                            <a href={clientViewUrl(i.id)} target="_blank" rel="noopener noreferrer" className={styles.link}>
-                              Open as client ↗
-                            </a>
-                            <SimulatePayment invoiceId={i.id} disabledReason={lockReason} />
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
       )}
 
       {step === "invoice" && (
@@ -232,8 +234,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
           <h2 id="new-h">Before you send the next invoice</h2>
           <p className={styles.muted}>
             Describe it in a sentence. Claude reads it into fields; code prices each way of billing from this client&apos;s
-            payment history and the ECB rates; Claude compares them in plain words, checked like everything else. Nothing is
-            created until you approve one.
+            payment history and the ECB rates; Claude compares them in plain words. Nothing is created until you approve one.
           </p>
           <InvoiceAssistant base={base} clients={[...new Set(inputs.invoices.map((i) => i.recipientName).filter((n): n is string => !!n))].sort()} />
         </section>
@@ -258,27 +259,14 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
 
       <footer className={styles.footer}>
         <p>
-          Rates: {RATE_SOURCE}, {inputs.ecb.date}, crossed into {base}. 1σ swing from {VOL_LOOKBACK_DAYS} days of daily
-          moves, scaled by the square root of time.
+          Rates: {RATE_SOURCE}, {inputs.ecb.date}, crossed into {base}. Typical swing (1σ) from {VOL_LOOKBACK_DAYS} days of
+          daily moves, scaled by the square root of time.
         </p>
         <p>No exchange-rate forecasts. PayPal sandbox only — no real money moves.</p>
       </footer>
     </>
   );
 }
-
-type Step = "exposure" | "evidence" | "agent" | "pay" | "invoice" | "autopilot";
-// The order is the story: the problem, why waiting is the risk, the agent acting, the loop closing,
-// then prevention and delegation.
-const STEPS: { id: Step; label: string; next: string }[] = [
-  { id: "exposure", label: "Your exposure", next: "See what waiting has done before" },
-  { id: "evidence", label: "Evidence", next: "Let the agent shorten the wait" },
-  { id: "agent", label: "Agent plan", next: "Play the client and pay" },
-  { id: "pay", label: "Client pays", next: "Plan the next invoice" },
-  { id: "invoice", label: "Next invoice", next: "Hand routine work to the autopilot" },
-  { id: "autopilot", label: "Autopilot", next: "" },
-];
-const pickStep = (s: string | string[] | undefined): Step => STEPS.find((x) => x.id === s)?.id ?? "exposure";
 
 function StepFooter({ step, href }: { step: Step; href: (s: Step) => string }) {
   const i = STEPS.findIndex((s) => s.id === step);
@@ -302,113 +290,49 @@ function StepFooter({ step, href }: { step: Step; href: (s: Step) => string }) {
   );
 }
 
-function DoneList({ done, closed }: { done: { kind: string; at: string; auto?: true; inv: Invoice }[]; closed: number }) {
+function ClientTable({ open, rates, lockReason }: { open: Invoice[]; rates: Record<string, number>; lockReason?: string }) {
   return (
-    <section aria-labelledby="done-h">
-      <h2 id="done-h">Done by the agent</h2>
-      {done.length === 0 ? (
-        <p className={styles.muted}>Nothing yet. Approved actions show up here and stay recorded on the invoice.</p>
-      ) : (
-        <ul className={styles.doneList}>
-          {done.map((d) => (
-            <li key={`${d.inv.id}-${d.kind}-${d.at}`}>
-              <time dateTime={d.at}>{d.at.slice(0, 16).replace("T", " ")} UTC</time>
-              <span>
-                {d.kind === "reminder" ? "Reminder sent" : d.kind === "created" ? "Invoice created" : "Early-payment discount applied"}
-                {d.auto && <strong className={styles.autoTag}> · autopilot</strong>}
-              </span>
-              <span>
-                {d.inv.number} · {money(d.inv.currency, d.inv.amountDue)} still owed, due {d.inv.dueDate}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {closed > 0 && (
-        <p className={styles.muted}>
-          {closed} earlier {closed === 1 ? "action" : "actions"} on invoices since paid or cancelled not listed.
-        </p>
-      )}
-    </section>
+    <div className={styles.tableWrap}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th scope="col">Invoice</th>
+            <th scope="col">Client</th>
+            <th scope="col" className={styles.num}>
+              Still owed
+            </th>
+            <th scope="col">Due</th>
+            <th scope="col">Pay it</th>
+          </tr>
+        </thead>
+        <tbody>
+          {open
+            .slice()
+            .sort((a, b) => (rates[b.currency] ?? 0) * b.amountDue - (rates[a.currency] ?? 0) * a.amountDue)
+            .map((i) => (
+              <tr key={i.id}>
+                <th scope="row">{i.number}</th>
+                <td>{i.recipientName ?? ""}</td>
+                <td className={styles.num}>{money(i.currency, i.amountDue)}</td>
+                <td>{i.dueDate}</td>
+                <td>
+                  <div className={styles.inlineForm}>
+                    <a href={clientViewUrl(i.id)} target="_blank" rel="noopener noreferrer" className={styles.link}>
+                      Open as client ↗
+                    </a>
+                    <SimulatePayment invoiceId={i.id} disabledReason={lockReason} />
+                  </div>
+                </td>
+              </tr>
+            ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
-function ExposureTable({ view, skipped, archived }: { view: BookView; skipped: { id: string; reason: string }[]; archived: number }) {
-  const { exposure: e, rates, base } = view;
-  const c = (n: number) => compact(base, n);
-  const cellValue = e.rows.flatMap((r) => BUCKETS.map((b) => r.buckets[b] * rates[r.currency]));
-  const maxCell = Math.max(1, ...cellValue);
-  const level = (v: number) => (v > 0 ? Math.min(5, Math.ceil((v / maxCell) * 5)) : 0);
-  return (
-    <section aria-labelledby="exposure-h">
-      <h2 id="exposure-h">Where the exposure sits</h2>
-      <p className={styles.muted}>Unpaid amounts by currency and by when they fall due. Darker cells hold more money in {base} terms.</p>
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th scope="col">Currency</th>
-              {BUCKETS.map((b) => (
-                <th key={b} scope="col" className={styles.num}>
-                  {BUCKET_LABEL[b]}
-                </th>
-              ))}
-              <th scope="col" className={styles.num}>
-                In {base}
-              </th>
-              <th scope="col" className={styles.num}>
-                ±{SHOCK_PCT}%
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {e.rows.map((r) => (
-              <tr key={r.currency}>
-                <th scope="row">{r.currency}</th>
-                {BUCKETS.map((b) => {
-                  const v = r.buckets[b] * rates[r.currency];
-                  return (
-                    <td
-                      key={b}
-                      className={`${styles.num} ${styles.heat}`}
-                      data-level={level(v)}
-                      title={v ? `${money(r.currency, r.buckets[b])} ≈ ${full(base, v)}` : undefined}
-                    >
-                      {cell(r.currency, r.buckets[b])}
-                    </td>
-                  );
-                })}
-                <td className={styles.num}>{c(r.value)}</td>
-                <td className={styles.num}>±{c(r.shock)}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <th scope="row">Total</th>
-              {BUCKETS.map((b) => (
-                <td key={b} className={styles.num}>
-                  {c(e.rows.reduce((s, r) => s + r.buckets[b] * rates[r.currency], 0))}
-                </td>
-              ))}
-              <td className={styles.num}>{c(e.totalValue)}</td>
-              <td className={styles.num}>±{c(e.totalShock)}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      {(skipped.length > 0 || archived > 0) && (
-        <p className={styles.muted}>
-          {skipped.length > 0 && (
-            <span className={styles.warn}>
-              Not counted ({skipped.length}): {skipped.map((s) => `${s.id} — ${s.reason}`).join("; ")}.{" "}
-            </span>
-          )}
-          {archived > 0 && <>{archived} retired demo invoices are left out on purpose.</>}
-        </p>
-      )}
-    </section>
-  );
+async function ReplayFor({ run, ecb, input }: { run: Promise<AgentRun>; ecb: EcbQuotes; input: AgentInput }) {
+  return <Replay r={await run} ecb={ecb} input={input} />;
 }
 
 function Tile({ label, value, note }: { label: string; value: string; note: string }) {
@@ -542,121 +466,111 @@ function Replay({ r, ecb, input }: { r: AgentRun; ecb: EcbQuotes; input: AgentIn
   );
 }
 
-async function AgentPlan({ run, base, lockReason, ecb, input }: { run: Promise<AgentRun>; base: string; lockReason?: string; ecb: EcbQuotes; input: AgentInput }) {
-  const r = await run;
-  const reminders = r.proposals.filter((p) => p.kind === "reminder");
-  const offers = r.proposals.filter((p) => p.kind === "early_pay_discount");
-  const calls = r.steps.filter((s) => s.tool !== "summary").length;
+function DoneList({ done, closed }: { done: { kind: string; at: string; auto?: true; inv: Invoice }[]; closed: number }) {
   return (
-    <>
-      <div className={styles.agentStatus}>
-        {r.source === "agent" ? (
-          <p>
-            <strong>Planned by Claude</strong> ({r.model}) · {calls} tool calls ·{" "}
-            {r.rejections === 0 ? "every draft passed the checks first time" : `${r.rejections} draft${r.rejections === 1 ? "" : "s"} rejected by the checks and rewritten`}
-          </p>
-        ) : (
-          <p>
-            <strong>Rule-based proposals</strong> · the agent did not run ({r.reason}); fixed wording below
-          </p>
-        )}
-        <p>{r.summary}</p>
-        {r.steps.length > 0 && (
-          <details>
-            <summary>Agent steps</summary>
-            <ol className={styles.steps}>
-              {r.steps.map((s, i) => (
-                <li key={i} data-ok={s.ok}>
-                  <code>{s.tool}</code>
-                  {s.invoice && <> · {s.invoice}</>} — {s.ok ? s.detail : `rejected: ${s.detail}`}
-                </li>
-              ))}
-            </ol>
-          </details>
-        )}
-      </div>
-
-      <Replay r={r} ecb={ecb} input={input} />
-
-      {reminders.length > 0 && (
-        <>
-          <h3 className={styles.groupH}>Chase what is already late</h3>
-          <ul className={styles.cards}>
-            {reminders.map((p) => (
-              <ProposalCard key={p.invoiceId} p={p} base={base} lockReason={lockReason} agent={r.source === "agent"} />
-            ))}
-          </ul>
-        </>
+    <section aria-labelledby="done-h">
+      <h2 id="done-h">Done by the agent</h2>
+      {done.length === 0 ? (
+        <p className={styles.muted}>Nothing yet. Approved actions show up here and stay recorded on the invoice.</p>
+      ) : (
+        <ul className={styles.doneList}>
+          {done.map((d) => (
+            <li key={`${d.inv.id}-${d.kind}-${d.at}`}>
+              <time dateTime={d.at}>{d.at.slice(0, 16).replace("T", " ")} UTC</time>
+              <span>
+                {d.kind === "reminder" ? "Reminder sent" : d.kind === "created" ? "Invoice created" : "Early-payment discount applied"}
+                {d.auto && <strong className={styles.autoTag}> · autopilot</strong>}
+              </span>
+              <span>
+                {d.inv.number} · {money(d.inv.currency, d.inv.amountDue)} still owed, due {d.inv.dueDate}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
-      {offers.length > 0 && (
-        <>
-          <h3 className={styles.groupH}>Pull large, distant invoices closer</h3>
-          <p className={styles.note}>
-            The PayPal sandbox rejects conditional early-payment rules (HTTP 500), so the agent edits the invoice instead:
-            the discount is applied and the due date moves in. The discount stays even if the client pays late.
-          </p>
-          <ul className={styles.cards}>
-            {offers.map((p) => (
-              <ProposalCard key={p.invoiceId} p={p} base={base} lockReason={lockReason} agent={r.source === "agent"} />
-            ))}
-          </ul>
-        </>
+      {closed > 0 && (
+        <p className={styles.muted}>
+          {closed} earlier {closed === 1 ? "action" : "actions"} on invoices since paid or cancelled not listed.
+        </p>
       )}
-      {r.notProposed.length > 0 && (
-        <details className={styles.leftAlone}>
-          <summary>Left alone ({r.notProposed.length})</summary>
-          <ul>
-            {r.notProposed.map((n) => (
-              <li key={n.invoiceNumber}>
-                <strong>{n.invoiceNumber}</strong> — {n.why}{" "}
-                <span className={styles.muted}>({n.by === "agent" ? "agent's call" : "not eligible"})</span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-    </>
+    </section>
   );
 }
 
-function ProposalCard({ p, base, lockReason, agent }: { p: AgentProposal; base: string; lockReason?: string; agent: boolean }) {
+function ExposureTable({ view, skipped, archived }: { view: BookView; skipped: { id: string; reason: string }[]; archived: number }) {
+  const { exposure: e, rates, base } = view;
   const c = (n: number) => compact(base, n);
+  const cellValue = e.rows.flatMap((r) => BUCKETS.map((b) => r.buckets[b] * rates[r.currency]));
+  const maxCell = Math.max(1, ...cellValue);
+  const level = (v: number) => (v > 0 ? Math.min(5, Math.ceil((v / maxCell) * 5)) : 0);
   return (
-    <li className={styles.card}>
-      <p className={styles.cardKind}>
-        {p.kind === "reminder" ? "Send a payment reminder" : `Offer ${p.percent}% off to be paid within ${p.withinDays} days`}
-      </p>
-      <p className={styles.cardTitle}>
-        {p.invoiceNumber} · {money(p.currency, p.amount)} <span className={styles.muted}>≈ {c(p.value)}</span>
-      </p>
-      {p.kind === "reminder" ? (
-        <p>
-          {p.daysOverdue} days overdue.
-          {p.lastReminderAt && <span className={styles.muted}> Last reminder {p.lastReminderAt.slice(0, 10)}.</span>}
-        </p>
-      ) : (
-        <dl className={styles.compare}>
-          <div>
-            <dt>Cost if the client takes it</dt>
-            <dd>{c(p.cost)}</dd>
-          </div>
-          <div>
-            <dt>1σ swing until the due date ({p.daysToDue} days)</dt>
-            <dd>{p.swingNow == null ? "n/a" : `±${c(p.swingNow)}`}</dd>
-          </div>
-          <div>
-            <dt>1σ swing if paid within {p.withinDays} days</dt>
-            <dd>{p.swingIfEarly == null ? "n/a" : `±${c(p.swingIfEarly)}`}</dd>
-          </div>
-        </dl>
-      )}
-      <div className={styles.why}>
-        <p>{p.rationale}</p>
-        <p className={styles.whySource}>
-          {agent ? "Written by Claude · checked: only our numbers, no forecasts or advice" : "Standard wording"}
-        </p>
+    <section aria-labelledby="exposure-h">
+      <h2 id="exposure-h">Where the exposure sits</h2>
+      <p className={styles.muted}>Unpaid amounts by currency and by when they fall due. Darker cells hold more money in {base} terms.</p>
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th scope="col">Currency</th>
+              {BUCKETS.map((b) => (
+                <th key={b} scope="col" className={styles.num}>
+                  {BUCKET_LABEL[b]}
+                </th>
+              ))}
+              <th scope="col" className={styles.num}>
+                In {base}
+              </th>
+              <th scope="col" className={styles.num}>
+                ±{SHOCK_PCT}%
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {e.rows.map((r) => (
+              <tr key={r.currency}>
+                <th scope="row">{r.currency}</th>
+                {BUCKETS.map((b) => {
+                  const v = r.buckets[b] * rates[r.currency];
+                  return (
+                    <td
+                      key={b}
+                      className={`${styles.num} ${styles.heat}`}
+                      data-level={level(v)}
+                      title={v ? `${money(r.currency, r.buckets[b])} ≈ ${full(base, v)}` : undefined}
+                    >
+                      {cell(r.currency, r.buckets[b])}
+                    </td>
+                  );
+                })}
+                <td className={styles.num}>{c(r.value)}</td>
+                <td className={styles.num}>±{c(r.shock)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row">Total</th>
+              {BUCKETS.map((b) => (
+                <td key={b} className={styles.num}>
+                  {c(e.rows.reduce((s, r) => s + r.buckets[b] * rates[r.currency], 0))}
+                </td>
+              ))}
+              <td className={styles.num}>{c(e.totalValue)}</td>
+              <td className={styles.num}>±{c(e.totalShock)}</td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
-      <ApproveForm p={p} base={base} disabledReason={lockReason} />
-    </li>
+      {(skipped.length > 0 || archived > 0) && (
+        <p className={styles.muted}>
+          {skipped.length > 0 && (
+            <span className={styles.warn}>
+              Not counted ({skipped.length}): {skipped.map((s) => `${s.id} — ${s.reason}`).join("; ")}.{" "}
+            </span>
+          )}
+          {archived > 0 && <>{archived} retired demo invoices are left out on purpose.</>}
+        </p>
+      )}
+    </section>
   );
 }

@@ -9,6 +9,7 @@
 
 import { refresh, updateTag } from "next/cache";
 import { BOOK_TAG } from "@/lib/book-cache";
+import { PLAN_TAG } from "@/lib/agent-cache";
 import { LOCKED_MESSAGE, writesAllowed } from "@/lib/access";
 import { demoMode, loadLiveInputs } from "@/lib/book";
 import { errorText, executeAction, type ActionRequest } from "@/lib/execute";
@@ -70,4 +71,14 @@ export async function simulateClientPayment(_prev: ApproveState, form: FormData)
   } catch (e) {
     return { ok: false, message: `PayPal refused: ${errorText(e)}` };
   }
+}
+
+// Drops the day's plan so the next view asks the agent again with the current invoices (~20–30 s, one model run
+// per home currency viewed). Needs the access code like every other action that spends model calls.
+export async function replan(): Promise<ApproveState> {
+  if (demoMode()) return { ok: false, message: "This is a read-only demo snapshot." };
+  if (!(await writesAllowed())) return { ok: false, message: LOCKED_MESSAGE };
+  updateTag(PLAN_TAG);
+  refresh();
+  return { ok: true, message: "Re-planning." };
 }
