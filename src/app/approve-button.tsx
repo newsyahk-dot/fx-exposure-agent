@@ -48,7 +48,15 @@ export function ApproveForm({ p, base, disabledReason, openDraft = false }: { p:
               ? "Approve: send reminder"
               : `Approve: ${p.percent}% off, due ${shortDate(p.newDueDate)}`}
         </button>
-        {disabledReason && !state && <span className={styles.muted}>{disabledReason}</span>}
+        {disabledReason && !state && (
+          <span className={styles.muted}>
+            {disabledReason}
+            {/access code/.test(disabledReason) &&
+              (p.kind === "reminder"
+                ? " — approving sends this e-mail to the client through PayPal"
+                : ` — approving takes ${p.percent}% off this invoice in PayPal and moves its due date to ${shortDate(p.newDueDate)}`)}
+          </span>
+        )}
         {state && (
           <span role="status" className={state.ok ? styles.ok : styles.error}>
             {state.message}

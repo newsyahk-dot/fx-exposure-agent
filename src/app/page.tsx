@@ -71,6 +71,8 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
 type Step = "today" | "exposure" | "evidence" | "invoice" | "autopilot";
 // The order is the story: what to do today (the loop), where the risk sits, why waiting is the risk, then
 // prevention (the next invoice) and delegation (autopilot).
+const PERSONA_HOME = "USD"; // the demo book's seller is US-based
+
 const STEPS: { id: Step; label: string; next: string }[] = [
   { id: "today", label: "Today", next: "See where the risk sits" },
   { id: "exposure", label: "Where it sits", next: "See what waiting has done before" },
@@ -100,6 +102,8 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   const open = inputs.invoices.filter((i) => OPEN_STATUSES.has(i.status) && i.amountDue > 0);
   const overdue = e.rows.reduce((s, r) => s + r.buckets.overdue * rates[r.currency], 0);
   const overdueCount = open.filter((i) => i.currency !== base && (rates[i.currency] ?? 0) > 0 && i.dueDate < inputs.asOf).length;
+  // The demo persona lives in the US; another home currency shows the same book as if that were home.
+  const away = base === PERSONA_HOME ? "from clients abroad" : `in currencies other than ${base}`;
   const skipped = [...inputs.skipped, ...e.skipped];
   const demo = inputs.source === "demo";
   const locked = !demo && !(await writesAllowed());
@@ -130,7 +134,11 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
           </span>
           <span>
             <strong>Maya</strong>, freelance designer in the US
-            <span className={styles.muted}> · clients in Europe, the UK and Japan · demo book</span>
+            <span className={styles.muted}>
+              {" "}
+              · clients in Europe, the UK and Japan · demo book
+              {base !== PERSONA_HOME && <> · shown in {base}, so her US-dollar invoices count as foreign here</>}
+            </span>
           </span>
         </p>
         <span className={styles.sourceBadge} data-source={inputs.source}>
@@ -165,7 +173,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
       {step === "today" ? (
         <section className={styles.hero} aria-label="Waiting to be paid">
           <p className={styles.heroLabel}>
-            Waiting to be paid from clients abroad, in {listAnd(e.rows.map((r) => r.currency)) || "foreign currencies"}
+            Waiting to be paid {away}, in {listAnd(e.rows.map((r) => r.currency)) || "foreign currencies"}
           </p>
           <HeroValue value={e.totalValue} base={base} collected={day.paid} />
           <div className={styles.heroChips}>
@@ -190,7 +198,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
       ) : (
         <aside className={styles.score} aria-label="Waiting to be paid">
           <span>
-            Waiting from clients abroad <strong>{c(e.totalValue)}</strong>
+            Waiting {away} <strong>{c(e.totalValue)}</strong>
             {Math.round(day.paid) > 0 && <span className={styles.ok}> (+{c(day.paid)} collected today)</span>}
           </span>
           <span>
@@ -213,7 +221,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
                   <li key={p.invoice.id}>
                     ✓ Paid today: <strong>{p.invoice.number}</strong>
                     {p.invoice.recipientName && <> · {p.invoice.recipientName}</>} · {money(p.invoice.currency, p.amount)} —{" "}
-                    {c((p.value * SHOCK_PCT) / 100)} no longer at risk at ±{SHOCK_PCT}%
+                    {c(p.value)} collected
                   </li>
                 ))}
             </ul>
@@ -223,6 +231,14 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
               <strong>Try it:</strong> <span>① Approve a proposal below — it runs in PayPal</span>
               <span>② Pay it as the client</span>
               <span>③ Watch &ldquo;collected&rdquo; appear above</span>
+            </p>
+          )}
+          {locked && (
+            <p className={styles.tryIt}>
+              <strong>How the loop works:</strong> <span>① Approve a card — its e-mail or offer goes out through PayPal</span>
+              <span>② The client pays on PayPal&apos;s invoice page</span>
+              <span>③ PayPal tells this app and &ldquo;+… collected&rdquo; appears here (under 20 s when measured)</span>
+              <span className={styles.muted}>Enter the access code above to try it.</span>
             </p>
           )}
           <section aria-labelledby="actions-h">
@@ -302,8 +318,8 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
           <section aria-labelledby="grid-h">
             <h2 id="grid-h">Every open invoice, by what it puts at risk</h2>
             <p className={styles.muted}>
-              Sort or filter any column, search, and download the list. &ldquo;Agent today&rdquo; shows what the agent proposed
-              or did for each invoice.
+              Sort any column, search, and download the list. &ldquo;Agent today&rdquo; shows what the agent proposed or did for
+              each invoice; an invoice number opens it in PayPal as the client sees it.
             </p>
             <Suspense key={base} fallback={<p className={`${styles.muted} ${styles.slowNote}`}>Loading the invoice list…</p>}>
               <GridSection run={plan()} invoices={inputs.invoices} view={view} asOf={inputs.asOf} />
