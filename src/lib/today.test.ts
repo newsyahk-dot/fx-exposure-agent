@@ -28,4 +28,8 @@ describe("today", () => {
     const open: Invoice = { ...inv("n", "JPY", []), status: "SENT", amountDue: 100000, invoiceDate: "2026-10-25", createdAt: "2026-10-26T01:30:00Z" };
     expect(dayChange([open], [], { JPY: 0.0066 }, "USD", "2026-10-26").added).toBeCloseTo(660, 9);
   });
+  it("does not count the re-created demo book as issued today", () => {
+    const seed: Invoice = { ...inv("s", "JPY", []), number: "FXA-3005-r10", status: "SENT", amountDue: 100000, invoiceDate: "2026-10-25", createdAt: "2026-10-26T00:07:00Z" };
+    expect(dayChange([seed], [], { JPY: 0.0066 }, "USD", "2026-10-26").added).toBe(0);
+  });
 });
