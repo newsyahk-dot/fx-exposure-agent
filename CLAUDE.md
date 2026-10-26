@@ -62,5 +62,10 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   button; the reset turns the autopilot off.
 - **Writing for judges**: README, Devpost and the video start with the seller and what she gets; how it works and
   reliability numbers come after. No "engine/platform" words up front.
+- **Navigation speed** (2026-10-26): every step and currency is a server render, so each click shows feedback at once
+  (`nav-link.tsx`: clicked pill pulses, top bar, page dims). The book cache refreshes in the background after 60 s and
+  expires only after a day idle (it used to block the first click after 10 idle minutes, 3.2 s measured). Plan-dependent
+  Suspense boundaries are keyed by currency and `partialPrefetching` is off, so an unplanned currency switches at once and
+  streams its plan. The demo reset plans every currency in the background (`after()`).
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.

@@ -901,3 +901,91 @@
   color: var(--accent);
   font-weight: 600;
 }
+
+/* Click feedback while a step or currency is loading (see nav-link.tsx). */
+.pendingMark {
+  display: none;
+}
+
+.basePill:has(> .pendingMark[data-pending]),
+.steps6 a:has(> .pendingMark[data-pending]) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+  animation: navPulse 0.9s ease-in-out infinite;
+}
+
+.stepBody {
+  display: flex;
+  flex-direction: column;
+  gap: 28px; /* same rhythm as .page, which it sits inside */
+  min-width: 0;
+  transition: opacity 0.15s ease;
+}
+
+.page:has(.pendingMark[data-pending]) .stepBody {
+  opacity: 0.5;
+  transition-delay: 0.08s;
+}
+
+.page:has(.pendingMark[data-pending])::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--accent);
+  transform-origin: left;
+  animation: navBar 1.2s ease-out forwards;
+  z-index: 10;
+}
+
+@keyframes navPulse {
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+}
+
+@keyframes navBar {
+  from {
+    transform: scaleX(0.05);
+  }
+  to {
+    transform: scaleX(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .basePill:has(> .pendingMark[data-pending]),
+  .steps6 a:has(> .pendingMark[data-pending]),
+  .page:has(.pendingMark[data-pending])::before {
+    animation: none;
+  }
+}
+
+/* Placeholder while a plan streams in (PlanPlaceholder in page.tsx). */
+.planPlaceholder {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeletonCard {
+  min-height: 180px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  opacity: 0.6;
+}
+
+/* Waiting notes appear only when the wait is long enough to matter. */
+.slowNote {
+  animation: slowNote 0.3s ease 1s both;
+}
+
+@keyframes slowNote {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
