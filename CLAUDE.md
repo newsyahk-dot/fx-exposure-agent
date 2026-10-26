@@ -35,6 +35,10 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   (`src/lib/plan-state.ts`: open / sent / paid / changed), so approvals and payments never wait for a new plan.
   "Re-plan" (access code) expires the plan tag. The demo snapshot stores one run per home currency. No key or an
   error → rule-based fallback.
+- **Ask the agent** (Today, `?ask=`, `src/app/ask-agent.tsx`, `askFor` in `src/lib/agent-cache.ts`): the seller's sentence goes to
+  the same agent as a `<seller_request>` (data, like notes — it cannot change rules, eligibility or numbers); the answer
+  and cards render like the plan and use the same approve path. Needs the access code; cached per request for hours.
+  The final summary goes through the checked `submit_summary` tool, so a refusal is rewritten instead of withheld.
 - **Home currency** is chosen on screen (`?base=`), default `FXA_DEFAULT_BASE` or USD. Raw ECB quotes are stored, so any
   of USD/EUR/GBP/JPY/KRW works in live and demo mode.
 - **What the agent puts in front of the seller** follows a stated rule of thumb: an offer is proposed only if its

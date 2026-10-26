@@ -167,7 +167,7 @@ export async function TodayPlan({
   );
 }
 
-function ProposalCard({
+export function ProposalCard({
   p,
   s,
   client,

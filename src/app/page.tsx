@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { rulesRun, type AgentInput, type AgentRun } from "@/lib/agent";
-import { planFor } from "@/lib/agent-cache";
+import { REQUEST_MAX, rulesRun, type AgentInput, type AgentRun } from "@/lib/agent";
+import { askFor, planFor } from "@/lib/agent-cache";
 import { writesAllowed } from "@/lib/access";
 import { RATE_SOURCE, type BookInputs } from "@/lib/book";
 import { loadInputs } from "@/lib/book-cache";
@@ -25,6 +25,8 @@ import { WaitChart } from "./wait-chart";
 import { HeroValue } from "./hero-value";
 import { Logo } from "./logo";
 import { InvoiceGrid } from "./invoice-grid";
+import { AskAgent } from "./ask-agent";
+import { AskResult } from "./ask-result";
 import { NavLink } from "./nav-link";
 import { PreloadGrid } from "./preload-grid";
 import { invoiceRows } from "@/lib/invoice-rows";
@@ -100,6 +102,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   const readOnly = demo || locked;
   const lockReason = demo ? "Read-only demo snapshot" : locked ? "Needs the access code" : undefined;
   const step = pickStep(sp.step);
+  const ask = (typeof sp.ask === "string" ? sp.ask : "").trim().slice(0, REQUEST_MAX);
   const href = (st: Step, b: string = base) => `/?base=${b}&step=${st}`;
 
   // The day's plan (one per home currency); the demo shows the saved one.
@@ -235,6 +238,32 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
                 sharedDemo={demo ? undefined : { startedAt: inputs.startedAt }}
               />
             </Suspense>
+          </section>
+          <section aria-labelledby="ask-h" id="ask">
+            <h2 id="ask-h">Ask the agent</h2>
+            <p className={styles.muted}>
+              Tell it what you want in your own words. It works with the same tools and the same checks, and anything it
+              proposes still waits for your click.
+            </p>
+            <AskAgent current={ask} maxLength={REQUEST_MAX} />
+            {ask &&
+              (demo ? (
+                <p className={styles.muted}>The read-only demo snapshot cannot ask the agent; the live demo can.</p>
+              ) : locked ? (
+                <p className={styles.warn}>Enter the access code at the top of the page to ask the agent (it calls the model).</p>
+              ) : (
+                <Suspense key={`${base}|${ask}`} fallback={<p className={`${styles.why} ${styles.slowNote}`}>The agent is working on your request… (about 20–30 seconds)</p>}>
+                  <AskResult
+                    run={askFor(inputs, base, ask)}
+                    request={ask}
+                    base={base}
+                    input={view.agentInput}
+                    invoices={inputs.invoices}
+                    lockReason={lockReason}
+                    paidValue={Object.fromEntries(paid.map((p) => [p.invoice.id, p.value]))}
+                  />
+                </Suspense>
+              ))}
           </section>
           <details className={styles.sandboxPanel}>
             <summary>Sandbox controls: pay any open invoice as the client, or start the demo over</summary>
