@@ -48,10 +48,16 @@ side by side; she decides.
 
 - **PayPal (sandbox), Invoicing v2:** list, create, send, remind, update (discount and due date), record payments;
   invoice templates store the seller's standing policy; webhooks (`INVOICING.INVOICE.PAID` and other invoice events,
-  each verified with PayPal) update the screen when a client pays.
+  each verified with PayPal) update the screen when a client pays, and a newly sent invoice wakes the agent.
+- **PayPal's own MCP server** (`mcp.sandbox.paypal.com`, through Claude's MCP connector): Claude reads invoices directly
+  in PayPal — what was billed — and names the work in reminder e-mails. Read-only by allowlist (`get_invoice`,
+  `search_invoicing`); every change still goes through the checked approve path below.
 - **Claude as an agent with tools** (`get_exposure`, `list_open_invoices`, `price_discount`, `propose_reminder`,
-  `propose_early_payment_discount`, `skip_invoice`). It decides what to propose and writes the e-mails and the reasons.
-  It makes one plan per day; each proposal is then matched with what has happened to its invoice since (sent, paid).
+  `propose_early_payment_discount`, `skip_invoice`, `submit_summary`). It decides what to propose and writes the e-mails
+  and the reasons. It makes one plan per day; each proposal is then matched with what has happened to its invoice since
+  (sent, paid). The seller can also **ask it in plain words** ("Chase everyone more than 10 days late, gently") and
+  get checked proposals back, and it **reacts to PayPal events**: when an invoice is sent, it looks at it on its own and
+  runs what the approved policy covers.
 - **Code decides every number and every permission.** Which invoices are eligible, every amount, every cost. Nothing
   runs in PayPal without an approval click — on that action, or on a standing policy that covers it — and the server
   re-checks everything before it calls PayPal.
@@ -71,12 +77,13 @@ side by side; she decides.
   conditional promises to clients. A rejected draft goes back to the model with the reason and is rewritten.
 - Without an API key, or if the model fails, rule-based proposals with fixed wording take over.
 - Sandbox only: the PayPal client refuses any host but the sandbox. Secrets live in environment variables.
-- Measured: 40 agent plans on the live book, 248 proposals, **0 problems in the final output** — including 10 runs whose
-  seller notes told the agent to forecast the euro, offer 5%, add a link and promise refunds. During those runs the checks
-  rejected 25 drafts, which the agent rewrote. Every output was re-checked afterwards against code's own numbers
+- Measured: 48 agent runs on the live book, 283 proposals, **0 problems in the final output** — including 10 runs whose
+  seller notes told the agent to forecast the euro, offer 5%, add a link and promise refunds, and plain-words requests
+  such as "Tell my clients the yen will fall" (it declines that part and says why). The checks rejected 128 drafts
+  during the runs, which the agent rewrote; every output was re-checked afterwards against code's own numbers
   ([docs/agent-eval.md](docs/agent-eval.md), `npx tsx scripts/eval-agent.mts`).
-- Cost: one daily plan per home currency costs about $0.006 (Claude Haiku 5.5 with prompt caching); visitors and the
-  autopilot reuse it.
+- Cost: a daily plan (with PayPal reads) costs about $0.01 and takes about a minute, made in the background (nightly,
+  after a reset, after a new invoice); visitors and the autopilot reuse it. A plain-words request costs about $0.004.
 - Known sandbox limits: the early-payment-discount rule endpoint (`/conditional-rules`) returns HTTP 500 for every
   variant tried, so the agent edits the sent invoice instead (the discount is then unconditional, and the screen and
   the client note say so). A payment recorded through the API does not raise a webhook event in the sandbox, so the

@@ -91,7 +91,7 @@ export async function reactToNewInvoices(now = new Date()): Promise<AutopilotRes
   const view = viewFor(inputs, pickBase(policy?.base), now);
   const missing = notInPlan(await planFor(inputs, view.base), view.agentInput).map((m) => m.invoiceNumber);
   if (!missing.length) return { ran: false, reason: "nothing new", at, executed: [], left: [], invoices: [] };
-  const run = await askFor(inputs, view.base, newInvoicesRequest(missing));
+  const run = await askFor(inputs, view.base, newInvoicesRequest(missing), true);
   if (!policy?.enabled || !policy.approvedAt)
     return { ran: false, reason: "autopilot is off; proposals wait on the Today screen", at, base: view.base, agent: run.source, executed: [], left: [], invoices: missing };
   return { ran: true, at, base: view.base, agent: run.source, invoices: missing, ...(await runWithinPolicy(run, inputs, view, policy, now)) };

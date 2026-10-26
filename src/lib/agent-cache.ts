@@ -26,18 +26,20 @@ async function dailyPlan(base: string, _asOf: string, _ecbDate: string, _notes: 
 
 // A one-off request from the seller ("Ask the agent"): the same agent and checks, focused on what was asked. Cached
 // by the request and the same day/fixing/notes key, so asking again or reloading does not call the model twice.
-async function requestPlan(base: string, _asOf: string, _ecbDate: string, _notes: string, request: string): Promise<AgentRun> {
+async function requestPlan(base: string, _asOf: string, _ecbDate: string, _notes: string, request: string, readPayPal: boolean): Promise<AgentRun> {
   "use cache: remote";
   cacheTag(PLAN_TAG);
   cacheLife("hours");
   const inputs = await loadLiveInputs();
   const input = viewFor(inputs, pickBase(base), new Date()).agentInput;
-  const run = await runAgent({ ...input, request });
+  const run = await runAgent({ ...input, request, readPayPal });
   return { ...run, plannedAt: new Date().toISOString() };
 }
 
-export function askFor(inputs: BookInputs, base: string, request: string): Promise<AgentRun> {
-  return requestPlan(base, inputs.asOf, inputs.ecb.date, inputs.policy?.notes ?? "", request);
+// readPayPal: background runs (PayPal events) read invoices through PayPal's MCP server; a seller waiting on screen
+// gets the faster run without it.
+export function askFor(inputs: BookInputs, base: string, request: string, readPayPal = false): Promise<AgentRun> {
+  return requestPlan(base, inputs.asOf, inputs.ecb.date, inputs.policy?.notes ?? "", request, readPayPal);
 }
 
 export function planFor(inputs: BookInputs, base: string): Promise<AgentRun> {

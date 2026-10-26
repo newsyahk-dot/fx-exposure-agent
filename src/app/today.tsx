@@ -61,6 +61,7 @@ export async function TodayPlan({
     .filter(Boolean)
     .join(" and ");
   const calls = r.steps.filter((s) => s.tool !== "summary").length;
+  const paypalReads = r.steps.filter((s) => s.tool.startsWith("paypal.") && s.ok).length;
 
   // What the proposals would have done to the range of the whole book, over two years of ECB rates.
   const { asInvoiced, withProposals } = timelines(input, r);
@@ -125,6 +126,13 @@ export async function TodayPlan({
               invoices were eligible and computed every number; every text it wrote was checked before it reached this
               screen
               {r.rejections > 0 ? ` (${r.rejections} draft${r.rejections === 1 ? "" : "s"} were rejected and rewritten)` : ""}.
+              {paypalReads > 0 && (
+                <>
+                  {" "}
+                  It read {paypalReads} invoice{paypalReads === 1 ? "" : "s"} directly in PayPal through PayPal&apos;s own MCP server (read-only tools:
+                  get_invoice, search_invoicing); every change to an invoice still goes through the checked approve path.
+                </>
+              )}
             </>
           ) : (
             <>The agent did not run ({r.reason}); these are rule-based proposals with fixed wording.</>

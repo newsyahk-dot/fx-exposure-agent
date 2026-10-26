@@ -495,7 +495,7 @@ async function NewSincePlan({
       ) : (
         <Suspense key={list} fallback={<p className={`${styles.why} ${styles.slowNote}`}>The agent is looking at {list}… (about 20 seconds)</p>}>
           <AskResult
-            run={askFor(inputs, base, newInvoicesRequest(missing))}
+            run={askFor(inputs, base, newInvoicesRequest(missing), true)}
             request={newInvoicesRequest(missing)}
             heading={`PayPal: ${list} sent after today's plan — the agent looked at ${missing.length === 1 ? "it" : "them"} on its own.`}
             base={base}
