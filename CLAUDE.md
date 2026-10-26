@@ -30,8 +30,11 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   number; every text the model writes must use only numbers from the facts, keep each figure under its own label
   (3% stress test vs 1σ typical swing), avoid forecasts/advice/"benefit"/"pays for itself", and (client text) links
   and conditional promises. Rejections go back to the model to rewrite. The approve action re-checks on the server.
-  Model: `FXA_AGENT_MODEL` (default claude-haiku-5-5, effort medium), one run per book state and home currency,
-  cached for days; the demo snapshot stores one run per home currency. No key or an error → rule-based fallback.
+  Model: `FXA_AGENT_MODEL` (default claude-haiku-5-5, effort medium). **One plan per day** per home currency, ECB
+  fixing and seller notes (`src/lib/agent-cache.ts`); each proposal is reconciled with its invoice at render time
+  (`src/lib/plan-state.ts`: open / sent / paid / changed), so approvals and payments never wait for a new plan.
+  "Re-plan" (access code) expires the plan tag. The demo snapshot stores one run per home currency. No key or an
+  error → rule-based fallback.
 - **Home currency** is chosen on screen (`?base=`), default `FXA_DEFAULT_BASE` or USD. Raw ECB quotes are stored, so any
   of USD/EUR/GBP/JPY/KRW works in live and demo mode.
 - **What the agent puts in front of the seller** follows a stated rule of thumb: an offer is proposed only if its
@@ -50,5 +53,13 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   day's ECB rates change (so at most about 5 per day with an unchanged book) — shared cache (`"use cache: remote"`), so visits and the autopilot reuse it; (2) for the invoice planner
   with the access code — the comparison is cached per request; (3) never from visitors without the code beyond (1). Each run logs `[agent-usage]` with tokens and cost to the host logs (`src/lib/usage.ts`; update
   `PRICES` with the model). The hard ceiling is the Anthropic Console monthly spend limit, not code.
+- **The loop and the demo**: Today screen = at risk now → proposals → approve → sent → pay as client → paid, with
+  "start of today → now". PayPal webhooks (`/api/paypal/webhook`, verified with PayPal; register with
+  `scripts/register-webhook.mts`) expire the cached book; the Today screen refreshes every 10 s. A payment recorded
+  through the API raises no webhook in the sandbox; one made on PayPal's invoice page does. The demo book (US-based
+  freelancer, clients in EUR/GBP/JPY + USD) resets nightly (`/api/warm?reset=1`) and from the "Reset the demo book"
+  button; the reset turns the autopilot off.
+- **Writing for judges**: README, Devpost and the video start with the seller and what she gets; how it works and
+  reliability numbers come after. No "engine/platform" words up front.
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.
