@@ -109,7 +109,7 @@ export async function resetDemoAction(): Promise<ApproveState> {
     });
     return r.failed.length
       ? { ok: false, message: `Reset partly failed (${r.failed.length} steps): ${r.failed[0]}` }
-      : { ok: true, message: `Demo book reset: ${r.created} fresh invoices. The agent is re-planning (about 30 s).` };
+      : { ok: true, message: `Demo book reset: ${r.created} fresh invoices. The agent is re-planning every currency in the background (about a minute).` };
   } catch (e) {
     return { ok: false, message: `Reset failed: ${errorText(e)}` };
   }
