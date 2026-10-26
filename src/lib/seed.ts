@@ -80,7 +80,8 @@ export async function closeSeedInvoices(pp: PayPalClient, o: { apply: boolean; l
       return;
     }
     try {
-      if (i.status === "DRAFT") await pp.deleteDraft(i.id);
+      // Drafts and scheduled invoices cannot be cancelled (CANNOT_CANCEL_SCHEDULED_INVOICE); they can be deleted.
+      if (i.status === "DRAFT" || i.status === "SCHEDULED") await pp.deleteDraft(i.id);
       else if (i.status === "PARTIALLY_PAID" && i.due_amount)
         await pp.recordPayment(i.id, { method: "OTHER", payment_date: o.today, amount: i.due_amount, note: "Closed by demo reset" });
       else await pp.cancelInvoice(i.id);

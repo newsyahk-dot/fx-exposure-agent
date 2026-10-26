@@ -277,6 +277,7 @@ export function toInvoice(pp: PPInvoice): { invoice: Invoice } | { skipped: { id
       payments: pp.payments?.transactions
         ?.filter((t) => t.payment_date && t.amount)
         .map((t) => ({ date: t.payment_date!, amount: Number(t.amount!.value) })),
+      createdAt: pp.detail.metadata?.create_time,
       agentLog: parseAgentLog(pp.detail.memo),
     },
   };

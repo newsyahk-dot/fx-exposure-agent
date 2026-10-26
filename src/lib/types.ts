@@ -14,6 +14,7 @@ export type Invoice = {
   recipientName?: string; // client's business or personal name, if the invoice has one
   total?: number; // invoice total, in the invoice currency
   payments?: { date: string; amount: number }[]; // recorded payments (filled for paid invoices only)
+  createdAt?: string; // when the invoice was created in PayPal (ISO, UTC)
   agentLog?: AgentLogEntry[]; // actions the agent already took on this invoice (from the memo)
 };
 
