@@ -780,3 +780,65 @@
 .nowrap {
   white-space: nowrap;
 }
+
+/* Today */
+.heroDelta {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.heroDelta strong {
+  color: var(--good);
+}
+
+.notices {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notices li {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--good);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 15px;
+}
+
+.tryIt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.replanRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 14px;
+}
+
+.cardDone {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.card[data-state="paid"],
+.card[data-state="closed"],
+.card[data-state="changed"] {
+  opacity: 0.75;
+}
+
+.sandboxPanel summary {
+  cursor: pointer;
+  font-weight: 600;
+}

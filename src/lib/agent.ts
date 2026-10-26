@@ -233,6 +233,7 @@ export type AgentRun = {
   rejections: number;
   summary: string;
   usage?: Usage & { costUsd: number | null };
+  plannedAt?: string; // when the day's plan was made (src/lib/agent-cache.ts)
 };
 
 // Fixed wording, used by the rules fallback and as the reference the checks are tested against.

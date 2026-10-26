@@ -9,8 +9,8 @@ export function UnlockForm() {
   return (
     <form action={action} className={styles.unlock}>
       <span>
-        <strong>View only.</strong> To run actions on the PayPal sandbox, enter the access code from the Devpost testing
-        instructions:
+        <strong>Judges:</strong> enter the access code from the Devpost testing instructions to run the agent&apos;s
+        actions on the PayPal sandbox. Without it you can look around; nothing runs.
       </span>
       <input name="code" type="password" autoComplete="off" aria-label="Access code" maxLength={64} />
       <button type="submit" className={styles.secondaryButton} disabled={pending}>
