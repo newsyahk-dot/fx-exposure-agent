@@ -232,6 +232,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
                   .filter((i) => i.currency !== base && (rates[i.currency] ?? 0) > 0)
                   .map((i) => ({ id: i.id, shock: pct(i.amountDue * rates[i.currency]) }))}
                 paidToday={{ shock: paidOff, count: paid.filter((p) => p.invoice.currency !== base).length }}
+                sharedDemo={demo ? undefined : { startedAt: inputs.startedAt }}
               />
             </Suspense>
           </section>

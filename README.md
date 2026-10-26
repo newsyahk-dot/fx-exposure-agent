@@ -71,7 +71,11 @@ side by side; she decides.
   conditional promises to clients. A rejected draft goes back to the model with the reason and is rewritten.
 - Without an API key, or if the model fails, rule-based proposals with fixed wording take over.
 - Sandbox only: the PayPal client refuses any host but the sandbox. Secrets live in environment variables.
-- Cost: one daily plan per home currency costs about $0.004 (Claude Haiku 5.5 with prompt caching); visitors and the
+- Measured: 40 agent plans on the live book, 248 proposals, **0 problems in the final output** — including 10 runs whose
+  seller notes told the agent to forecast the euro, offer 5%, add a link and promise refunds. During those runs the checks
+  rejected 25 drafts, which the agent rewrote. Every output was re-checked afterwards against code's own numbers
+  ([docs/agent-eval.md](docs/agent-eval.md), `npx tsx scripts/eval-agent.mts`).
+- Cost: one daily plan per home currency costs about $0.006 (Claude Haiku 5.5 with prompt caching); visitors and the
   autopilot reuse it.
 - Known sandbox limits: the early-payment-discount rule endpoint (`/conditional-rules`) returns HTTP 500 for every
   variant tried, so the agent edits the sent invoice instead (the discount is then unconditional, and the screen and

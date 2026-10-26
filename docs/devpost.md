@@ -100,7 +100,8 @@ by side; the seller decides.
   the real PayPal sandbox.
 - The AI is genuinely in charge of judgement (what to propose, how to say it) while code stays in charge of every
   number and every permission.
-- One agent plan costs about $0.004.
+- Measured over 40 agent plans (248 proposals): 0 problems in the final output, including 10 runs with seller notes that
+  told the agent to break its rules; 25 drafts were caught and rewritten. One plan costs about $0.006.
 
 ### What I learned
 
@@ -142,7 +143,7 @@ paypal, paypal-invoicing-api, paypal-webhooks, claude, anthropic, next.js, react
    seller's PayPal invoices, price discount terms and record proposals. It decides which actions to put in front of the
    seller and writes each client e-mail, each invoice note and each reason. Every number it may use comes from the
    tools; every sentence is checked by code before it is accepted, and rejected drafts are returned to it with the
-   reason. One plan per day and home currency, shared across visitors, with prompt caching (about $0.004 a plan).
+   reason. One plan per day and home currency, shared across visitors, with prompt caching (about $0.006 a plan).
 2. **Reading an invoice request.** Claude turns a sentence like "Bill Sakura Games ¥480,000, net 45" into structured
    invoice fields (structured output, validated with Zod).
 3. **Comparing billing options.** Claude writes a short, neutral comparison of the options the code priced — checked

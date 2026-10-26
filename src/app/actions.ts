@@ -11,7 +11,7 @@ import { refresh, updateTag } from "next/cache";
 import { after } from "next/server";
 import { BOOK_TAG } from "@/lib/book-cache";
 import { PLAN_TAG, planFor } from "@/lib/agent-cache";
-import { resetDemo } from "@/lib/demo-reset";
+import { lastResetAt, RESET_COOLDOWN_MIN, resetDemo, resetWait } from "@/lib/demo-reset";
 import { LOCKED_MESSAGE, writesAllowed } from "@/lib/access";
 import { demoMode, loadLiveInputs } from "@/lib/book";
 import { errorText, executeAction, type ActionRequest } from "@/lib/execute";
@@ -92,6 +92,12 @@ export async function resetDemoAction(): Promise<ApproveState> {
   if (demoMode()) return { ok: false, message: "This is a read-only demo snapshot." };
   if (!(await writesAllowed())) return { ok: false, message: LOCKED_MESSAGE };
   try {
+    const wait = resetWait(await lastResetAt());
+    if (wait > 0)
+      return {
+        ok: false,
+        message: `The demo book is shared and was started over less than ${RESET_COOLDOWN_MIN} minutes ago. Try again in ${wait} min — or keep going with it.`,
+      };
     const r = await resetDemo();
     updateTag(BOOK_TAG);
     updateTag(PLAN_TAG);

@@ -14,6 +14,7 @@ import { SHOCK_PCT } from "@/lib/view";
 import { ApproveForm } from "./approve-button";
 import { SimulatePayment } from "./client-pay";
 import { ReplanButton } from "./replan-button";
+import { ResetDemoButton } from "./reset-demo";
 import styles from "./page.module.css";
 
 export async function TodayPlan({
@@ -27,6 +28,7 @@ export async function TodayPlan({
   paidValue,
   atRisk,
   paidToday,
+  sharedDemo,
 }: {
   run: Promise<AgentRun>;
   base: string;
@@ -38,6 +40,7 @@ export async function TodayPlan({
   paidValue: Record<string, number>; // invoice id -> value paid today, home currency
   atRisk: { id: string; shock: number }[]; // open foreign invoices, ±3% figure in the home currency
   paidToday: { shock: number; count: number }; // foreign payments today, ±3% figure
+  sharedDemo?: { startedAt?: string }; // the hosted demo book, shared by every visitor
 }) {
   const r = await run;
   const c = (n: number) => compact(base, n);
@@ -51,6 +54,8 @@ export async function TodayPlan({
     else if (s.state === "open" && !states[p.invoiceId]) states[p.invoiceId] = "proposed";
   }
   const bar = todayBar(atRisk, states, paidToday);
+  const openCount = cards.filter((x) => x.s.state === "open").length;
+  const ranCount = cards.length - openCount;
   // On screen: a count made by code (always matches the cards). Claude's own summary is under the details.
   const nRem = r.proposals.filter((p) => p.kind === "reminder").length;
   const nOff = r.proposals.length - nRem;
@@ -95,6 +100,21 @@ export async function TodayPlan({
         )}
       </div>
 
+      {sharedDemo && cards.length > 0 && openCount === 0 && (
+        <div className={styles.freshStart}>
+          <p>
+            <strong>Every proposal for today has been run.</strong> This demo book is shared by everyone who opens the site, so
+            someone may have got here first. Start the story over to try the loop yourself:
+          </p>
+          <ResetDemoButton disabledReason={lockReason} />
+        </div>
+      )}
+      {sharedDemo && ranCount > 0 && openCount > 0 && (
+        <p className={styles.muted}>
+          {ranCount} of today&apos;s {cards.length} proposals already ran — this demo book is shared by every visitor
+          {sharedDemo.startedAt && <> (started {sharedDemo.startedAt.slice(11, 16)} UTC)</>}. The rest are yours to try.
+        </p>
+      )}
       {cards.length === 0 ? (
         <p className={styles.muted}>Nothing to do today: no overdue invoices to chase and no large distant ones worth an offer.</p>
       ) : (
