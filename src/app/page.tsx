@@ -23,6 +23,8 @@ import { LiveRefresh } from "./live-refresh";
 import { TodayPlan } from "./today";
 import { UnlockForm } from "./unlock-form";
 import { WaitChart } from "./wait-chart";
+import { InvoiceGrid } from "./invoice-grid";
+import { invoiceRows } from "@/lib/invoice-rows";
 import styles from "./page.module.css";
 
 const BUCKET_LABEL: Record<Bucket, string> = {
@@ -223,6 +225,16 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
             <Tile label={`Owed in ${base} (no FX risk)`} value={c(e.baseTotal)} note={`${open.filter((i) => i.currency === base).length} open invoices`} />
           </section>
           <ExposureTable view={view} skipped={skipped} archived={inputs.archived} />
+          <section aria-labelledby="grid-h">
+            <h2 id="grid-h">Every open invoice, by what it puts at risk</h2>
+            <p className={styles.muted}>
+              Sort or filter any column, search, and download the list. &ldquo;Agent today&rdquo; shows what the agent proposed
+              or did for each invoice.
+            </p>
+            <Suspense fallback={<p className={styles.muted}>Loading the invoice list…</p>}>
+              <GridSection run={plan()} invoices={inputs.invoices} view={view} asOf={inputs.asOf} />
+            </Suspense>
+          </section>
           <Timing view={view} />
         </>
       )}
@@ -336,6 +348,12 @@ function ClientTable({ open, rates, lockReason }: { open: Invoice[]; rates: Reco
       </table>
     </div>
   );
+}
+
+async function GridSection({ run, invoices, view, asOf }: { run: Promise<AgentRun>; invoices: Invoice[]; view: BookView; asOf: string }) {
+  const r = await run.catch(() => null);
+  const rows = invoiceRows(invoices, view.rates, view.vols, { base: view.base, asOf, shockPct: SHOCK_PCT, input: view.agentInput, run: r });
+  return <InvoiceGrid rows={rows} base={view.base} clientUrls={Object.fromEntries(rows.map((x) => [x.id, clientViewUrl(x.id)]))} />;
 }
 
 async function ReplayFor({ run, ecb, input }: { run: Promise<AgentRun>; ecb: EcbQuotes; input: AgentInput }) {

@@ -842,3 +842,62 @@
   cursor: pointer;
   font-weight: 600;
 }
+
+/* Invoice grid (AG Grid) */
+.gridWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.gridTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.gridTools input {
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  flex: 1 1 240px;
+  max-width: 420px;
+}
+
+.gridBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.gridBar i {
+  position: absolute;
+  left: 0;
+  top: 25%;
+  height: 50%;
+  border-radius: 3px;
+  background: var(--seq-2);
+}
+
+.gridBar span {
+  position: relative;
+  padding-left: 6px;
+}
+
+.gridLate {
+  color: var(--critical);
+  font-weight: 600;
+}
+
+.gridActive {
+  color: var(--accent);
+  font-weight: 600;
+}
