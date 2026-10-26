@@ -211,6 +211,10 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
                 lockReason={lockReason}
                 evidenceHref={href("evidence")}
                 paidValue={Object.fromEntries(paid.map((p) => [p.invoice.id, p.value]))}
+                atRisk={open
+                  .filter((i) => i.currency !== base && (rates[i.currency] ?? 0) > 0)
+                  .map((i) => ({ id: i.id, shock: pct(i.amountDue * rates[i.currency]) }))}
+                paidToday={{ shock: paidOff, count: paid.filter((p) => p.invoice.currency !== base).length }}
               />
             </Suspense>
           </section>

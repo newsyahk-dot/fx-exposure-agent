@@ -989,3 +989,75 @@
     opacity: 1;
   }
 }
+
+/* Where today's risk stands (TodayBar in today.tsx). */
+.todayBar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.barTrack {
+  display: flex;
+  height: 18px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.barTrack span {
+  transition: width 0.5s ease;
+}
+
+.barTrack span + span {
+  border-left: 2px solid var(--surface-1);
+}
+
+.barTrack [data-key="paid"],
+.barLegend [data-key="paid"] i {
+  background: repeating-linear-gradient(135deg, var(--good) 0 5px, color-mix(in srgb, var(--good) 45%, transparent) 5px 10px);
+}
+
+.barTrack [data-key="sent"],
+.barLegend [data-key="sent"] i {
+  background: var(--accent);
+}
+
+.barTrack [data-key="proposed"],
+.barLegend [data-key="proposed"] i {
+  background: color-mix(in srgb, var(--accent) 35%, var(--surface-1));
+}
+
+.barTrack [data-key="none"],
+.barLegend [data-key="none"] i {
+  background: color-mix(in srgb, var(--text-muted) 35%, var(--surface-1));
+}
+
+.barLegend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.barLegend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.barLegend i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barTrack span {
+    transition: none;
+  }
+}
