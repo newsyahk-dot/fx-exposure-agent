@@ -3,12 +3,13 @@
 // manual approval; each action is logged in the invoice memo with an "auto" mark.
 
 import type { AgentRun } from "./agent";
-import { planFor } from "./agent-cache";
-import { loadLiveInputs } from "./book";
+import { askFor, planFor } from "./agent-cache";
+import { loadLiveInputs, type BookInputs } from "./book";
 import { executeAction } from "./execute";
 import { PayPalClient } from "./paypal";
 import { outsidePolicy, type Policy } from "./policy";
-import { pickBase, viewFor } from "./view";
+import { notInPlan } from "./plan-state";
+import { pickBase, viewFor, type BookView } from "./view";
 
 export type AutopilotResult = {
   ran: boolean;
@@ -31,6 +32,12 @@ export async function runAutopilot(now = new Date()): Promise<AutopilotResult> {
 
   const view = viewFor(inputs, pickBase(policy.base), now);
   const run = await planFor(inputs, view.base);
+  return { ran: true, at, base: view.base, agent: run.source, ...(await runWithinPolicy(run, inputs, view, policy, now)) };
+}
+
+// Runs the proposals of one agent run that the approved policy covers, up to its per-run cap, through the same
+// executeAction path as a manual approval (marked "auto"). Shared by the morning run and the event reaction.
+async function runWithinPolicy(run: AgentRun, inputs: BookInputs, view: BookView, policy: Policy, now: Date) {
   const pp = new PayPalClient();
   const executed: AutopilotResult["executed"] = [];
   const left: AutopilotResult["left"] = [];
@@ -61,5 +68,31 @@ export async function runAutopilot(now = new Date()): Promise<AutopilotResult> {
     );
     executed.push({ invoiceNumber: p.invoiceNumber, kind: p.kind, ...r });
   }
-  return { ran: true, at, base: view.base, executed, left, agent: run.source };
+  return { executed, left };
+}
+
+// A request that asks the agent about invoices that arrived after the day's plan was made. The same text (and so the
+// same cached answer) is built here and on the Today screen.
+export function newInvoicesRequest(numbers: string[]): string {
+  const ns = [...numbers].sort();
+  return ns.length === 1
+    ? `New invoice ${ns[0]} was sent after today's plan. Consider only this invoice and propose what fits, or skip it with a reason.`
+    : `New invoices ${ns.join(", ")} were sent after today's plan. Consider only these invoices and propose what fits, or skip each with a reason.`;
+}
+
+// Called after PayPal tells us (webhook) that an invoice was sent. The agent looks at whatever open invoices the day's
+// plan has not seen; if the seller's approved policy covers what it proposes, that runs now, otherwise it waits on
+// the Today screen ("New since today's plan"). Idempotent: the request is cached per set of invoices, and an action
+// already taken makes the invoice ineligible for the same action.
+export async function reactToNewInvoices(now = new Date()): Promise<AutopilotResult & { invoices: string[] }> {
+  const at = now.toISOString();
+  const inputs = await loadLiveInputs();
+  const policy = inputs.policy;
+  const view = viewFor(inputs, pickBase(policy?.base), now);
+  const missing = notInPlan(await planFor(inputs, view.base), view.agentInput).map((m) => m.invoiceNumber);
+  if (!missing.length) return { ran: false, reason: "nothing new", at, executed: [], left: [], invoices: [] };
+  const run = await askFor(inputs, view.base, newInvoicesRequest(missing), true);
+  if (!policy?.enabled || !policy.approvedAt)
+    return { ran: false, reason: "autopilot is off; proposals wait on the Today screen", at, base: view.base, agent: run.source, executed: [], left: [], invoices: missing };
+  return { ran: true, at, base: view.base, agent: run.source, invoices: missing, ...(await runWithinPolicy(run, inputs, view, policy, now)) };
 }

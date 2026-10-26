@@ -69,8 +69,14 @@ by side; the seller decides.
 - **PayPal webhooks** (`INVOICING.INVOICE.PAID` and other invoice events), each verified with PayPal's
   verify-webhook-signature endpoint, tell the app when an invoice changes, so the seller's screen updates on its own.
 - **Claude (Anthropic API) as an agent with tools** — `get_exposure`, `list_open_invoices`, `price_discount`,
-  `propose_reminder`, `propose_early_payment_discount`, `skip_invoice`. It decides what to propose and writes the
-  e-mails and the reasons. Code decides which invoices are eligible and computes every number.
+  `propose_reminder`, `propose_early_payment_discount`, `skip_invoice`, `submit_summary`. It decides what to propose and
+  writes the e-mails and the reasons. Code decides which invoices are eligible and computes every number.
+- **PayPal's own MCP server**, connected through Claude's MCP connector: Claude reads each invoice directly in PayPal
+  (`get_invoice`, `search_invoicing` — an allowlist, read-only) and names the billed work in the reminder. Writes never go
+  through MCP; they take the checked, approved path.
+- **The agent works three ways**: a daily plan; plain-words requests from the seller ("Chase everyone more than 10 days
+  late, gently"); and PayPal events — a verified `INVOICING.INVOICE.SENT` webhook makes it look at the new invoice on
+  its own and run what the seller's approved policy covers.
 - **A checker on every sentence Claude writes**: only numbers that appear in the facts it was given, each figure under
   its own label, no forecasts, no advice, no links, no conditional promises to clients. A draft that fails goes back to
   Claude with the reason and is rewritten; the seller can see how many were.
@@ -100,7 +106,9 @@ by side; the seller decides.
   the real PayPal sandbox.
 - The AI is genuinely in charge of judgement (what to propose, how to say it) while code stays in charge of every
   number and every permission.
-- One agent plan costs about $0.004.
+- Measured over 48 agent runs (283 proposals): 0 problems in the final output, including 10 runs with seller notes that
+  told the agent to break its rules and a request to tell clients "the yen will fall" (declined, with a reason); 128
+  drafts were caught and rewritten. A daily plan costs about $0.01.
 
 ### What I learned
 
@@ -142,7 +150,7 @@ paypal, paypal-invoicing-api, paypal-webhooks, claude, anthropic, next.js, react
    seller's PayPal invoices, price discount terms and record proposals. It decides which actions to put in front of the
    seller and writes each client e-mail, each invoice note and each reason. Every number it may use comes from the
    tools; every sentence is checked by code before it is accepted, and rejected drafts are returned to it with the
-   reason. One plan per day and home currency, shared across visitors, with prompt caching (about $0.004 a plan).
+   reason. One plan per day and home currency, shared across visitors, with prompt caching (about $0.01 a plan).
 2. **Reading an invoice request.** Claude turns a sentence like "Bill Sakura Games ¥480,000, net 45" into structured
    invoice fields (structured output, validated with Zod).
 3. **Comparing billing options.** Claude writes a short, neutral comparison of the options the code priced — checked

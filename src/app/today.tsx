@@ -7,13 +7,13 @@ import { timelines, replayBook } from "@/lib/evidence";
 import type { EcbQuotes } from "@/lib/fx";
 import { compact, money } from "@/lib/format";
 import { clientViewUrl } from "@/lib/paypal";
-import { notInPlan, proposalState, type ProposalState } from "@/lib/plan-state";
+import { proposalState, type ProposalState } from "@/lib/plan-state";
 import type { Invoice } from "@/lib/types";
 import { todayBar, type BarKey } from "@/lib/today-bar";
 import { SHOCK_PCT } from "@/lib/view";
 import { ApproveForm } from "./approve-button";
 import { SimulatePayment } from "./client-pay";
-import { ReplanButton } from "./replan-button";
+import { ResetDemoButton } from "./reset-demo";
 import styles from "./page.module.css";
 
 export async function TodayPlan({
@@ -27,6 +27,7 @@ export async function TodayPlan({
   paidValue,
   atRisk,
   paidToday,
+  sharedDemo,
 }: {
   run: Promise<AgentRun>;
   base: string;
@@ -38,19 +39,21 @@ export async function TodayPlan({
   paidValue: Record<string, number>; // invoice id -> value paid today, home currency
   atRisk: { id: string; shock: number }[]; // open foreign invoices, ±3% figure in the home currency
   paidToday: { shock: number; count: number }; // foreign payments today, ±3% figure
+  sharedDemo?: { startedAt?: string }; // the hosted demo book, shared by every visitor
 }) {
   const r = await run;
   const c = (n: number) => compact(base, n);
   const cards = r.proposals.map((p) => ({ p, s: proposalState(p, input, invoices, r.plannedAt) }));
   // A fixed order (reminders first, then by value): a card stays where it is while it goes open → sent → paid.
   cards.sort((a, b) => (a.p.kind === b.p.kind ? b.p.value - a.p.value : a.p.kind === "reminder" ? -1 : 1));
-  const missing = notInPlan(r, input);
   const states: Record<string, "sent" | "proposed"> = {};
   for (const { p, s } of cards) {
     if (s.state === "done") states[p.invoiceId] = "sent";
     else if (s.state === "open" && !states[p.invoiceId]) states[p.invoiceId] = "proposed";
   }
   const bar = todayBar(atRisk, states, paidToday);
+  const openCount = cards.filter((x) => x.s.state === "open").length;
+  const ranCount = cards.length - openCount;
   // On screen: a count made by code (always matches the cards). Claude's own summary is under the details.
   const nRem = r.proposals.filter((p) => p.kind === "reminder").length;
   const nOff = r.proposals.length - nRem;
@@ -58,6 +61,7 @@ export async function TodayPlan({
     .filter(Boolean)
     .join(" and ");
   const calls = r.steps.filter((s) => s.tool !== "summary").length;
+  const paypalReads = r.steps.filter((s) => s.tool.startsWith("paypal.") && s.ok).length;
 
   // What the proposals would have done to the range of the whole book, over two years of ECB rates.
   const { asInvoiced, withProposals } = timelines(input, r);
@@ -85,16 +89,23 @@ export async function TodayPlan({
             </Link>
           </p>
         )}
-        {missing.length > 0 && (
-          <div className={styles.replanRow}>
-            <span>
-              {missing.length} open {missing.length === 1 ? "invoice is" : "invoices are"} not in this plan ({missing.map((m) => m.invoiceNumber).join(", ")}).
-            </span>
-            <ReplanButton disabledReason={lockReason} />
-          </div>
-        )}
       </div>
 
+      {sharedDemo && cards.length > 0 && openCount === 0 && (
+        <div className={styles.freshStart}>
+          <p>
+            <strong>Every proposal for today has been run.</strong> This demo book is shared by everyone who opens the site, so
+            someone may have got here first. Start the story over to try the loop yourself:
+          </p>
+          <ResetDemoButton disabledReason={lockReason} />
+        </div>
+      )}
+      {sharedDemo && ranCount > 0 && openCount > 0 && (
+        <p className={styles.muted}>
+          {ranCount} of today&apos;s {cards.length} proposals already ran — this demo book is shared by every visitor
+          {sharedDemo.startedAt && <> (started {sharedDemo.startedAt.slice(11, 16)} UTC)</>}. The rest are yours to try.
+        </p>
+      )}
       {cards.length === 0 ? (
         <p className={styles.muted}>Nothing to do today: no overdue invoices to chase and no large distant ones worth an offer.</p>
       ) : (
@@ -115,6 +126,13 @@ export async function TodayPlan({
               invoices were eligible and computed every number; every text it wrote was checked before it reached this
               screen
               {r.rejections > 0 ? ` (${r.rejections} draft${r.rejections === 1 ? "" : "s"} were rejected and rewritten)` : ""}.
+              {paypalReads > 0 && (
+                <>
+                  {" "}
+                  It read {paypalReads} invoice{paypalReads === 1 ? "" : "s"} directly in PayPal through PayPal&apos;s own MCP server (read-only tools:
+                  get_invoice, search_invoicing); every change to an invoice still goes through the checked approve path.
+                </>
+              )}
             </>
           ) : (
             <>The agent did not run ({r.reason}); these are rule-based proposals with fixed wording.</>
@@ -147,7 +165,7 @@ export async function TodayPlan({
   );
 }
 
-function ProposalCard({
+export function ProposalCard({
   p,
   s,
   client,

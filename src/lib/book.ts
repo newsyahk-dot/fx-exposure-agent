@@ -25,6 +25,7 @@ export type BookInputs = {
   archived: number; // retired demo invoices left out on purpose (see retired() below)
   policy?: Policy; // live only: the seller's standing policy and notes, from a PayPal invoice template
   agentRuns?: Record<string, AgentRun>; // demo snapshot only, by home currency: the demo never calls the model
+  startedAt?: string; // live demo book: when the current generation was seeded (the last reset), ISO time
 };
 
 export const RATE_SOURCE = "ECB euro foreign exchange reference rates via Frankfurter";
@@ -61,7 +62,7 @@ export async function loadLiveInputs(asOf = new Date().toISOString().slice(0, 10
     if (!("invoice" in r)) skipped.push(r.skipped);
     else invoices.push(r.invoice);
   }
-  return { source: "live", asOf, fetchedAt: new Date().toISOString(), ecb, invoices, skipped, archived, policy };
+  return { source: "live", asOf, fetchedAt: new Date().toISOString(), ecb, invoices, skipped, archived, policy, startedAt: bookStartedAt(raw) };
 }
 
 // Demo housekeeping. The sandbox account is reset by seeding a new generation of demo invoices
@@ -69,14 +70,20 @@ export async function loadLiveInputs(asOf = new Date().toISOString().slice(0, 10
 // So invoices from an older generation, capability-check leftovers (CHK-...) and invoices marked
 // "archived" in their memo are left out, and the page says how many. A real seller's invoice numbers
 // never match these patterns.
-function retired(raw: PPInvoice[]): (x: PPInvoice) => boolean {
+// When the current demo generation was seeded: the earliest creation time among its invoices.
+export function bookStartedAt(raw: PPInvoice[]): string | undefined {
   const newest = Math.max(0, ...raw.map((x) => parseSeedNumber(x.detail.invoice_number)?.gen ?? 0));
-  // Invoices the new-invoice assistant made before the latest demo reset belong to an older story too.
-  const resetAt = raw
+  return raw
     .filter((x) => parseSeedNumber(x.detail.invoice_number)?.gen === newest)
     .map((x) => x.detail.metadata?.create_time ?? "")
     .filter(Boolean)
     .sort()[0];
+}
+
+function retired(raw: PPInvoice[]): (x: PPInvoice) => boolean {
+  const newest = Math.max(0, ...raw.map((x) => parseSeedNumber(x.detail.invoice_number)?.gen ?? 0));
+  // Invoices the new-invoice assistant made before the latest demo reset belong to an older story too.
+  const resetAt = bookStartedAt(raw);
   return (x) => {
     const n = x.detail.invoice_number ?? "";
     const seed = parseSeedNumber(n);

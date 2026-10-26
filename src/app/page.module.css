@@ -1299,3 +1299,56 @@
     font-size: 14px;
   }
 }
+
+/* Shown on Today when nothing is left to approve in the shared demo book. */
+.freshStart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface-1));
+}
+
+/* Ask the agent (ask-agent.tsx, ask-result.tsx). */
+.askForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.askRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.askRow input {
+  flex: 1 1 22em;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.askResult {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.askQuote {
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.newSince {
+  border-left: 3px solid var(--good);
+  padding-left: 14px;
+}
