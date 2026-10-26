@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 import { compact, money } from "@/lib/format";
 import type { InvoiceOption, InvoiceRequest } from "@/lib/invoice-plan";
 import { PLAN_CURRENCIES, TERMS } from "@/lib/invoice-terms";
@@ -8,20 +8,44 @@ import { createPlannedInvoice, planInvoice, type CreateState, type PlanState } f
 import styles from "./page.module.css";
 
 const EXAMPLE = "Bill Sakura Games ¥480,000 for the level art pack, net 45";
+// One-click starting points, for clients already in the demo book.
+const EXAMPLES = [
+  EXAMPLE,
+  "Invoice Kleinfeld GmbH €3,200 for the brand refresh, due in 30 days",
+  "Bill Marlow Press £1,500 for the book cover, net 14",
+];
 
 export function InvoiceAssistant({ base, clients }: { base: string; clients: string[] }) {
   const [state, action, pending] = useActionState<PlanState, FormData>(planInvoice, null);
   const f = state?.fields ?? {};
   // Remount the inputs whenever the server returns new fields, so they show what it read.
   const key = JSON.stringify(f);
+  const text = useRef<HTMLTextAreaElement>(null);
   return (
     <>
       <form action={action} className={styles.assistantForm}>
         <input type="hidden" name="base" value={base} />
         <label className={styles.field}>
           Describe the invoice
-          <textarea key={state?.text ?? ""} name="text" rows={2} maxLength={500} placeholder={EXAMPLE} defaultValue={state?.text ?? ""} />
+          <textarea ref={text} key={state?.text ?? ""} name="text" rows={2} maxLength={500} placeholder={EXAMPLE} defaultValue={state?.text ?? ""} />
         </label>
+        <div className={styles.examples}>
+          <span className={styles.muted}>Try:</span>
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex}
+              type="button"
+              className={styles.chip}
+              onClick={() => {
+                if (!text.current) return;
+                text.current.value = ex;
+                text.current.focus();
+              }}
+            >
+              {ex}
+            </button>
+          ))}
+        </div>
         <div className={styles.fieldRow} key={key}>
           <label className={styles.field}>
             Client
