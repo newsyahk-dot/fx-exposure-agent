@@ -18,6 +18,7 @@ import { pickBase, SHOCK_PCT, TIMING_DAYS, VOL_LOOKBACK_DAYS, viewFor, type Book
 import { AutopilotPanel } from "./autopilot-panel";
 import { SimulatePayment } from "./client-pay";
 import { InvoiceAssistant } from "./invoice-assistant";
+import { LiveRefresh } from "./live-refresh";
 import { TodayPlan } from "./today";
 import { UnlockForm } from "./unlock-form";
 import { WaitChart } from "./wait-chart";
@@ -161,6 +162,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
 
       {step === "today" && (
         <>
+          {!demo && <LiveRefresh />}
           {paid.filter((p) => p.invoice.currency !== base).length > 0 && (
             <ul className={styles.notices} aria-label="Paid today">
               {paid
