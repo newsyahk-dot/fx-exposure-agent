@@ -67,5 +67,8 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   expires only after a day idle (it used to block the first click after 10 idle minutes, 3.2 s measured). Plan-dependent
   Suspense boundaries are keyed by currency and `partialPrefetching` is off, so an unplanned currency switches at once and
   streams its plan. The demo reset plans every currency in the background (`after()`).
+  **A deploy empties the shared (`use cache: remote`) cache**, so each currency's first visit after a deploy waits ~30 s
+  for a new plan (measured 2026-10-26). After every deploy, warm it: `/api/warm` with `CRON_SECRET`, or open
+  `/?base=<B>&step=today` for all five currencies once. Avoid deploying during judging unless needed.
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.
