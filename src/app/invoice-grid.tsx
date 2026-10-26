@@ -1,7 +1,7 @@
 "use client";
 
 // Every open invoice in one AG Grid (Community): ranked by what it puts at risk, with today's agent status,
-// sortable and filterable by any column, searchable, a pinned total row, and a CSV download for the seller's
+// sortable by any column, searchable, a pinned total row, and a CSV download for the seller's
 // own records. Colours come from the page's CSS variables, so the grid follows light and dark mode.
 
 import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef, type GridApi, type ICellRendererParams } from "ag-grid-community";
@@ -34,31 +34,43 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
 
   const columns = useMemo<ColDef<InvoiceRow>[]>(
     () => [
-      { field: "number", headerName: "Invoice", pinned: "left", width: 150, filter: "agTextColumnFilter" },
-      { field: "client", headerName: "Client", flex: 1, minWidth: 150, filter: "agTextColumnFilter" },
-      { field: "currency", headerName: "Ccy", width: 80, filter: "agTextColumnFilter" },
+      {
+        field: "number",
+        headerName: "Invoice",
+        pinned: "left",
+        minWidth: 140,
+        // The invoice number opens PayPal's client view (a separate column did not fit at desktop width).
+        cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
+          p.data?.id && clientUrls[p.data.id] ? (
+            <a href={clientUrls[p.data.id]} target="_blank" rel="noopener noreferrer" className={styles.link} title="Open in PayPal as the client">
+              {p.value} ↗
+            </a>
+          ) : (
+            p.value
+          ),
+      },
+      { field: "client", headerName: "Client", minWidth: 128 },
+      { field: "currency", headerName: "Ccy", hide: true }, // in "Still owed"; kept for search
       {
         field: "amount",
         headerName: "Still owed",
-        width: 140,
+        minWidth: 130,
         type: "rightAligned",
-        filter: "agNumberColumnFilter",
-        valueFormatter: (p) => (p.data?.currency ? new Intl.NumberFormat("en-US", { style: "currency", currency: p.data.currency }).format(p.value) : ""),
+        valueFormatter: (p) =>
+          p.data?.currency ? new Intl.NumberFormat("en-US", { style: "currency", currency: p.data.currency, currencyDisplay: "code" }).format(p.value) : "",
       },
       {
         field: "daysToDue",
         headerName: "Due",
-        width: 130,
-        filter: "agNumberColumnFilter",
+        minWidth: 128,
         valueFormatter: (p) => (p.value == null ? "" : p.value < 0 ? `${-p.value} days late` : p.value === 0 ? "today" : `in ${p.value} days`),
         cellClassRules: { [styles.gridLate]: (p) => (p.value ?? 0) < 0 },
       },
       {
         field: "atRisk",
         headerName: "At risk ±3%",
-        width: 170,
+        minWidth: 132,
         sort: "desc",
-        filter: "agNumberColumnFilter",
         valueFormatter: (p) => (p.value ? `±${home(p.value)}` : "none"), // used by the CSV export
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.node.rowPinned ? (
@@ -72,28 +84,15 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
             <span className={styles.muted}>none</span>
           ),
       },
-      { field: "agent", headerName: "Agent today", width: 170, filter: "agTextColumnFilter", cellClassRules: { [styles.gridActive]: (p) => /proposed|sent|Paid/.test(p.value ?? "") } },
-      { field: "value", headerName: `Worth (${base})`, width: 140, type: "rightAligned", filter: "agNumberColumnFilter", valueFormatter: (p) => home(p.value) },
+      { field: "agent", headerName: "Agent today", minWidth: 176, cellClassRules: { [styles.gridActive]: (p) => /proposed|sent|Paid/.test(p.value ?? "") } },
+      { field: "value", headerName: `In ${base}`, headerTooltip: `What it is worth in ${base} at today's ECB rates`, minWidth: 96, type: "rightAligned", valueFormatter: (p) => home(p.value) },
       {
         field: "swing",
-        headerName: "Typical swing to due",
+        headerName: "Swing",
         headerTooltip: "One standard deviation of the value until the due date — a size of uncertainty, not a forecast",
-        width: 170,
+        minWidth: 112,
         type: "rightAligned",
-        filter: "agNumberColumnFilter",
         valueFormatter: (p) => (p.node?.rowPinned ? "" : p.value == null ? "overdue" : p.value === 0 ? "none" : `±${home(p.value)}`),
-      },
-      {
-        headerName: "PayPal",
-        width: 120,
-        sortable: false,
-        filter: false,
-        cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
-          p.data?.id && clientUrls[p.data.id] ? (
-            <a href={clientUrls[p.data.id]} target="_blank" rel="noopener noreferrer" className={styles.link}>
-              Client view ↗
-            </a>
-          ) : null,
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,18 +127,20 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
           Download CSV
         </button>
       </div>
-      <div style={{ height: Math.min(560, 56 + 42 * (rows.length + 1)) }}>
+      <div style={{ height: Math.min(1000, 58 + 42 * (rows.length + 1)) }}>
         <AgGridReact<InvoiceRow>
           theme={theme}
           rowData={rows}
           columnDefs={columns}
-          defaultColDef={{ sortable: true, resizable: true, floatingFilter: false }}
+          defaultColDef={{ sortable: true, resizable: true, filter: false }}
           quickFilterText={search}
           pinnedBottomRowData={totals as InvoiceRow[]}
           getRowId={(p) => p.data.id ?? p.data.number}
           onGridReady={(e) => (api.current = e.api)}
           onFilterChanged={refreshTotals}
           tooltipShowDelay={300}
+          includeHiddenColumnsInQuickFilter
+          autoSizeStrategy={{ type: "fitGridWidth" }}
         />
       </div>
     </div>
@@ -148,7 +149,7 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
 
 function total(rows: InvoiceRow[]): TotalRow {
   return {
-    number: `Total (${rows.length})`,
+    number: `${rows.length} invoice${rows.length === 1 ? "" : "s"}`,
     value: rows.reduce((s, r) => s + r.value, 0),
     atRisk: rows.reduce((s, r) => s + r.atRisk, 0),
   };

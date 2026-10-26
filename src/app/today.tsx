@@ -212,7 +212,11 @@ export function ProposalCard({
   return (
     <li className={styles.card} data-state={s.state}>
       <p className={styles.cardKind}>
-        {p.kind === "reminder" ? "Chase a late payment" : `Offer ${p.percent}% off to be paid within ${p.withinDays} days`}
+        {p.kind === "reminder"
+          ? "Chase a late payment"
+          : weeksSooner >= 1
+            ? `Ask to be paid ${weeksSooner} week${weeksSooner === 1 ? "" : "s"} sooner, for ${p.percent}% off`
+            : `Offer ${p.percent}% off for an earlier due date`}
       </p>
       <p className={styles.cardTitle}>
         {p.invoiceNumber}
@@ -223,40 +227,24 @@ export function ProposalCard({
           Overdue {p.daysOverdue} days · <strong>{c(p.value)} waiting</strong>
         </p>
       ) : (
-        <p className={styles.cardPitch}>
-          Asks for payment by <strong>{shortDate(p.newDueDate)}</strong>
-          {due && <> instead of {shortDate(due)}</>}
-          {weeksSooner >= 1 && (
-            <>
-              {" "}
-              — about {weeksSooner} week{weeksSooner === 1 ? "" : "s"} sooner
-            </>
-          )}{" "}
-          — for {p.percent}% off (<strong>{c(p.cost)}</strong>)
-        </p>
+        <>
+          <p className={styles.cardPitch}>
+            <strong>{c(p.cost)}</strong> off · due <strong>{shortDate(p.newDueDate)}</strong>
+            {due && due !== p.newDueDate && <> instead of {shortDate(due)}</>}
+            {p.swingNow != null && p.swingIfEarly != null && (
+              <>
+                {" "}
+                · <span title="Typical swing until paid: one standard deviation of the value — a size of uncertainty, not a forecast">
+                  typical swing ±{c(p.swingNow)} → ±{c(p.swingIfEarly)}
+                </span>
+              </>
+            )}
+          </p>
+          {s.state === "open" && (
+            <p className={styles.muted}>The {p.percent}% comes off when you approve — a PayPal invoice cannot make a discount conditional.</p>
+          )}
+        </>
       )}
-      <dl className={styles.compare}>
-        {p.kind === "early_pay_discount" && (
-          <>
-            <div>
-              <dt>Cost to you</dt>
-              <dd>{c(p.cost)}</dd>
-            </div>
-            <div>
-              <dt title="One standard deviation of the value until it is paid — a size of uncertainty, not a forecast">
-                Typical swing until paid
-              </dt>
-              <dd>
-                {p.swingNow == null || p.swingIfEarly == null ? "n/a" : `±${c(p.swingNow)} → ±${c(p.swingIfEarly)}`}
-              </dd>
-            </div>
-          </>
-        )}
-        <div>
-          <dt title="A stress test: what a 3% move either way would change. Up or down — not a forecast.">If rates move {SHOCK_PCT}%</dt>
-          <dd>±{c(atRisk)}</dd>
-        </div>
-      </dl>
       <p className={styles.checkBadge} data-rewritten={rejected.length > 0 || undefined}>
         {agent ? (
           <>
@@ -272,8 +260,30 @@ export function ProposalCard({
           "Standard wording"
         )}
       </p>
-      <details className={styles.draft} open={featured && s.state === "open"}>
-        <summary>Why the agent proposes this</summary>
+      <details className={styles.draft}>
+        <summary>Numbers and the agent&apos;s reason</summary>
+        <dl className={styles.compare}>
+          {p.kind === "early_pay_discount" && (
+            <>
+              <div>
+                <dt>Cost to you</dt>
+                <dd>{c(p.cost)}</dd>
+              </div>
+              <div>
+                <dt title="One standard deviation of the value until it is paid — a size of uncertainty, not a forecast">
+                  Typical swing until paid
+                </dt>
+                <dd>
+                  {p.swingNow == null || p.swingIfEarly == null ? "n/a" : `±${c(p.swingNow)} → ±${c(p.swingIfEarly)}`}
+                </dd>
+              </div>
+            </>
+          )}
+          <div>
+            <dt title="A stress test: what a 3% move either way would change. Up or down — not a forecast.">If rates move {SHOCK_PCT}%</dt>
+            <dd>±{c(atRisk)}</dd>
+          </div>
+        </dl>
         <p>{p.rationale}</p>
       </details>
 

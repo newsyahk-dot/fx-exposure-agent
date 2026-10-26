@@ -53,7 +53,7 @@ Captions are mandatory (burned in).
 
 | Time | Screen | Narration | Number |
 |---|---|---|---|
-| 2:10 | Back to the top of **Today**; caption: "48 test runs · 283 proposals · 0 violations of our own checks". (Optional 2-second flash of **Evidence**: "about half as wide".) | "Every number from code. Every action approved — by her click, or her policy." | 0 |
+| 2:10 | Back to the top of **Today**; caption: "48 test runs · 283 proposals · 0 violations of our own checks". (Optional 2-second flash of **Evidence**: the replay line, e.g. "about two-thirds as wide".) | "Every number from code. Every action approved — by her click, or her policy." | 0 |
 | 2:20 | End card: name, live URL, "PayPal Invoicing API · webhooks · invoice templates · PayPal MCP server · Claude". | "Get paid sooner from clients abroad." | — |
 
 Dropped from the video (still in the app): the Where-it-sits grid and the Evidence chart in detail.

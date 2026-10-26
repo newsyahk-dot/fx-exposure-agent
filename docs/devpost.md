@@ -59,8 +59,8 @@ PayPal; the card shows "sent". When the client pays, the card shows "paid", the 
 about each one — searchable, sortable, and downloadable as CSV.
 
 **Evidence, not forecasts.** Two years of ECB rates show how far each currency moved for money that waited 7 to 90
-days, and replay the seller's open book: paid the way the agent proposes, it would have moved in a range about half as
-wide ([42]% narrower). History, labelled as history.
+days, and replay the seller's open book: paid the way the agent proposes, it would have moved in a narrower range
+([copy the phrase from the Today screen on submission day, e.g. "about two-thirds as wide (37% narrower)"]). History, labelled as history.
 
 **Before the next invoice.** The seller types "Bill Sakura Games ¥480,000 for the level art pack, net 45". Claude turns
 it into an invoice; the app prices four ways to bill it — as asked, in dollars, on 14-day terms, half up front — using
@@ -182,7 +182,7 @@ Also used: **AG Grid Community** (the invoice grid), **Vercel** (hosting, cron, 
 1. Open https://fx-exposure-agent.vercel.app. Everything is visible without a code.
 2. To run actions on the PayPal sandbox, enter the access code **[ACCESS CODE]** in the box at the top.
 3. **Today:** approve a proposal, then "Simulate client payment" in the same card (or "Open as client ↗" to pay on
-   PayPal's page with the sandbox buyer account **[buyer e-mail / password]**). Watch the number at the top go down.
+   PayPal's page with the sandbox buyer account **[buyer e-mail / password]**). Watch "+… collected" appear at the top.
 4. Steps 2–5: the invoice grid, the two-year evidence, "Next invoice" (describe an invoice in a sentence) and
    "Autopilot" (approve a policy, then "Run autopilot now").
 5. "Reset the demo book" (Today → Sandbox controls) starts the story over; the book also resets every night at 00:07 UTC.
