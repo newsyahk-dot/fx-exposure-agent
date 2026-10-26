@@ -37,8 +37,8 @@ export async function TodayPlan({
   const r = await run;
   const c = (n: number) => compact(base, n);
   const cards = r.proposals.map((p) => ({ p, s: proposalState(p, input, invoices, r.plannedAt) }));
-  const order = (x: { s: ProposalState }) => (x.s.state === "open" ? 0 : x.s.state === "done" ? 1 : 2);
-  cards.sort((a, b) => order(a) - order(b) || (a.p.kind === b.p.kind ? b.p.value - a.p.value : a.p.kind === "reminder" ? -1 : 1));
+  // A fixed order (reminders first, then by value): a card stays where it is while it goes open → sent → paid.
+  cards.sort((a, b) => (a.p.kind === b.p.kind ? b.p.value - a.p.value : a.p.kind === "reminder" ? -1 : 1));
   const missing = notInPlan(r, input);
   const calls = r.steps.filter((s) => s.tool !== "summary").length;
 

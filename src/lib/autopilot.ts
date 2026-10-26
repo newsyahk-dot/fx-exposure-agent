@@ -47,7 +47,8 @@ export async function runAutopilot(now = new Date()): Promise<AutopilotResult> {
     }
     const cand = view.agentInput.candidates.find((c) => c.invoiceId === p.invoiceId);
     if (!cand) {
-      left.push({ invoiceNumber: p.invoiceNumber, why: "no longer open" });
+      const inv = inputs.invoices.find((i) => i.id === p.invoiceId);
+      left.push({ invoiceNumber: p.invoiceNumber, why: inv && /PAID/.test(inv.status) ? "already paid" : "no longer open" });
       continue;
     }
     const r = await executeAction(

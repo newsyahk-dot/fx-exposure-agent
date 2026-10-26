@@ -12,7 +12,7 @@ import { BASES, type EcbQuotes } from "@/lib/fx";
 import { cell, compact, full, money } from "@/lib/format";
 import { clientViewUrl } from "@/lib/paypal";
 import { DEFAULT_POLICY } from "@/lib/policy";
-import { paidToday, startOfDayValue } from "@/lib/today";
+import { dayChange, paidToday } from "@/lib/today";
 import { BUCKETS, type Bucket, type Invoice } from "@/lib/types";
 import { pickBase, SHOCK_PCT, TIMING_DAYS, VOL_LOOKBACK_DAYS, viewFor, type BookView } from "@/lib/view";
 import { AutopilotPanel } from "./autopilot-panel";
@@ -102,9 +102,11 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
 
   // Before/after for today: payments that arrived today no longer count as exposure.
   const paid = paidToday(inputs.invoices, rates, base, inputs.asOf);
-  const startValue = startOfDayValue(e.totalValue, paid, base);
-  const startShock = (startValue * SHOCK_PCT) / 100;
-  const dropped = startShock - e.totalShock;
+  const day = dayChange(inputs.invoices, paid, rates, base, inputs.asOf);
+  const pct = (v: number) => (v * SHOCK_PCT) / 100;
+  const startShock = pct(e.totalValue + day.paid - day.added);
+  const paidOff = pct(day.paid);
+  const addedOn = pct(day.added);
 
   const allDone = inputs.invoices.flatMap((i) => (i.agentLog ?? []).filter((a) => a.kind !== "archived").map((a) => ({ ...a, inv: i })));
   const done = allDone.filter((d) => OPEN_STATUSES.has(d.inv.status)).sort((a, b) => b.at.localeCompare(a.at));
@@ -141,21 +143,24 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
         <section className={styles.hero} aria-label="At risk now">
           <p className={styles.heroLabel}>If exchange rates move {SHOCK_PCT}% either way, your unpaid foreign invoices change by about</p>
           <p className={styles.heroValue}>{c(e.totalShock)}</p>
-          {Math.round(dropped) > 0 ? (
+          {Math.round(paidOff) > 0 || Math.round(addedOn) > 0 ? (
             <p className={styles.heroDelta}>
-              Start of today {c(startShock)} → now {c(e.totalShock)} <strong>(−{c(dropped)})</strong>
+              Start of today {c(startShock)} → now {c(e.totalShock)}
+              {Math.round(paidOff) > 0 && <strong> (−{c(paidOff)} paid today)</strong>}
+              {Math.round(addedOn) > 0 && <span className={styles.muted}> (+{c(addedOn)} new invoices today)</span>}
             </p>
           ) : null}
           <p className={styles.muted}>
             Up or down — equally likely. The size of the risk, not a forecast. {c(e.totalValue)} owed in{" "}
-            {e.rows.map((r) => r.currency).join(", ") || "foreign currencies"}, {c(overdue)} of it overdue.
+            {listAnd(e.rows.map((r) => r.currency)) || "foreign currencies"}
+            {overdue > 0 ? <>; {c(overdue)} of it is overdue.</> : "."}
           </p>
         </section>
       ) : (
         <aside className={styles.score} aria-label="Exposure now">
           <span>
             At risk at ±{SHOCK_PCT}% <strong>{c(e.totalShock)}</strong>
-            {Math.round(dropped) > 0 && <span className={styles.ok}> (−{c(dropped)} today)</span>}
+            {Math.round(paidOff) > 0 && <span className={styles.ok}> (−{c(paidOff)} paid today)</span>}
           </span>
           <span>
             Owed in foreign currencies <strong>{c(e.totalValue)}</strong>
@@ -286,6 +291,8 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
     </>
   );
 }
+
+const listAnd = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
 
 function StepFooter({ step, href }: { step: Step; href: (s: Step) => string }) {
   const i = STEPS.findIndex((s) => s.id === step);
