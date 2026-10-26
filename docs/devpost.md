@@ -88,8 +88,9 @@ by side; the seller decides.
 - **Speed in the middle of the loop.** At first, every approval changed the book and made the agent re-plan for 20–30
   seconds. Now the agent plans once a day, and each proposal is matched with what has since happened to its invoice:
   approve → sent in about 5 seconds, pay → paid in about 3.
-- **Webhooks in the sandbox**: a payment recorded through the API raised no webhook event; [result of the real buyer
-  payment test].
+- **Webhooks in the sandbox**: a payment recorded through the API raised no webhook event, so the demo has a "Simulate client
+  payment" button for that path. A payment made on PayPal's own invoice page does raise one: the seller's screen shows
+  it as paid in under 20 seconds.
 - Smaller ones: PayPal doesn't invoice in Korean won, so the "bill in your home currency" option is hidden for a KRW
   seller; the public rates API rounds when the base is KRW, so rates are crossed from EUR instead.
 

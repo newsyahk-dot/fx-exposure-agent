@@ -16,10 +16,10 @@ uses "about" and placeholders in [brackets].
 | 0:00 | **Today**, home currency USD. Big number "[$929]". | "Maya is a freelance designer in the US. Her clients in Europe, the UK and Japan pay her through PayPal invoices. Right now about [$31,000] of her income is waiting in euros, pounds and yen — and if rates move three percent, about [$929] of it moves with them. Nothing in her inbox tells her that." |
 | 0:12 | Scroll to the card **"Chase a late payment · Hollis & Grey · £2,100 · 15 days overdue"**. | "Every morning an AI agent goes through her open invoices and proposes the day's work." |
 | 0:17 | Click **Approve: send reminder**. Card turns to **"✓ Reminder sent in PayPal"**. | "One click, and the reminder goes out through PayPal." |
-| 0:21 | In the same card: **Simulate client payment** (or the real client page — see note). Card → **"✓ Paid"**; top shows **"Start of today [$929] → now [$845] (−[$84] paid today)"** and the green "Paid today" note. | "When the client pays, her number goes down — that money no longer depends on the exchange rate." |
+| 0:21 | In the same card: **Open as client ↗** → pay on PayPal's invoice page with the sandbox buyer → back to the app (cut the wait in editing). Card → **"✓ Paid"**; top shows **"Start of today [$929] → now [$845] (−[$84] paid today)"** and the green "Paid today" note. | "When the client pays, her number goes down — that money no longer depends on the exchange rate." |
 
-> Note: use **"Open as client ↗"** and pay on PayPal's own page only after the webhook has been verified with a real
-> sandbox buyer payment. Until then, use "Simulate client payment" and say "the client pays".
+> Note: the webhook was verified on 2026-10-26 ("Paid" in under 20 s after paying on PayPal's page). Log in to the
+> sandbox buyer in that browser before recording. Fallback if PayPal's page misbehaves: "Simulate client payment".
 
 ## 0:30–0:50 — Who it's for and why it matters
 
@@ -79,8 +79,3 @@ uses "about" and placeholders in [brackets].
    marks). PayPal is named as the platform used, not as an endorsement.
 6. English narration (or English captions). Captions are recommended either way.
 7. Upload to YouTube as **Public**; put the link in the Devpost form.
-
-## Scenes not to use until verified
-
-- Paying on PayPal's own invoice page and the screen updating by itself (webhook). Verify with a real sandbox buyer
-  payment first; then replace the 0:21 shot with it — it is the strongest "done, and you're told" moment.
