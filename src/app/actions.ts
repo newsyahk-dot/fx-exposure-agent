@@ -8,13 +8,15 @@
 // allowed bounds and runs the same text checks the agent had to pass. Only then is PayPal called.
 
 import { refresh, updateTag } from "next/cache";
+import { after } from "next/server";
 import { BOOK_TAG } from "@/lib/book-cache";
-import { PLAN_TAG } from "@/lib/agent-cache";
+import { PLAN_TAG, planFor } from "@/lib/agent-cache";
 import { resetDemo } from "@/lib/demo-reset";
 import { LOCKED_MESSAGE, writesAllowed } from "@/lib/access";
 import { demoMode, loadLiveInputs } from "@/lib/book";
 import { errorText, executeAction, type ActionRequest } from "@/lib/execute";
 import { PayPalClient } from "@/lib/paypal";
+import { BASES } from "@/lib/fx";
 import { pickBase, viewFor } from "@/lib/view";
 
 export type ApproveState = { ok: boolean; message: string } | null;
@@ -94,6 +96,11 @@ export async function resetDemoAction(): Promise<ApproveState> {
     updateTag(BOOK_TAG);
     updateTag(PLAN_TAG);
     refresh();
+    // Plan every home currency now, in the background, so switching currency after a reset never waits ~30 s.
+    after(async () => {
+      const inputs = await loadLiveInputs();
+      await Promise.allSettled(BASES.map((b) => planFor(inputs, b)));
+    });
     return r.failed.length
       ? { ok: false, message: `Reset partly failed (${r.failed.length} steps): ${r.failed[0]}` }
       : { ok: true, message: `Demo book reset: ${r.created} fresh invoices. The agent is re-planning (about 30 s).` };

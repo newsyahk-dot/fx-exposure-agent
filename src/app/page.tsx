@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { rulesRun, type AgentInput, type AgentRun } from "@/lib/agent";
@@ -24,6 +23,8 @@ import { TodayPlan } from "./today";
 import { UnlockForm } from "./unlock-form";
 import { WaitChart } from "./wait-chart";
 import { InvoiceGrid } from "./invoice-grid";
+import { NavLink } from "./nav-link";
+import { PreloadGrid } from "./preload-grid";
 import { invoiceRows } from "@/lib/invoice-rows";
 import styles from "./page.module.css";
 
@@ -117,9 +118,9 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
       <nav className={styles.baseNav} aria-label="Home currency">
         <span className={styles.muted}>Home currency</span>
         {BASES.map((b) => (
-          <Link key={b} href={href(step, b)} className={styles.basePill} aria-current={b === base ? "true" : undefined}>
+          <NavLink key={b} href={href(step, b)} className={styles.basePill} aria-current={b === base ? "true" : undefined}>
             {b}
-          </Link>
+          </NavLink>
         ))}
         <span className={styles.sourceBadge} data-source={inputs.source}>
           {inputs.source === "live" ? "Live · PayPal sandbox" : "Demo snapshot"} · as of {inputs.asOf}
@@ -131,14 +132,16 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
         <ol>
           {STEPS.map((st, i) => (
             <li key={st.id}>
-              <Link href={href(st.id)} aria-current={st.id === step ? "step" : undefined}>
+              <NavLink href={href(st.id)} aria-current={st.id === step ? "step" : undefined}>
                 <span className={styles.stepNum}>{i + 1}</span> {st.label}
-              </Link>
+              </NavLink>
             </li>
           ))}
         </ol>
       </nav>
+      {step !== "exposure" && <PreloadGrid />}
 
+      <div className={styles.stepBody}>
       {step === "today" ? (
         <section className={styles.hero} aria-label="At risk now">
           <p className={styles.heroLabel}>If exchange rates move {SHOCK_PCT}% either way, your unpaid foreign invoices change by about</p>
@@ -196,7 +199,9 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
           )}
           <section aria-labelledby="actions-h">
             <h2 id="actions-h">What the agent proposes today</h2>
-            <Suspense fallback={<p className={styles.why}>The agent is planning today… (about 30 seconds, once a day)</p>}>
+            {/* key: a new home currency is a new boundary, so its fallback shows at once instead of the old plan
+                staying on screen until the new one is ready (React keeps revealed content during a navigation). */}
+            <Suspense key={base} fallback={<PlanPlaceholder />}>
               <TodayPlan
                 run={plan()}
                 base={base}
@@ -236,7 +241,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
               Sort or filter any column, search, and download the list. &ldquo;Agent today&rdquo; shows what the agent proposed
               or did for each invoice.
             </p>
-            <Suspense fallback={<p className={styles.muted}>Loading the invoice list…</p>}>
+            <Suspense key={base} fallback={<p className={`${styles.muted} ${styles.slowNote}`}>Loading the invoice list…</p>}>
               <GridSection run={plan()} invoices={inputs.invoices} view={view} asOf={inputs.asOf} />
             </Suspense>
           </section>
@@ -247,7 +252,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
       {step === "evidence" && (
         <>
           <Evidence ecb={inputs.ecb} base={base} asOf={inputs.asOf} ccys={e.rows.map((r) => r.currency)} lead={e.rows.slice().sort((a, b) => b.value - a.value)[0]?.currency} />
-          <Suspense fallback={null}>
+          <Suspense key={base} fallback={null}>
             <ReplayFor run={plan()} ecb={inputs.ecb} input={view.agentInput} />
           </Suspense>
         </>
@@ -279,6 +284,8 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
         </>
       )}
 
+      </div>
+
       <StepFooter step={step} href={href} />
 
       <footer className={styles.footer}>
@@ -292,6 +299,21 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   );
 }
 
+// Shown while the day's plan streams in. Usually that takes a fraction of a second (the plan is cached), so only
+// outlines show at first; the note appears only if the wait is long (the first plan of the day for a currency).
+function PlanPlaceholder() {
+  return (
+    <div className={styles.planPlaceholder} aria-busy="true">
+      <p className={`${styles.why} ${styles.slowNote}`}>The agent is planning today… (about 30 seconds, once a day)</p>
+      <ul className={styles.cards} aria-hidden="true">
+        <li className={styles.skeletonCard} />
+        <li className={styles.skeletonCard} />
+        <li className={styles.skeletonCard} />
+      </ul>
+    </div>
+  );
+}
+
 const listAnd = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
 
 function StepFooter({ step, href }: { step: Step; href: (s: Step) => string }) {
@@ -301,16 +323,16 @@ function StepFooter({ step, href }: { step: Step; href: (s: Step) => string }) {
   return (
     <nav className={styles.stepFooter} aria-label="Next step">
       {prev ? (
-        <Link href={href(prev.id)} className={styles.link}>
+        <NavLink href={href(prev.id)} className={styles.link}>
           ← {prev.label}
-        </Link>
+        </NavLink>
       ) : (
         <span />
       )}
       {next && (
-        <Link href={href(next.id)} className={styles.nextStep}>
+        <NavLink href={href(next.id)} className={styles.nextStep}>
           {STEPS[i].next} → <span className={styles.muted}>Step {i + 2}: {next.label}</span>
-        </Link>
+        </NavLink>
       )}
     </nav>
   );
