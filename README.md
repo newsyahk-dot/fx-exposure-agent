@@ -72,8 +72,9 @@ side by side; she decides.
   autopilot reuse it.
 - Known sandbox limits: the early-payment-discount rule endpoint (`/conditional-rules`) returns HTTP 500 for every
   variant tried, so the agent edits the sent invoice instead (the discount is then unconditional, and the screen and
-  the client note say so). A payment recorded through the API does not raise a webhook event in the sandbox; a payment
-  made on PayPal's invoice page does. Transaction Search and Balances return 403, so the timing effect is computed from
+  the client note say so). A payment recorded through the API does not raise a webhook event in the sandbox, so the
+  "Simulate client payment" button updates the screen directly; a payment made on PayPal's invoice page reaches the
+  screen through the webhook, or within a minute without it. Transaction Search and Balances return 403, so the timing effect is computed from
   each invoice's own payment dates.
 - `npm test` covers the exposure maths, the agent's eligibility and fallbacks, every text check, the plan
   reconciliation, the webhook verification and the demo book.
