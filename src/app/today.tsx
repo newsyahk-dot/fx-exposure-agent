@@ -7,13 +7,12 @@ import { timelines, replayBook } from "@/lib/evidence";
 import type { EcbQuotes } from "@/lib/fx";
 import { compact, money } from "@/lib/format";
 import { clientViewUrl } from "@/lib/paypal";
-import { notInPlan, proposalState, type ProposalState } from "@/lib/plan-state";
+import { proposalState, type ProposalState } from "@/lib/plan-state";
 import type { Invoice } from "@/lib/types";
 import { todayBar, type BarKey } from "@/lib/today-bar";
 import { SHOCK_PCT } from "@/lib/view";
 import { ApproveForm } from "./approve-button";
 import { SimulatePayment } from "./client-pay";
-import { ReplanButton } from "./replan-button";
 import { ResetDemoButton } from "./reset-demo";
 import styles from "./page.module.css";
 
@@ -47,7 +46,6 @@ export async function TodayPlan({
   const cards = r.proposals.map((p) => ({ p, s: proposalState(p, input, invoices, r.plannedAt) }));
   // A fixed order (reminders first, then by value): a card stays where it is while it goes open → sent → paid.
   cards.sort((a, b) => (a.p.kind === b.p.kind ? b.p.value - a.p.value : a.p.kind === "reminder" ? -1 : 1));
-  const missing = notInPlan(r, input);
   const states: Record<string, "sent" | "proposed"> = {};
   for (const { p, s } of cards) {
     if (s.state === "done") states[p.invoiceId] = "sent";
@@ -89,14 +87,6 @@ export async function TodayPlan({
               See the evidence →
             </Link>
           </p>
-        )}
-        {missing.length > 0 && (
-          <div className={styles.replanRow}>
-            <span>
-              {missing.length} open {missing.length === 1 ? "invoice is" : "invoices are"} not in this plan ({missing.map((m) => m.invoiceNumber).join(", ")}).
-            </span>
-            <ReplanButton disabledReason={lockReason} />
-          </div>
         )}
       </div>
 

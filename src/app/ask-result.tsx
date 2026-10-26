@@ -11,6 +11,7 @@ import styles from "./page.module.css";
 export async function AskResult({
   run,
   request,
+  heading,
   base,
   input,
   invoices,
@@ -19,6 +20,7 @@ export async function AskResult({
 }: {
   run: Promise<AgentRun>;
   request: string;
+  heading?: string; // shown instead of the quoted request (e.g. for a PayPal event)
   base: string;
   input: AgentInput;
   invoices: Invoice[];
@@ -31,7 +33,7 @@ export async function AskResult({
   return (
     <div className={styles.askResult}>
       <div className={styles.agentStatus}>
-        <p className={styles.askQuote}>&ldquo;{request}&rdquo;</p>
+        <p className={styles.askQuote}>{heading ?? <>&ldquo;{request}&rdquo;</>}</p>
         <p>
           <strong>{r.source === "agent" ? "Claude:" : "Rule-based answer:"}</strong> {r.source === "agent" ? r.summary : `The agent did not run (${r.reason}).`}
         </p>
@@ -39,7 +41,7 @@ export async function AskResult({
           <p className={styles.muted}>
             {calls} tool calls · {r.proposals.length} proposal{r.proposals.length === 1 ? "" : "s"}
             {r.rejections > 0 && <> · {r.rejections} draft{r.rejections === 1 ? "" : "s"} rejected by the checks and rewritten</>} · every
-            number from code, nothing runs until you approve
+            number from code; nothing runs without your click or your approved autopilot policy
           </p>
         )}
       </div>

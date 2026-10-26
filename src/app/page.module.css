@@ -1347,3 +1347,8 @@
   font-style: italic;
   color: var(--text-secondary);
 }
+
+.newSince {
+  border-left: 3px solid var(--good);
+  padding-left: 14px;
+}

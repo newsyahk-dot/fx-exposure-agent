@@ -39,6 +39,11 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   the same agent as a `<seller_request>` (data, like notes — it cannot change rules, eligibility or numbers); the answer
   and cards render like the plan and use the same approve path. Needs the access code; cached per request for hours.
   The final summary goes through the checked `submit_summary` tool, so a refusal is rewritten instead of withheld.
+- **Agent reacts to PayPal events**: a verified `INVOICING.INVOICE.SENT` webhook for a non-seed invoice runs
+  `reactToNewInvoices` (`src/lib/autopilot.ts`) in `after()`: the agent looks at open invoices the day's plan has not
+  seen (`newInvoicesRequest`, cached per set of invoices), and proposals inside the approved policy run through the same
+  path as the autopilot. Today shows the answer under "New since today's plan". Sandbox sends CREATED/SENT for
+  API-created invoices (measured 2026-10-26). Seed invoices are skipped so a reset does not start 22 runs.
 - **Home currency** is chosen on screen (`?base=`), default `FXA_DEFAULT_BASE` or USD. Raw ECB quotes are stored, so any
   of USD/EUR/GBP/JPY/KRW works in live and demo mode.
 - **What the agent puts in front of the seller** follows a stated rule of thumb: an offer is proposed only if its

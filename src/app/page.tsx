@@ -2,6 +2,8 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { REQUEST_MAX, rulesRun, type AgentInput, type AgentRun } from "@/lib/agent";
 import { askFor, planFor } from "@/lib/agent-cache";
+import { newInvoicesRequest } from "@/lib/autopilot";
+import { notInPlan } from "@/lib/plan-state";
 import { writesAllowed } from "@/lib/access";
 import { RATE_SOURCE, type BookInputs } from "@/lib/book";
 import { loadInputs } from "@/lib/book-cache";
@@ -27,6 +29,7 @@ import { Logo } from "./logo";
 import { InvoiceGrid } from "./invoice-grid";
 import { AskAgent } from "./ask-agent";
 import { AskResult } from "./ask-result";
+import { ReplanButton } from "./replan-button";
 import { NavLink } from "./nav-link";
 import { PreloadGrid } from "./preload-grid";
 import { invoiceRows } from "@/lib/invoice-rows";
@@ -239,6 +242,20 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
               />
             </Suspense>
           </section>
+          {!demo && (
+            <Suspense key={`new-${base}`} fallback={null}>
+              <NewSincePlan
+                run={plan()}
+                inputs={inputs}
+                base={base}
+                input={view.agentInput}
+                locked={locked}
+                ownBase={base === pickBase(inputs.policy?.base)}
+                lockReason={lockReason}
+                paidValue={Object.fromEntries(paid.map((p) => [p.invoice.id, p.value]))}
+              />
+            </Suspense>
+          )}
           <section aria-labelledby="ask-h" id="ask">
             <h2 id="ask-h">Ask the agent</h2>
             <p className={styles.muted}>
@@ -437,6 +454,63 @@ function ClientTable({ open, rates, lockReason }: { open: Invoice[]; rates: Reco
         </tbody>
       </table>
     </div>
+  );
+}
+
+// Invoices sent after the day's plan was made. A PayPal webhook already asked the agent about them (for the seller's
+// policy currency) and ran what the approved policy covers; this shows the agent's answer and what waits for a click.
+// Visitors without the access code only see it where the webhook has already made it (no new model call).
+async function NewSincePlan({
+  run,
+  inputs,
+  base,
+  input,
+  locked,
+  ownBase,
+  lockReason,
+  paidValue,
+}: {
+  run: Promise<AgentRun>;
+  inputs: BookInputs;
+  base: string;
+  input: AgentInput;
+  locked: boolean;
+  ownBase: boolean;
+  lockReason?: string;
+  paidValue: Record<string, number>;
+}) {
+  const r = await run.catch(() => null);
+  if (!r) return null;
+  const missing = notInPlan(r, input).map((m) => m.invoiceNumber);
+  if (!missing.length) return null;
+  const list = missing.join(", ");
+  return (
+    <section aria-labelledby="new-since-h" className={styles.newSince}>
+      <h2 id="new-since-h">New since today&apos;s plan</h2>
+      {locked && !ownBase ? (
+        <p className={styles.muted}>
+          {list} arrived after the plan. The agent looks at new invoices in the seller&apos;s policy currency (
+          {pickBase(inputs.policy?.base)}); switch to it, or enter the access code to ask here.
+        </p>
+      ) : (
+        <Suspense key={list} fallback={<p className={`${styles.why} ${styles.slowNote}`}>The agent is looking at {list}… (about 20 seconds)</p>}>
+          <AskResult
+            run={askFor(inputs, base, newInvoicesRequest(missing))}
+            request={newInvoicesRequest(missing)}
+            heading={`PayPal: ${list} sent after today's plan — the agent looked at ${missing.length === 1 ? "it" : "them"} on its own.`}
+            base={base}
+            input={input}
+            invoices={inputs.invoices}
+            lockReason={lockReason}
+            paidValue={paidValue}
+          />
+        </Suspense>
+      )}
+      <div className={styles.replanRow}>
+        <span className={styles.muted}>Or make a fresh plan for the whole book:</span>
+        <ReplanButton disabledReason={lockReason} />
+      </div>
+    </section>
   );
 }
 
