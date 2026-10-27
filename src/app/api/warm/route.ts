@@ -7,7 +7,7 @@ import { revalidateTag } from "next/cache";
 import { planFor } from "@/lib/agent-cache";
 import { BOOK_TAG } from "@/lib/book-cache";
 import { resetDemo } from "@/lib/demo-reset";
-import { demoMode, loadLiveInputs } from "@/lib/book";
+import { demoMode, settledBook } from "@/lib/book";
 import { loadInputs } from "@/lib/book-cache";
 import { cronAuthorized } from "@/lib/cron-auth";
 import { BASES } from "@/lib/fx";
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
   let reset: Awaited<ReturnType<typeof resetDemo>> | null = null;
   if (new URL(req.url).searchParams.get("reset") === "1") reset = await resetDemo();
   // After a reset: plan the new book (new generation, new key) while visitors still see the old one with its plans.
-  const inputs = reset ? await loadLiveInputs() : await loadInputs();
+  const inputs = reset ? await settledBook(reset.gen) : await loadInputs();
   const runs = await Promise.allSettled(BASES.map((b) => planFor(inputs, b)));
   if (reset) revalidateTag(BOOK_TAG, { expire: 0 }); // now switch everyone to the new book
   return Response.json({
@@ -33,3 +33,4 @@ export async function GET(req: Request) {
     warmed: BASES.map((b, i) => ({ base: b, ok: runs[i].status === "fulfilled" && runs[i].value.source === "agent" })),
   });
 }
+
