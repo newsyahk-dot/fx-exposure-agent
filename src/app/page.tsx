@@ -182,10 +182,11 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
                 <strong>{c(overdue)}</strong> overdue · {overdueCount} invoice{overdueCount === 1 ? "" : "s"}
               </span>
             )}
-            <span className={styles.statChip}>
-              <strong>±{c(e.totalShock)}</strong> if rates move {SHOCK_PCT}% before it arrives
+            <span className={styles.statChip} title="A stress test: up or down, equally likely — the size of the risk, not a forecast.">
+              <strong>±{c(e.totalShock)}</strong> if rates move {SHOCK_PCT}% either way
             </span>
           </div>
+          <p className={styles.muted}>Up or down, equally likely — the size of the risk, not a forecast.</p>
           {Math.round(day.paid) > 0 || Math.round(day.added) > 0 ? (
             <p className={styles.heroDelta}>
               Start of today {c(e.totalValue + day.paid - day.added)} → now {c(e.totalValue)}
@@ -193,7 +194,6 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
               {Math.round(day.added) > 0 && <span className={styles.muted}> (+{c(day.added)} new invoices today)</span>}
             </p>
           ) : null}
-          <p className={styles.muted}>Exchange rates: up or down, equally likely — the size of the risk, not a forecast.</p>
         </section>
       ) : (
         <aside className={styles.score} aria-label="Waiting to be paid">
@@ -213,32 +213,19 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
       {step === "today" && (
         <>
           {!demo && <LiveRefresh />}
-          {paid.filter((p) => p.invoice.currency !== base).length > 0 && (
-            <ul className={styles.notices} aria-label="Paid today">
-              {paid
-                .filter((p) => p.invoice.currency !== base)
-                .map((p) => (
-                  <li key={p.invoice.id}>
-                    ✓ Paid today: <strong>{p.invoice.number}</strong>
-                    {p.invoice.recipientName && <> · {p.invoice.recipientName}</>} · {money(p.invoice.currency, p.amount)} —{" "}
-                    {c(p.value)} collected
-                  </li>
-                ))}
-            </ul>
-          )}
           {!readOnly && (
             <p className={styles.tryIt}>
-              <strong>Try it:</strong> <span>① Approve a proposal below — it runs in PayPal</span>
+              <strong>Try it:</strong> <span>① Approve a card — it runs in PayPal</span>
               <span>② Pay it as the client</span>
-              <span>③ Watch &ldquo;collected&rdquo; appear above</span>
+              <span>③ See &ldquo;collected&rdquo; above</span>
             </p>
           )}
           {locked && (
             <p className={styles.tryIt}>
-              <strong>How the loop works:</strong> <span>① Approve a card — its e-mail or offer goes out through PayPal</span>
-              <span>② The client pays on PayPal&apos;s invoice page</span>
-              <span>③ PayPal tells this app and &ldquo;+… collected&rdquo; appears here (under 20 s when measured)</span>
-              <span className={styles.muted}>Enter the access code above to try it.</span>
+              <strong>How it works:</strong> <span>① Approve a card — it runs in PayPal</span>
+              <span>② The client pays on PayPal</span>
+              <span>③ &ldquo;+… collected&rdquo; appears here</span>
+              <span className={styles.muted}>Access code above to try it.</span>
             </p>
           )}
           <section aria-labelledby="actions-h">
@@ -279,10 +266,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
           )}
           <section aria-labelledby="ask-h" id="ask">
             <h2 id="ask-h">Ask the agent</h2>
-            <p className={styles.muted}>
-              Tell it what you want in your own words. It works with the same tools and the same checks, and anything it
-              proposes still waits for your click.
-            </p>
+            <p className={styles.muted}>In your own words — same tools, same checks, nothing runs without your click.</p>
             <AskAgent current={ask} maxLength={REQUEST_MAX} />
             {ask &&
               (demo ? (
@@ -308,7 +292,10 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
             <ClientTable open={open} rates={rates} lockReason={lockReason} />
             <ResetDemoButton disabledReason={lockReason} />
           </details>
-          {doneList}
+          <details className={styles.leftAlone}>
+            <summary>Done by the agent ({done.length})</summary>
+            <DoneList done={done} closed={allDone.length - done.length} bare />
+          </details>
         </>
       )}
 
@@ -690,10 +677,10 @@ function Replay({ r, ecb, input }: { r: AgentRun; ecb: EcbQuotes; input: AgentIn
   );
 }
 
-function DoneList({ done, closed }: { done: { kind: string; at: string; auto?: true; inv: Invoice }[]; closed: number }) {
+function DoneList({ done, closed, bare = false }: { done: { kind: string; at: string; auto?: true; inv: Invoice }[]; closed: number; bare?: boolean }) {
   return (
-    <section aria-labelledby="done-h">
-      <h2 id="done-h">Done by the agent</h2>
+    <section aria-labelledby={bare ? undefined : "done-h"} aria-label={bare ? "Done by the agent" : undefined}>
+      {!bare && <h2 id="done-h">Done by the agent</h2>}
       {done.length === 0 ? (
         <p className={styles.muted}>Nothing yet. Approved actions show up here and stay recorded on the invoice.</p>
       ) : (

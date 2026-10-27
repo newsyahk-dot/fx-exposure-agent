@@ -1406,3 +1406,21 @@
   border-left: 3px solid var(--good);
   padding-left: 14px;
 }
+
+/* Today, simplified (2026-10-27): the invoice number sits quietly after the client; the tool log folds away. */
+.cardNumber {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.stepLog {
+  margin-top: 8px;
+}
+
+.stepLog > summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
