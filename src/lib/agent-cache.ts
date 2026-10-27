@@ -13,9 +13,10 @@ import { pickBase, viewFor } from "./view";
 
 export const PLAN_TAG = "plan";
 
-// asOf, ecbDate and notes are only the cache key: the function reads the book itself.
+// asOf, ecbDate, notes and startedAt (which demo generation) are only the cache key: the function reads the book
+// itself. A demo reset starts a new generation, so it gets new plans without expiring anyone's current ones.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function dailyPlan(base: string, _asOf: string, _ecbDate: string, _notes: string): Promise<AgentRun> {
+async function dailyPlan(base: string, _asOf: string, _ecbDate: string, _notes: string, _startedAt: string): Promise<AgentRun> {
   "use cache: remote";
   cacheTag(PLAN_TAG);
   cacheLife("days");
@@ -26,7 +27,15 @@ async function dailyPlan(base: string, _asOf: string, _ecbDate: string, _notes: 
 
 // A one-off request from the seller ("Ask the agent"): the same agent and checks, focused on what was asked. Cached
 // by the request and the same day/fixing/notes key, so asking again or reloading does not call the model twice.
-async function requestPlan(base: string, _asOf: string, _ecbDate: string, _notes: string, request: string, readPayPal: boolean): Promise<AgentRun> {
+async function requestPlan(
+  base: string,
+  _asOf: string,
+  _ecbDate: string,
+  _notes: string,
+  _startedAt: string,
+  request: string,
+  readPayPal: boolean,
+): Promise<AgentRun> {
   "use cache: remote";
   cacheTag(PLAN_TAG);
   cacheLife("hours");
@@ -39,9 +48,9 @@ async function requestPlan(base: string, _asOf: string, _ecbDate: string, _notes
 // readPayPal: background runs (PayPal events) read invoices through PayPal's MCP server; a seller waiting on screen
 // gets the faster run without it.
 export function askFor(inputs: BookInputs, base: string, request: string, readPayPal = false): Promise<AgentRun> {
-  return requestPlan(base, inputs.asOf, inputs.ecb.date, inputs.policy?.notes ?? "", request, readPayPal);
+  return requestPlan(base, inputs.asOf, inputs.ecb.date, inputs.policy?.notes ?? "", inputs.startedAt ?? "", request, readPayPal);
 }
 
 export function planFor(inputs: BookInputs, base: string): Promise<AgentRun> {
-  return dailyPlan(base, inputs.asOf, inputs.ecb.date, inputs.policy?.notes ?? "");
+  return dailyPlan(base, inputs.asOf, inputs.ecb.date, inputs.policy?.notes ?? "", inputs.startedAt ?? "");
 }

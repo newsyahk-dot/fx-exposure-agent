@@ -75,6 +75,17 @@ export async function fetchEcbQuotes(from: string, to: string): Promise<EcbQuote
   return { date: l.date, latest: l.rates, history: { ...h.rates, [l.date]: l.rates } };
 }
 
+// Only the fixings published before `day`. The demo book uses the last complete fixing before its book day, so the
+// numbers (and the agent's plan) do not change in the middle of the day when the ECB publishes at ~15:00 UTC.
+export function ecbBefore(q: EcbQuotes, day: string): EcbQuotes {
+  const dates = Object.keys(q.history)
+    .filter((d) => d < day)
+    .sort();
+  const last = dates.at(-1);
+  if (!last) return q;
+  return { date: last, latest: q.history[last], history: Object.fromEntries(dates.map((d) => [d, q.history[d]])) };
+}
+
 // Standard deviation of daily log returns. Needs at least 20 observations to mean anything.
 export function dailyVol(series: number[]): number | null {
   if (series.length < 21) return null;
