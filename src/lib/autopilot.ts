@@ -42,8 +42,11 @@ async function runWithinPolicy(run: AgentRun, inputs: BookInputs, view: BookView
   const executed: AutopilotResult["executed"] = [];
   const left: AutopilotResult["left"] = [];
   for (const p of run.proposals) {
+    const sentOn = inputs.invoices.find((i) => i.id === p.invoiceId)?.invoiceDate;
     // Rule-based fallback proposals price every eligible discount the same way; only the agent weighs them.
-    const why = outsidePolicy(p, policy) ?? (run.source !== "agent" && p.kind !== "reminder" ? "the agent did not run; discounts need its plan" : null);
+    const why =
+      outsidePolicy(p, policy, sentOn, now.toISOString().slice(0, 10)) ??
+      (run.source !== "agent" && p.kind !== "reminder" ? "the agent did not run; discounts need its plan" : null);
     if (why) {
       left.push({ invoiceNumber: p.invoiceNumber, why });
       continue;

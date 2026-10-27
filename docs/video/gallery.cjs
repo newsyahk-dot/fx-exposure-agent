@@ -124,13 +124,13 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
     await goto('/?base=USD&step=today');
     await p.locator('li[data-state]').first().waitFor({ timeout: 180000 }).catch(() => {});
     await wait(4000);
-    found = (await p.getByText('no click needed').count()) > 0;
+    found = (await p.getByText(/the agent looked at (it|them) on its own/).count()) > 0;
     if (!found) await wait(12000);
   }
   if (found) {
     await topAt(p.locator('#new-since-h'), 16);
-    await hl(p.locator('li:has-text("no click needed")').first());
-    await shot('6-autopilot', 'PayPal tells the agent; her policy lets it act', 'A new invoice went out. The agent looked at it on its own and applied the offer her standing policy allows.');
+    await hl(p.locator('section[aria-labelledby="new-since-h"]'));
+    await shot('6-autopilot', 'PayPal tells the agent, and it looks on its own', 'A new invoice went out. The agent looked at it at once; the terms she just set stay hers — any offer waits for her click.');
   }
 
   // Compose: headline bar + screenshot, 1500×1000.

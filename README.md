@@ -59,7 +59,8 @@ to deal with first.
    what billing in yen, in dollars, on shorter terms or half up front would leave at risk, using that client's own
    payment history. She picks one; it is created and sent in PayPal.
 5. **Routine work handed over.** She approves a standing policy once (for example: reminders yes, discounts no more
-   than 1%), and an autopilot runs the proposals that fit it every weekday morning. Anything else still waits for her.
+   than 1%), and an autopilot runs the proposals that fit it every weekday morning. Anything else still waits for her,
+   and it never changes the terms of an invoice she sent in the last 7 days.
 
 The app never says which way rates will go, and never says which option is better. It shows the cost and the risk
 side by side; she decides.

@@ -6,7 +6,8 @@ import { ASSUME } from "@/lib/evidence";
 import type { MoneyTimeline as Timeline } from "@/lib/money-timeline";
 import styles from "./page.module.css";
 
-export function MoneyTimeline({ t, base }: { t: Timeline; base: string }) {
+// `paid`: money already collected today (home currency) — it has left the chart, so the caption says so.
+export function MoneyTimeline({ t, base, paid = 0 }: { t: Timeline; base: string; paid?: number }) {
   if (!(t.total > 0)) return null;
   const c = (n: number) => compact(base, n);
   const W = 640, H = 170, L = 8, R = 8, T = 14, B = 34;
@@ -19,6 +20,12 @@ export function MoneyTimeline({ t, base }: { t: Timeline; base: string }) {
     <figure className={styles.timeline}>
       <figcaption>
         <strong>When the money comes in</strong>
+        {paid > 0 && (
+          <span>
+            {" "}
+            — <strong className={styles.timelineUp}>{c(paid)}</strong> already paid today
+          </span>
+        )}
         {moved > 0 ? (
           <span>
             {" "}

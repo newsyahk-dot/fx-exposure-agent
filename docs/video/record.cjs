@@ -138,7 +138,7 @@ const INIT = `(() => {
   const shockChip = hero.getByText(/if rates move/);
   const shock = ((await shockChip.innerText()).match(/±\$[\d,]+/) || ['±$900'])[0];
   await hl(shockChip);
-  await say('Waiting costs more than patience.', 'Until foreign money arrives, the exchange rate decides what she actually earns.');
+  await say('While she waits, the exchange rate keeps moving.', 'Until foreign money arrives, the rate decides what she actually earns.');
   await say(`A 3% move either way is about ${shock} on what she's still owed.`, 'Up or down, equally likely — the size of the risk, never a forecast.');
   await hl(shockChip, false);
   await say('Banks hedge this for big companies.', 'This app never predicts rates — it helps a one-person business get paid sooner.', 3600);
@@ -205,6 +205,20 @@ const INIT = `(() => {
   await cutEnd();
   await show(p.getByText('Autopilot is on').first());
   await say('Autopilot is on.', 'Anything outside the policy still waits for her click.', 2400);
+  const runNow = p.getByRole('button', { name: 'Run autopilot now' });
+  await show(runNow);
+  await click(runNow);
+  await cutBegin();
+  const ran = p.locator('[role=status]:has-text("Autopilot ran")').first();
+  await ran.waitFor({ timeout: 180000 }).catch(() => log('autopilot result not seen'));
+  await wait(600);
+  await cutEnd();
+  if (await ran.count()) {
+    await show(ran);
+    await hl(ran);
+    await say('It runs what her policy covers, through the same checks — and says what it left for her.', null, 4200);
+    await hl(ran, false);
+  }
 
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(700);
   await navTo('Next invoice');
@@ -243,7 +257,7 @@ const INIT = `(() => {
     await goto('/?base=USD&step=today');
     await p.locator('li[data-state]').first().waitFor({ timeout: 180000 }).catch(() => {});
     await wait(4000);
-    found = (await p.getByText('no click needed').count()) > 0;
+    found = (await p.getByText(/the agent looked at (it|them) on its own/).count()) > 0;
     log('poll', i, found);
     if (!found) await wait(12000);
   }
@@ -254,10 +268,10 @@ const INIT = `(() => {
   await cutEnd();
   await wait(1600);
   if (found) {
-    const li = p.locator('li:has-text("no click needed")').first();
-    await hl(li);
-    await say('PayPal tells the agent a new invoice went out. It looks at it on its own —', 'and because her policy covers it, the early-payment offer is already on the invoice. Nobody pressed anything.', 7000);
-    await hl(li, false);
+    const sect = p.locator('section[aria-labelledby="new-since-h"]');
+    await hl(sect);
+    await say('PayPal tells the agent a new invoice went out. It looks at it on its own —', 'and leaves the terms she just chose alone: any offer on it waits for her click.', 6500);
+    await hl(sect, false);
   }
 
   // ---- Scene 6 — any seller can try it on their own invoice list

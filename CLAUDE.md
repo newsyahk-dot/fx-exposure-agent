@@ -46,7 +46,9 @@ actions that shorten that exposure (payment reminders, early-payment discount te
 - **Agent reacts to PayPal events**: a verified `INVOICING.INVOICE.SENT` webhook for a non-seed invoice runs
   `reactToNewInvoices` (`src/lib/autopilot.ts`) in `after()`: the agent looks at open invoices the day's plan has not
   seen (`newInvoicesRequest`, cached per set of invoices), and proposals inside the approved policy run through the same
-  path as the autopilot. Today shows the answer under "New since today's plan". Sandbox sends CREATED/SENT for
+  path as the autopilot. The autopilot never changes the terms of an invoice sent in the last `NEW_TERMS_DAYS` (7) days
+  (`outsidePolicy` in `src/lib/policy.ts`; 2026-10-27, after a blind review read it as overriding terms she just chose);
+  such an offer waits for her click. Seed offer invoices are dated 8+ days back so the demo autopilot has work. Today shows the answer under "New since today's plan". Sandbox sends CREATED/SENT for
   API-created invoices (measured 2026-10-26). Seed invoices are skipped so a reset does not start 22 runs.
 - **Home currency** is chosen on screen (`?base=`), default `FXA_DEFAULT_BASE` or USD. Raw ECB quotes are stored, so any
   of USD/EUR/GBP/JPY/KRW works in live and demo mode.

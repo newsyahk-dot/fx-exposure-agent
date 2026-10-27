@@ -46,9 +46,10 @@ placeholders. Captions are mandatory (burned in).
 
 ## 5 · 1:45–2:20 — Hand it over
 
-Autopilot: discounts up to 1% → **Approve this standing policy**. Next invoice: "Bill Sakura Games ¥480,000 …, net 45"
-→ compare → **Approve: create and send**. About a minute later, **New since today's plan**: PayPal told the agent, and the
-offer her policy allows is already on the invoice — "no click needed".
+Autopilot: discounts up to 1% → **Approve this standing policy** → **Run autopilot now** ("Autopilot ran: 3 done", and
+what it left for her). Next invoice: "Bill Sakura Games ¥480,000 …, net 45" → compare → **Approve: create and send**.
+About a minute later, **New since today's plan**: PayPal told the agent, it looked at the new invoice on its own, and it
+leaves the terms she just chose alone — any offer on it waits for her click.
 
 ## 6 · 2:20–2:40 — Try it with your own invoices
 

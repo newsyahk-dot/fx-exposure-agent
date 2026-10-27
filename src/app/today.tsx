@@ -91,7 +91,7 @@ export async function TodayPlan({
         )}
       </div>
 
-      <MoneyTimeline t={moneyTimeline(input, r)} base={base} />
+      <MoneyTimeline t={moneyTimeline(input, r)} base={base} paid={Object.values(paidValue).reduce((a, b) => a + b, 0)} />
 
       {sharedDemo && cards.length > 0 && openCount === 0 && (
         <div className={styles.freshStart}>
@@ -104,7 +104,7 @@ export async function TodayPlan({
       )}
       {sharedDemo && ranCount > 0 && openCount > 0 && (
         <p className={styles.muted}>
-          {ranCount} of {cards.length} already ran — the demo is shared by every visitor. The rest are yours to try.
+          Done today: {ranCount} of {cards.length}. This demo book is shared, so other visitors may act on it too.
         </p>
       )}
       {cards.length === 0 ? (

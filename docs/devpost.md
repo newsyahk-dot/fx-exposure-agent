@@ -86,7 +86,8 @@ what is late, where the exchange-rate risk sits, and what the agent would do tod
 own plan with the access code). Nothing is stored and no PayPal account is touched.
 
 **Routine work handed over.** The seller approves a standing policy once (reminders yes; discounts up to 1%; at most
-three actions a run). Every weekday morning the agent runs what fits; everything else still waits for a click. The
+three actions a run). Every weekday morning the agent runs what fits; everything else still waits for a click, and
+terms she set in the last 7 days are never changed on its own. The
 policy is stored in the seller's PayPal account as an invoice template.
 
 The app never says which way rates will go and never says which option is better. It shows the cost and the risk side
@@ -109,7 +110,8 @@ by side; the seller decides.
   through MCP; they take the checked, approved path.
 - **The agent works three ways**: a daily plan; plain-words requests from the seller ("Chase everyone more than 10 days
   late, gently"); and PayPal events — a verified `INVOICING.INVOICE.SENT` webhook makes it look at the new invoice on
-  its own and run what the seller's approved policy covers.
+  its own and run what the seller's approved policy covers — except that it never changes the terms of an invoice sent
+  in the last 7 days: she just chose them, so an offer there waits for her click.
 - **A checker on every sentence Claude writes**: only numbers that appear in the facts it was given, each figure under
   its own label, no forecasts, no advice, no links, no conditional promises to clients. A draft that fails goes back to
   Claude with the reason and is rewritten; the seller can see how many were.
