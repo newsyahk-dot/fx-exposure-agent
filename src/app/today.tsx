@@ -2,7 +2,7 @@
 // place — approve, sent in PayPal, paid by the client, number down. The loop the demo video opens with.
 
 import Link from "next/link";
-import type { AgentInput, AgentProposal, AgentRun } from "@/lib/agent";
+import { annualCostPct, type AgentInput, type AgentProposal, type AgentRun } from "@/lib/agent";
 import { timelines, replayBook } from "@/lib/evidence";
 import type { EcbQuotes } from "@/lib/fx";
 import { compact, money } from "@/lib/format";
@@ -210,7 +210,9 @@ export function ProposalCard({
   featured?: boolean; // the first card shows the agent's reason and draft without a click
 }) {
   const atRisk = (p.value * SHOCK_PCT) / 100;
-  const weeksSooner = p.kind === "early_pay_discount" ? Math.round((p.daysToDue - p.withinDays) / 7) : 0;
+  const daysSooner = p.kind === "early_pay_discount" ? Math.max(0, p.daysToDue - p.withinDays) : 0;
+  const weeksSooner = Math.round(daysSooner / 7);
+  const annual = p.kind === "early_pay_discount" ? annualCostPct(p.percent, daysSooner) : 0;
   return (
     <li className={styles.card} data-state={s.state}>
       <p className={styles.cardKind}>
@@ -233,15 +235,10 @@ export function ProposalCard({
         <>
           <p className={styles.cardPitch}>
             <strong>{c(p.cost)}</strong> off · due <strong>{shortDate(p.newDueDate)}</strong>
-            {due && due !== p.newDueDate && <> instead of {shortDate(due)}</>}
-            {p.swingNow != null && p.swingIfEarly != null && (
-              <>
-                {" "}
-                · <span title="Typical swing until paid: one standard deviation of the value — a size of uncertainty, not a forecast">
-                  typical swing ±{c(p.swingNow)} → ±{c(p.swingIfEarly)}
-                </span>
-              </>
-            )}
+            {due && due !== p.newDueDate && <> instead of {shortDate(due)}</>} ·{" "}
+            <span title="The discount's cost as a yearly rate: percent / (100 − percent) × 365 / days sooner (the standard trade-credit formula)">
+              about {annual}% a year
+            </span>
           </p>
           {s.state === "open" && (
             <p className={styles.muted}>Comes off when you approve (PayPal can&apos;t make a discount conditional).</p>
@@ -271,6 +268,14 @@ export function ProposalCard({
               <div>
                 <dt>Cost to you</dt>
                 <dd>{c(p.cost)}</dd>
+              </div>
+              <div>
+                <dt>Paid sooner by</dt>
+                <dd>{daysSooner} days</dd>
+              </div>
+              <div>
+                <dt title="percent / (100 − percent) × 365 / days sooner">As a yearly rate</dt>
+                <dd>about {annual}%</dd>
               </div>
               <div>
                 <dt title="One standard deviation of the value until it is paid — a size of uncertainty, not a forecast">

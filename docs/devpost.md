@@ -51,7 +51,8 @@ would do to it (about [$929]). That last figure is the size of the risk, not a f
 
 **The day's work, done with a click.** An AI agent goes through the invoices and proposes today's actions: a reminder
 for an overdue invoice, written for that client, or a small early-payment discount on a large invoice that isn't due
-for two months — with its cost shown next to how much uncertainty it removes. The seller approves; the action runs in
+for two months — shown as a price for getting paid weeks sooner, with its cost as a yearly rate. A discount is not an
+exchange-rate hedge (it is a certain cost; a rate move can go either way), so the app never sells it as one. The seller approves; the action runs in
 PayPal; the card shows "sent". When the client pays, the card shows "paid", the top of the screen shows
 "+[$2,807] collected", and what is still waiting goes down: "Start of today [$31K] → now [$28K]".
 
