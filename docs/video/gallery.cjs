@@ -46,9 +46,7 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
   const timeline = p.locator('figure:has-text("When the money comes in")').first();
   if (await timeline.count()) {
     await topAt(timeline, 20);
-    await hl(p.locator('li[data-state]:has-text("sooner, for")').first());
-    await shot('1b-sooner', 'Money in sooner — and what it costs', 'When the money comes in, as invoiced and if clients pay as proposed (a scenario). Each offer shows its cost as a yearly rate.');
-    await hl(p.locator('li[data-state]:has-text("sooner, for")').first(), false);
+    await shot('1b-sooner', 'When the money comes in', 'Week by week: as invoiced, and if clients pay as the agent proposes — a scenario with its assumptions on screen.');
   }
 
   // 3 — the agent's own log: PayPal reads and a rejected draft
