@@ -42,6 +42,15 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
   await topAt(hero, 20);
   await shot('1-today', 'Get paid sooner from clients abroad', 'What she is still owed, what is late, and the day\'s work an AI agent proposes — one click each.');
 
+  // 1b — getting paid sooner: the money-in timeline and an offer card priced as a yearly rate
+  const timeline = p.locator('figure:has-text("When the money comes in")').first();
+  if (await timeline.count()) {
+    await topAt(timeline, 20);
+    await hl(p.locator('li[data-state]:has-text("sooner, for")').first());
+    await shot('1b-sooner', 'Money in sooner — and what it costs', 'When the money comes in, as invoiced and if clients pay as proposed (a scenario). Each offer shows its cost as a yearly rate.');
+    await hl(p.locator('li[data-state]:has-text("sooner, for")').first(), false);
+  }
+
   // 3 — the agent's own log: PayPal reads and a rejected draft
   const planned = p.locator('details:has(> summary:text("How the agent planned this"))');
   await planned.locator('summary').first().click();
@@ -67,6 +76,15 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
   await chart.waitFor({ timeout: 60000 });
   await topAt(p.locator('h2').first(), 16);
   await shot('7-evidence', 'History, never forecasts', 'Two years of ECB rates: how far money moved while it waited — and her open book replayed both ways.');
+
+  // 8 — try it with your own invoices (read-only, nothing stored)
+  await goto('/try');
+  await p.getByRole('button', { name: 'Load a sample' }).click();
+  await p.getByRole('button', { name: "Show what's waiting" }).click();
+  const own = p.locator('section[aria-label="Your invoices"]');
+  await own.waitFor({ timeout: 90000 });
+  await topAt(own, 16);
+  await shot('8-try', 'Try it with your own invoices', 'Paste an invoice list from PayPal or any tool: what is waiting, what is late, the exchange-rate risk and the plan. Nothing stored.');
 
   // 2 — approve, pay as the client, collected
   await goto('/?base=USD&step=today');

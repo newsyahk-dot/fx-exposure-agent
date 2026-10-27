@@ -77,6 +77,15 @@ const INIT = `(() => {
   const goto = async (path) => { await clear(); await p.goto(URL + path, { waitUntil: 'domcontentloaded', timeout: 180000 }); };
   const navTo = async (label) => { await clear(); await click(p.locator('nav[aria-label="Steps"] a', { hasText: label })); };
 
+  // ---- Opening — the problem, from a public source (README "Why it matters")
+  await p.setContent(`<html><body style="margin:0;height:100vh;display:grid;place-items:center;background:#0f1218;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif">
+    <div style="text-align:center;max-width:1050px">
+      <div style="font-size:52px;font-weight:700;letter-spacing:-.02em;line-height:1.2">35% of UK freelancers were not paid on time by a client in the past year.</div>
+      <div style="font-size:22px;margin-top:20px;opacity:.6">IPSE, late payment research, 2022</div>
+      <div style="font-size:30px;margin-top:44px;opacity:.92">When the client is abroad, the exchange rate keeps moving while she waits.</div>
+    </div></body></html>`);
+  await wait(6500);
+
   // ---- Scene 1 — paid, once
   await cutBegin();
   await goto('/?base=USD&step=today');
@@ -126,14 +135,23 @@ const INIT = `(() => {
   await say('Waiting costs more than patience.', 'Until foreign money arrives, the exchange rate decides what she actually earns.');
   await say(`A 3% move either way is about ${shock} on what she's still owed.`, 'Up or down, equally likely — the size of the risk, never a forecast.');
   await hl(shockChip, false);
-  await say('Banks hedge this for big companies.', 'This app helps a one-person business get paid sooner.', 3200);
+  await say('Banks hedge this for big companies.', 'This app never predicts rates — it helps a one-person business get paid sooner.', 3600);
+  const timeline = p.locator('figure:has-text("When the money comes in")').first();
+  if (await timeline.count()) {
+    await show(timeline);
+    const cap = (await timeline.locator('figcaption').innerText()).replace(/^When the money comes in\s*—\s*/, '');
+    await hl(timeline);
+    await say('When the money comes in, week by week.', cap ? cap.charAt(0).toUpperCase() + cap.slice(1) + ' — a scenario, not a promise.' : 'As invoiced, and if clients pay as proposed — a scenario, not a promise.', 6000);
+    await hl(timeline, false);
+  }
 
   // ---- Scene 3 — the agent, checked by code
   const offer = p.locator('li[data-state]:has-text("sooner, for")').first();
   await show(offer);
   const pitch = offer.locator('p').nth(2);
   await hl(offer);
-  await say('For a large invoice due in two months, it can offer a small early-payment discount.', 'The cost is shown next to how much it shortens the wait. She decides.');
+  const annual = ((await offer.innerText()).match(/about ([\d.]+)% a year/) || [, ''])[1];
+  await say('For an invoice due in two months, it can ask to be paid weeks sooner for a small discount.', `A price for getting paid sooner${annual ? ` — about ${annual}% a year here` : ''}. Code allows only offers at least 3 weeks sooner and at most 12% a year. She decides.`, 7000);
   await hl(offer, false);
   const badgeCheck = offer.getByText(/Written by Claude, checked by code/);
   await hl(badgeCheck);
@@ -255,7 +273,28 @@ const INIT = `(() => {
     await hl(li, false);
   }
 
-  // ---- Scene 6 — close. The total now includes the invoice she just sent, so say so instead of leaving a number
+  // ---- Scene 6 — any seller can try it on their own invoice list
+  await goto('/try');
+  const loadSample = p.getByRole('button', { name: 'Load a sample' });
+  await loadSample.waitFor({ timeout: 60000 });
+  await wait(600);
+  await say('Any seller can try it on their own invoices: paste a list from PayPal or any invoicing tool.', 'Nothing is stored, and nothing in PayPal is touched.', 4200);
+  await click(loadSample);
+  await wait(500);
+  await click(p.getByRole('button', { name: "Show what's waiting" }));
+  await cutBegin();
+  const ownHero = p.locator('section[aria-label="Your invoices"]');
+  await ownHero.waitFor({ timeout: 90000 });
+  await wait(800);
+  await cutEnd();
+  await show(ownHero, 'start');
+  await say('What is waiting, what is late, and the exchange-rate risk — by currency.', null, 3800);
+  const ownTimeline = ownHero.locator('figure').first();
+  if (await ownTimeline.count()) { await show(ownTimeline); await hl(ownTimeline); await say('And what the agent would do today.', null, 3200); await hl(ownTimeline, false); }
+  await goto('/?base=USD&step=today');
+  await p.locator('li[data-state]').first().waitFor({ timeout: 180000 }).catch(() => {});
+
+  // ---- Scene 7 — close. The total now includes the invoice she just sent, so say so instead of leaving a number
   // that seems to have gone back up.
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(900);
   const delta = hero.locator('p').filter({ hasText: 'Start of today' }).first();
@@ -265,7 +304,10 @@ const INIT = `(() => {
     await say(`Today: ${collected || 'one payment'} collected.`, added ? `The new invoice she just sent (${added}) is waiting too — with its early-payment offer already on it.` : null, 4200);
     await hl(delta, false);
   }
-  await say('Tested: 48 agent runs · 283 proposals · 0 violations of our own checks.', 'Every number from code. Every action approved — by her click, or her policy.', 5200);
+  const evalMd = fs.readFileSync(require('path').join(__dirname, '..', 'agent-eval.md'), 'utf8');
+  let runs = 0, props = 0, probs = 0;
+  for (const m of evalMd.matchAll(/^\| [^|]+ \| (\d+) \| \d+ \| (\d+) \([^|]*\| [^|]*\| \*\*(\d+)\*\*/gm)) { runs += +m[1]; props += +m[2]; probs += +m[3]; }
+  await say(`Tested: ${runs} agent runs · ${props} proposals · ${probs} violations of our own checks.`, 'Every number from code. Every action approved — by her click, or her policy.', 5200);
   await say('', null, 300);
   await p.setContent(`<html><body style="margin:0;height:100vh;display:grid;place-items:center;background:#0f1218;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif">
     <div style="text-align:center">

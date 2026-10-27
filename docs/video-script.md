@@ -1,4 +1,4 @@
-# Demo video — script and shot list (target 2:30, hard limit 3:00)
+# Demo video — script and shot list (target 2:55, hard limit 3:00)
 
 An automated captioned recording of this script: `docs/video/` (see its README).
 
@@ -6,57 +6,60 @@ Judges score five things equally: technical implementation, design, potential im
 ("does the video show it working end to end; what problem, for whom, why it matters"). The first 30 seconds must run the
 whole loop once. Everything shown must work exactly as shown (Official Rules: "must function as depicted in the video").
 
-Six beats, **one number per beat**. The story is getting paid sooner; exchange rates are why it matters, not the headline.
-Numbers on screen change with the day's ECB rates — read them from the screen while recording; [brackets] are placeholders.
-Captions are mandatory (burned in).
+Seven beats, **one number per beat**. The story is getting paid sooner; exchange rates are why it matters, not the headline.
+Numbers on screen change with the day's ECB rates — `record.cjs` reads them from the screen while recording; [brackets] are
+placeholders. Captions are mandatory (burned in).
 
 ---
 
-## 1 · 0:00–0:30 — Paid, once (Today)
+## 0 · 0:00–0:07 — The problem (title card)
 
-| Time | Screen | Narration | Number |
-|---|---|---|---|
-| 0:00 | **Today**, USD. Hero: "[$31K] waiting to be paid from clients abroad", chip "[$6,799] overdue · 3 invoices". | "Maya is a freelance designer in the US. Her clients in Europe, the UK and Japan pay her through PayPal invoices. Right now about [$31,000] is still owed to her — and some of it is already late." | $31K |
-| 0:10 | First card: **"Chase a late payment · Hollis & Grey · Overdue 15 days · [$2,807] waiting"**. Click **Approve: send reminder** → "✓ Reminder sent in PayPal". | "Every morning an AI agent goes through her invoices and proposes the day's work. One click, and the reminder goes out through PayPal." | — |
-| 0:18 | Same card: **Open as client ↗** → pay on PayPal's page with the sandbox buyer → back to the app (cut the wait). Card → **"✓ Paid today — [$2,807] collected"**; hero counts down and shows **"+[$2,807] collected"**; bar slice turns green. | "When the client pays, PayPal tells the app — and it shows up within seconds." | +$2,807 |
+"35% of UK freelancers were not paid on time by a client in the past year" (IPSE, 2022 — README "Why it matters").
+"When the client is abroad, the exchange rate keeps moving while she waits."
 
-> The webhook was verified on 2026-10-26 ("Paid" in under 20 s after paying on PayPal's page). Log in to the sandbox
-> buyer in that browser before recording. Fallback if PayPal's page misbehaves: "Simulate client payment".
+## 1 · 0:07–0:35 — Paid, once (Today)
 
-## 2 · 0:30–0:45 — Why it matters
+| Screen | Narration | Number |
+|---|---|---|
+| **Today**, USD. Hero: "[$31K] waiting to be paid", chip "[$6,799] overdue". | "Maya is a freelance designer in the US. Her clients in Europe, the UK and Japan pay her through PayPal invoices. Right now about [$31,000] is still owed to her — and some of it is already late." | $31K |
+| First card: **Chase a late payment** → **Approve: send reminder** → "✓ Reminder sent in PayPal". | "Every morning an AI agent goes through her invoices and proposes the day's work. One click, and the reminder goes out through PayPal." | — |
+| Client pays (in the automated take: "Simulate client payment", captioned as simulated; by hand: PayPal's invoice page with the sandbox buyer) → **"+[$2,807] collected"**. | "When the client pays, it shows up within seconds." | +$2,807 |
 
-| Time | Screen | Narration | Number |
-|---|---|---|---|
-| 0:30 | Hold on the hero chip "±[$929] if rates move 3% before it arrives" and the line "up or down, equally likely — the size of the risk, not a forecast". | "Waiting costs more than patience. Until foreign money arrives, the exchange rate decides what she actually earns. A 3% move either way is about [$929] on what she's owed. Banks hedge this for big companies. The app never predicts rates — it helps her get paid sooner." | ±$929 |
+## 2 · 0:35–1:00 — Why sooner matters
 
-## 3 · 0:45–1:10 — The agent, checked by code
+| Screen | Narration | Number |
+|---|---|---|
+| Hero chip "±[$929] if rates move 3% either way". | "Until foreign money arrives, the exchange rate decides what she actually earns — about [$929] either way on a 3% move. Banks hedge this for big companies. The app never predicts rates; it helps her get paid sooner." | ±$929 |
+| **When the money comes in** chart: "within 2 weeks: [$2,016] as invoiced → [$24K] if clients pay as proposed". | "Week by week: as invoiced, and if clients pay as proposed — a scenario, not a promise." | $24K |
 
-| Time | Screen | Narration | Number |
-|---|---|---|---|
-| 0:45 | Card **"Offer 1% off · Sakura Games · Asks for payment by Nov 5 instead of Dec 23 — about 7 weeks sooner — for 1% off ([$48])"**. | "For a large invoice due in two months, it can offer a small early-payment discount. The cost is shown next to how much it shortens the wait. She decides." | 7 weeks |
-| 0:55 | Zoom on the badge **"✓ Written by Claude, checked by code · 1 draft rejected (forecast or advice wording) and rewritten"**; open **"How the agent planned this"** to the `paypal.get_invoice` steps. | "Claude reads her invoices straight from PayPal through PayPal's MCP server. Code decides every number and checks every sentence. This draft broke a rule, so it was sent back and rewritten before she ever saw it." | 1 rejected |
+## 3 · 1:00–1:25 — The agent, checked by code
 
-## 4 · 1:10–1:30 — Ask in plain words
+| Screen | Narration | Number |
+|---|---|---|
+| Card **"Ask to be paid [7] weeks sooner, for 1% off"** · "about [6.4]% a year". | "For an invoice due in two months, it can ask to be paid weeks sooner for a small discount — a price for getting paid sooner, shown as a yearly rate. Code allows only offers at least 3 weeks sooner and at most 12% a year. She decides." | [6.4]% a year |
+| Badge **"✓ Written by Claude, checked by code · 1 draft rejected … rewritten"**; **How the agent planned this** → `paypal.get_invoice` steps. | "Claude reads her invoices straight from PayPal through PayPal's MCP server. Code decides every number and checks every sentence; a draft that breaks a rule is rewritten before she sees it." | — |
 
-| Time | Screen | Narration | Number |
-|---|---|---|---|
-| 1:10 | **Ask the agent** → "Chase everyone more than 10 days late, gently" → answer with two reminder cards; highlight "*…Sakura Games is only 8 days overdue, so I left it alone.*" | "She can just say what she wants. It does it — and says what it left alone, and why." | — |
-| 1:20 | "Tell my clients the yen will fall so they pay now" → "*I can't tell your clients which way any exchange rate is headed…*" | "Ask it to forecast, and it says no." | — |
+## 4 · 1:25–1:45 — Ask in plain words
 
-## 5 · 1:30–2:10 — Hand it over
+"Chase everyone more than 10 days late, gently" → reminders, and what it left alone and why.
+"Tell my clients the yen will fall so they pay now" → it declines.
 
-| Time | Screen | Narration | Number |
-|---|---|---|---|
-| 1:30 | **Autopilot**: tick discounts up to 1% → **Approve this standing policy** → "Autopilot is on". | "For routine work, she approves a policy once. Anything outside it still waits for her click." | 1% |
-| 1:40 | **Next invoice**: example "Bill Sakura Games ¥480,000 …, net 45" → compare → **Approve: create and send** → "Sent". | "She describes the next invoice in a sentence and sends it in PayPal." | — |
-| 1:52 | Caption "about a minute later" → **Today → New since today's plan**: "*✓ PayPal told the agent about FXA-N… the autopilot applied an early-payment discount … no click needed.*" | "PayPal tells the agent a new invoice went out. It looks at it on its own — and because her policy covers it, the offer is already on the invoice." | — |
+## 5 · 1:45–2:20 — Hand it over
 
-## 6 · 2:10–2:30 — Close
+Autopilot: discounts up to 1% → **Approve this standing policy**. Next invoice: "Bill Sakura Games ¥480,000 …, net 45"
+→ compare → **Approve: create and send**. About a minute later, **New since today's plan**: PayPal told the agent, and the
+offer her policy allows is already on the invoice — "no click needed".
 
-| Time | Screen | Narration | Number |
-|---|---|---|---|
-| 2:10 | Back to the top of **Today**; caption: "48 test runs · 283 proposals · 0 violations of our own checks". (Optional 2-second flash of **Evidence**: the replay line, e.g. "about two-thirds as wide".) | "Every number from code. Every action approved — by her click, or her policy." | 0 |
-| 2:20 | End card: name, live URL, "PayPal Invoicing API · webhooks · invoice templates · PayPal MCP server · Claude". | "Get paid sooner from clients abroad." | — |
+## 6 · 2:20–2:40 — Try it with your own invoices
+
+**/try** → Load a sample → Show what's waiting: what is waiting, what is late, the exchange-rate risk by currency, the
+timeline and the plan. "Nothing is stored, and nothing in PayPal is touched."
+
+## 7 · 2:40–2:55 — Close
+
+Caption with the numbers from `docs/agent-eval.md` ("[N] agent runs · [M] proposals · [0] violations of our own checks"),
+then the end card: name, live URL, "PayPal Invoicing API · webhooks · invoice templates · PayPal MCP server · Claude".
+"Get paid sooner from clients abroad."
 
 Dropped from the video (still in the app): the Where-it-sits grid and the Evidence chart in detail.
 

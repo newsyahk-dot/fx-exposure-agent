@@ -54,22 +54,27 @@ business the view a treasury desk has."]
 ### What it does
 
 **What she's waiting for, at a glance.** The app reads the seller's open PayPal invoices and shows how much is still
-owed from clients abroad (about [$31,000] in the demo book), what is already overdue, and what a 3% move either way
-would do to it (about [$929]). That last figure is the size of the risk, not a forecast.
+owed from clients abroad, what is already overdue, and what a 3% move either way would do to it. That last figure is
+the size of the risk, not a forecast.
 
 **The day's work, done with a click.** An AI agent goes through the invoices and proposes today's actions: a reminder
 for an overdue invoice, written for that client, or a small early-payment discount on a large invoice that isn't due
 for two months — shown as a price for getting paid weeks sooner, with its cost as a yearly rate. A discount is not an
 exchange-rate hedge (it is a certain cost; a rate move can go either way), so the app never sells it as one. The seller approves; the action runs in
 PayPal; the card shows "sent". When the client pays, the card shows "paid", the top of the screen shows
-"+[$2,807] collected", and what is still waiting goes down: "Start of today [$31K] → now [$28K]".
+"+ collected" with the amount, and what is still waiting goes down ("Start of today → now").
+
+**When the money comes in.** A week-by-week chart of money from clients abroad: as invoiced, and if clients pay as the
+agent proposes — late invoices count as not yet in, a reminded invoice is assumed paid within 7 days and an offer by its
+new due date, net of the discount. The headline line says how much would arrive within two weeks either way. It is
+labelled a scenario, not a promise.
 
 **Where the risk sits.** Every open invoice in one grid, ranked by what it puts at risk, with what the agent is doing
 about each one — searchable, sortable, and downloadable as CSV.
 
 **Evidence, not forecasts.** Two years of ECB rates show how far each currency moved for money that waited 7 to 90
 days, and replay the seller's open book: paid the way the agent proposes, it would have moved in a narrower range
-([copy the phrase from the Today screen on submission day, e.g. "about two-thirds as wide (37% narrower)"]). History, labelled as history.
+(the screen says how much narrower, recomputed daily). History, labelled as history.
 
 **Before the next invoice.** The seller types "Bill Sakura Games ¥480,000 for the level art pack, net 45". Claude turns
 it into an invoice; the app prices four ways to bill it — as asked, in dollars, on 14-day terms, half up front — using

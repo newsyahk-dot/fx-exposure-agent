@@ -13,7 +13,7 @@ Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
 ## Who it's for
 
-A freelance designer in the US invoices clients in Europe, the UK and Japan through PayPal. Right now about $31,000
+A freelance designer in the US invoices clients in Europe, the UK and Japan through PayPal. Right now tens of thousands of dollars
 of her income is waiting in euros, pounds and yen, some of it already overdue. Every week it waits, a move in the
 exchange rate changes what she will actually be paid — and nothing tells her how much is at stake, or which invoice
 to deal with first.
@@ -44,15 +44,17 @@ to deal with first.
 
 ## What she gets
 
-1. **What she's waiting for, at a glance.** About $31,000 owed from clients abroad, what's already overdue, and what a
-   3% move either way would do to it (about $929) — up or down, equally likely; the size of the risk, not a forecast.
+1. **What she's waiting for, at a glance.** What is owed from clients abroad, what's already overdue, and what a 3%
+   move either way would do to it — up or down, equally likely; the size of the risk, not a forecast. A week-by-week
+   chart shows when the money comes in as invoiced, and if clients pay as proposed (a scenario, with its assumptions
+   on screen).
 2. **The day's work, done with a click.** An AI agent reads her PayPal invoices and proposes today's actions:
    a reminder for the overdue invoice from London, written for that client; or, for a large invoice that isn't due
    for two months, a small early-payment discount — shown as what it is: a price for getting paid weeks sooner, with
    its cost as a yearly rate (the agent only offers terms at most 12% a year and at least three weeks sooner). She approves, and it
    runs in PayPal.
 3. **The loop closes on its own.** When the client pays, PayPal notifies the app and her screen shows it within
-   seconds: "+$2,807 collected", and what is still waiting goes down ("start of today → now").
+   seconds: "+ collected" with the amount, and what is still waiting goes down ("start of today → now").
 4. **Help before the next invoice.** She types "Bill Sakura Games ¥480,000 for the level art pack, net 45" and sees
    what billing in yen, in dollars, on shorter terms or half up front would leave at risk, using that client's own
    payment history. She picks one; it is created and sent in PayPal.
