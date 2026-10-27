@@ -9,6 +9,7 @@
 //
 // No key, an API error or a refusal falls back to rule-based proposals with fixed wording.
 
+import { annualCostPct, OFFER_MAX_ANNUAL_PCT, OFFER_MIN_DAYS_SOONER } from "./offer-rule";
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
@@ -30,13 +31,8 @@ const REMIND_COOLDOWN_DAYS = 3;
 const TOOL_BUDGET = 40;
 export const DISCOUNT_PCTS = [1, 1.5, 2] as const;
 export const WINDOW_DAYS = { min: 5, max: 10 } as const;
-// The app's rule for early-payment offers (code enforces it; the seller decides): an offer must bring the money in
-// at least OFFER_MIN_DAYS_SOONER days sooner, and its cost as a yearly rate — the standard trade-credit formula,
-// percent / (100 − percent) × 365 / days sooner — must be at most OFFER_MAX_ANNUAL_PCT. A discount is a price for
-// getting paid sooner, not an exchange-rate hedge: it is a certain cost, while a rate move can go either way.
-export const OFFER_MIN_DAYS_SOONER = 21;
-export const OFFER_MAX_ANNUAL_PCT = 12;
 const MIN_DAYS_FOR_OFFER = OFFER_MIN_DAYS_SOONER + WINDOW_DAYS.min;
+export { annualCostPct, OFFER_MAX_ANNUAL_PCT, OFFER_MIN_DAYS_SOONER };
 
 // --- Candidates: what code knows about each open invoice ------------------------------------------
 
@@ -184,10 +180,7 @@ export type Pricing = {
   facts: string;
 };
 
-// The discount's cost as a yearly rate: percent / (100 − percent) × 365 / days sooner, rounded to 0.1%.
-export function annualCostPct(percent: number, daysSooner: number): number {
-  return daysSooner > 0 ? Math.round((percent / (100 - percent)) * (365 / daysSooner) * 1000) / 10 : Infinity;
-}
+
 
 export function priceDiscount(cand: Candidate, base: string, asOf: string, percent: number, withinDays: number): Pricing {
   const c = (n: number) => compact(base, n);

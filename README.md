@@ -5,6 +5,10 @@
 Live demo: **https://fx-exposure-agent.vercel.app** (PayPal sandbox — no real money). Judges: the access code that
 lets you run the agent's actions is in the Devpost testing instructions; without it you can look around.
 
+**Try it with your own invoices:** https://fx-exposure-agent.vercel.app/try — paste an invoice list (CSV, e.g. an export
+from PayPal) and see what is waiting from clients abroad, what is late and what the agent would do today. Nothing is
+stored; no PayPal account is touched.
+
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
 ## Who it's for
@@ -58,6 +62,7 @@ side by side; she decides.
    "Simulate client payment". Watch "+… collected" appear at the top.
 4. **Next invoice:** describe an invoice in a sentence and compare the options.
 5. **Autopilot:** approve a policy and press "Run autopilot now".
+6. **Your own invoices:** open `/try`, load the sample or paste your own list, and see the same analysis and plan.
 
 "Reset the demo book" (under sandbox controls on Today) starts the story over; it also resets every night.
 

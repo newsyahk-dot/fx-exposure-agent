@@ -99,5 +99,10 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   and a cursor drawn into the page; `edit.py` cuts waits marked by a corner square in the video (the recording drifts
   ~7 s against the clock over 5 min, so cut times are never taken from the clock). The access code comes from
   `FXA_ACCESS_CODE` only; the unlocked session (`state.json`) and outputs are git-ignored. Reset the demo book after.
+- **Try it with your own invoices** (`/try`, 2026-10-27): `src/lib/own-invoices.ts` reads a pasted CSV/TSV by header
+  names (rows it cannot read are listed with a reason), `src/lib/own-analysis.ts` runs the same `viewFor` + `rulesRun` as
+  the demo as of today (`quotesFor`, every ECB currency), and `try-actions.ts` adds Claude's plan only with the access
+  code (`readPayPal: false`). Nothing is stored or logged; nothing in PayPal is touched. The offer rule's constants live
+  in `src/lib/offer-rule.ts` (no imports, safe for client components).
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.
