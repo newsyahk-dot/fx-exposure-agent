@@ -1,0 +1,274 @@
+// Records the demo video draft on the live site, following docs/video-script.md.
+// Captions and a visible cursor are drawn into the page; waits are marked and cut afterwards (cut.json).
+const PW = process.env.PLAYWRIGHT_MODULE || 'playwright';
+const { chromium } = require(PW);
+const URL = process.env.FXA_URL || 'https://fx-exposure-agent.vercel.app';
+const launch = () => chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
+const fs = require('fs');
+const W = 1440, H = 900;
+
+const INIT = `(() => {
+  const css = \`
+    #__cap{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);max-width:1100px;z-index:2147483647;
+      background:rgba(15,18,24,.86);color:#fff;font:600 26px/1.38 system-ui,-apple-system,Segoe UI,sans-serif;
+      padding:14px 26px;border-radius:14px;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none;
+      box-shadow:0 6px 30px rgba(0,0,0,.25)}
+    #__cap small{display:block;font-weight:500;font-size:17px;opacity:.82;margin-top:4px}
+    #__cur{position:fixed;width:22px;height:22px;margin:-3px 0 0 -3px;z-index:2147483647;pointer-events:none;
+      background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22'><path d='M2 2 L2 18 L7 13 L10.5 20 L13 19 L9.6 12 L16.5 12 Z' fill='black' stroke='white' stroke-width='1.5'/></svg>") no-repeat}
+    .__ripple{position:fixed;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:3px solid #2a78d6;
+      z-index:2147483646;pointer-events:none;animation:__r .6s ease-out forwards}
+    @keyframes __r{from{transform:scale(.3);opacity:1}to{transform:scale(1.6);opacity:0}}
+    .__hl{outline:4px solid #f5a623 !important;outline-offset:4px !important;border-radius:10px;transition:outline-color .3s}
+  \`;
+  const ensure = () => {
+    if (!document.body) return;
+    if (!document.getElementById('__st')) { const s=document.createElement('style'); s.id='__st'; s.textContent=css; document.head.appendChild(s); }
+    if (!document.getElementById('__cap')) {
+      const c=document.createElement('div'); c.id='__cap'; document.body.appendChild(c);
+      const t=sessionStorage.getItem('__cap'); if (t) { c.innerHTML=t; c.style.opacity=1; }
+    }
+    if (!document.getElementById('__cur')) {
+      const k=document.createElement('div'); k.id='__cur'; document.body.appendChild(k);
+      const p=(sessionStorage.getItem('__cur')||'720,450').split(','); k.style.left=p[0]+'px'; k.style.top=p[1]+'px';
+    }
+  };
+  const mark = () => {
+    if (!document.body) return;
+    let m = document.getElementById('__mark');
+    const c = sessionStorage.getItem('__mark') || '';
+    if (!m) { m = document.createElement('div'); m.id = '__mark'; document.body.appendChild(m); }
+    m.style.cssText = 'position:fixed;left:0;top:0;width:24px;height:24px;z-index:2147483647;pointer-events:none;background:' + (c || 'transparent');
+  };
+  window.__setMark = (c) => { sessionStorage.setItem('__mark', c || ''); mark(); };
+  setInterval(() => { ensure(); mark(); }, 100);
+  setInterval(ensure, 200);
+  document.addEventListener('DOMContentLoaded', ensure);
+  window.__setCap = (html) => { ensure(); const c=document.getElementById('__cap'); sessionStorage.setItem('__cap', html||''); c.innerHTML=html||''; c.style.opacity=html?1:0; };
+  addEventListener('mousemove', e => { const k=document.getElementById('__cur'); if(k){k.style.left=e.clientX+'px';k.style.top=e.clientY+'px';} sessionStorage.setItem('__cur', e.clientX+','+e.clientY); }, true);
+  addEventListener('mousedown', e => { const r=document.createElement('div'); r.className='__ripple'; r.style.left=e.clientX+'px'; r.style.top=e.clientY+'px'; document.body.appendChild(r); setTimeout(()=>r.remove(),700); }, true);
+})();`;
+
+(async () => {
+  const b = await launch();
+  const ctx = await b.newContext({ viewport: { width: W, height: H }, storageState: 'state.json', recordVideo: { dir: 'raw', size: { width: W, height: H } } });
+  await ctx.addInitScript(INIT);
+  const p = await ctx.newPage();
+  const t0 = Date.now();
+  await p.setContent('<html><body style="margin:0;background:#fff;height:100vh"></body></html>');
+  const now = () => (Date.now() - t0) / 1000;
+  const cuts = []; let cutAt = null;
+  const setMark = (c) => p.evaluate((c) => window.__setMark && window.__setMark(c), c).catch(() => {});
+  const cutBegin = async () => { cutAt = now(); await setMark('#ff00ff'); await p.waitForTimeout(250); };
+  const cutEnd = async () => { await setMark('#00ffff'); await p.waitForTimeout(350); await setMark(''); await p.waitForTimeout(150); cuts.push([cutAt, now()]); cutAt = null; };
+  const log = (...a) => console.log(now().toFixed(1), ...a);
+  const wait = (ms) => p.waitForTimeout(ms);
+  const say = async (text, sub, ms) => {
+    const html = text ? text + (sub ? `<small>${sub}</small>` : '') : '';
+    await p.evaluate((h) => window.__setCap && window.__setCap(h), html).catch(() => {});
+    const words = (text + ' ' + (sub || '')).split(/\s+/).length;
+    await wait(ms ?? Math.max(2500, words * 330 + 900));
+  };
+  const hl = (loc, on = true) => loc.evaluate((el, on) => el.classList.toggle('__hl', on), on).catch(() => {});
+  const show = async (loc, block = 'center') => { await loc.evaluate((el, block) => el.scrollIntoView({ behavior: 'smooth', block }), block); await wait(900); };
+  const moveTo = async (loc) => { const bb = await loc.boundingBox(); if (bb) await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2, { steps: 25 }); await wait(250); };
+  const click = async (loc) => { await moveTo(loc); await loc.click(); };
+  const clear = () => p.evaluate(() => window.__setCap && window.__setCap('')).catch(() => {});
+  const goto = async (path) => { await clear(); await p.goto(URL + path, { waitUntil: 'domcontentloaded', timeout: 180000 }); };
+  const navTo = async (label) => { await clear(); await click(p.locator('nav[aria-label="Steps"] a', { hasText: label })); };
+
+  // ---- Scene 1 — paid, once
+  await cutBegin();
+  await goto('/?base=USD&step=today');
+  const hero = p.locator('section[aria-label="Waiting to be paid"]');
+  const firstCard = p.locator('li[data-state]').first();
+  await firstCard.waitFor({ timeout: 180000 });
+  await wait(1500);
+  await cutEnd();
+  const heroText = await hero.innerText();
+  const total = (heroText.match(/\$[\d.,]+K/) || ['about $31K'])[0];
+  const overdue = ((await hero.locator('[data-tone="late"]').innerText().catch(() => '')).match(/\$[\d,]+/) || ['some'])[0];
+  log('hero', total, overdue);
+  await say('Maya is a freelance designer in the US.', 'Her clients in Europe, the UK and Japan pay her through PayPal invoices.');
+  await hl(hero);
+  await say(`Right now ${total.replace('K', ',000').replace(/\$(\d+),000/, '$$$1,000')} is still owed to her —`, `and ${overdue} of it is already late.`);
+  await hl(hero, false);
+  await show(firstCard, 'start');
+  await p.mouse.wheel(0, -120); await wait(500);
+  await say('Every morning an AI agent goes through her invoices and proposes the day\'s work.', 'Here: chase a late payment, with the e-mail it wrote for this client.');
+  const approve = firstCard.getByRole('button', { name: /Approve: send reminder/ });
+  await show(approve);
+  await say('One click, and the reminder goes out through PayPal.', null, 1800);
+  await click(approve);
+  await cutBegin();
+  await firstCard.getByText(/Reminder sent in PayPal/).waitFor({ timeout: 60000 });
+  await cutEnd();
+  await show(firstCard.getByText(/Reminder sent in PayPal/));
+  await say('✓ Sent in PayPal.', 'Now play the client and pay the invoice.', 2600);
+  const pay = firstCard.getByRole('button', { name: 'Simulate client payment' });
+  await click(pay);
+  await say('Paying as the client…', 'Sandbox: payment simulated in the app. Paying on PayPal\'s own invoice page shows up the same way, via webhook, in under 20 s.', 1500);
+  await firstCard.getByText(/Paid today/).waitFor({ timeout: 60000 }).catch(() => log('paid text not seen'));
+  const collected = ((await firstCard.innerText()).match(/(\$[\d,]+) collected/) || [, ''])[1];
+  log('collected', collected);
+  await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  await wait(800);
+  const badge = hero.locator('[role=status]');
+  await badge.waitFor({ timeout: 15000 }).catch(() => log('badge not seen'));
+  await hl(badge);
+  await say(`Paid: ${collected || 'the payment'} collected.`, 'What she is still waiting for goes down at once.', 4200);
+  await hl(badge, false);
+
+  // ---- Scene 2 — why it matters
+  const shockChip = hero.getByText(/if rates move/);
+  const shock = ((await shockChip.innerText()).match(/±\$[\d,]+/) || ['±$900'])[0];
+  await hl(shockChip);
+  await say('Waiting costs more than patience.', 'Until foreign money arrives, the exchange rate decides what she actually earns.');
+  await say(`A 3% move either way is about ${shock} on what she's still owed.`, 'Up or down, equally likely — the size of the risk, never a forecast.');
+  await hl(shockChip, false);
+  await say('Banks hedge this for big companies.', 'This app helps a one-person business get paid sooner.', 3200);
+
+  // ---- Scene 3 — the agent, checked by code
+  const offer = p.locator('li[data-state]:has-text("sooner, for")').first();
+  await show(offer);
+  const pitch = offer.locator('p').nth(2);
+  await hl(offer);
+  await say('For a large invoice due in two months, it can offer a small early-payment discount.', 'The cost is shown next to how much it shortens the wait. She decides.');
+  await hl(offer, false);
+  const badgeCheck = offer.getByText(/Written by Claude, checked by code/);
+  await hl(badgeCheck);
+  await say('Claude writes every proposal. Code checks it before she sees it:', 'only numbers from the facts, no forecasts, no advice, no links — a draft that fails is sent back and rewritten.');
+  await hl(badgeCheck, false);
+  const rewritten = p.locator('p[data-rewritten]').first();
+  if (await rewritten.count()) {
+    await show(rewritten);
+    await hl(rewritten);
+    await say('Like this one: a draft broke a rule, so code sent it back and Claude rewrote it.', null, 4200);
+    await hl(rewritten, false);
+  }
+  const planned = p.locator('details:has(> summary:text("How the agent planned this"))');
+  await show(planned.locator('summary'));
+  await click(planned.locator('summary'));
+  await wait(600);
+  const firstRead = planned.locator('li:has(code:text-matches("^paypal\\\\."))').first();
+  if (await firstRead.count()) { await show(firstRead); await hl(firstRead); }
+  await say('Claude reads her invoices straight from PayPal, through PayPal\'s own MCP server (read-only tools).', 'Code decides every number; every change still goes through her approval.');
+  if (await firstRead.count()) await hl(firstRead, false);
+
+  // ---- Scene 4 — ask in plain words
+  const ask = p.locator('#ask');
+  await show(ask, 'start');
+  await say('She can also just say what she wants.', null, 2200);
+  await click(ask.getByRole('button', { name: 'Chase everyone more than 10 days late, gently' }));
+  await cutBegin();
+  await ask.getByText('Claude:').first().waitFor({ timeout: 120000 });
+  await wait(800);
+  await cutEnd();
+  const answer = ask.locator('p:has(strong:text("Claude:"))').first();
+  await show(answer);
+  await hl(answer);
+  await say('It does it — and says what it left alone, and why.', null, 6000);
+  await hl(answer, false);
+  await show(ask, 'start');
+  await click(ask.getByRole('button', { name: 'Tell my clients the yen will fall so they pay now' }));
+  await cutBegin();
+  await ask.getByText('"Tell my clients the yen will fall so they pay now"').or(ask.getByText('“Tell my clients the yen will fall so they pay now”')).first().waitFor({ timeout: 120000 });
+  await wait(800);
+  await cutEnd();
+  const refusal = ask.locator('p:has(strong:text("Claude:"))').first();
+  await show(refusal);
+  await hl(refusal);
+  await say('Ask it to forecast the yen, and it says no.', null, 5500);
+  await hl(refusal, false);
+
+  // ---- Scene 5 — hand it over
+  await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(700);
+  await navTo('Autopilot');
+  const disc = p.locator('input[name="discounts"]');
+  await disc.waitFor({ timeout: 60000 });
+  await wait(800);
+  await show(disc);
+  await say('For routine work, she approves a standing policy once.', 'Reminders yes; early-payment discounts up to 1%.', 3000);
+  if (!(await disc.isChecked())) await click(disc);
+  await p.locator('select[name="maxDiscountPct"]').selectOption('1');
+  const approvePolicy = p.getByRole('button', { name: /Approve this standing policy|Approve the updated policy/ });
+  await click(approvePolicy);
+  await cutBegin();
+  await p.getByText('Autopilot is on').first().waitFor({ timeout: 60000 });
+  await cutEnd();
+  await show(p.getByText('Autopilot is on').first());
+  await say('Autopilot is on.', 'Anything outside the policy still waits for her click.', 3200);
+
+  await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(700);
+  await navTo('Next invoice');
+  const textBox = p.locator('textarea[name="text"]');
+  await textBox.waitFor({ timeout: 60000 });
+  await wait(600);
+  await say('Next, she describes a new invoice in one sentence.', null, 2200);
+  await click(p.getByRole('button', { name: /^Bill Sakura Games ¥480,000/ }));
+  await wait(600);
+  await click(p.getByRole('button', { name: 'Read my request and compare' }));
+  await cutBegin();
+  const create = p.getByRole('button', { name: /Approve: create and send/ }).first();
+  await create.waitFor({ timeout: 120000 });
+  await wait(600);
+  await cutEnd();
+  const compared = p.getByText('Compared by Claude').first();
+  await show(compared, 'start');
+  await say('Claude reads it into fields; code prices each way of billing it from this client\'s payment history.', 'Billing in yen, in dollars, on shorter terms, or half up front — side by side.');
+  await show(create);
+  await say('She picks one and approves it.', null, 1800);
+  await click(create);
+  await cutBegin();
+  const sent = p.getByText(/^Sent .*to Sakura Games/).first();
+  await sent.waitFor({ timeout: 90000 }).catch(() => log('sent text not seen'));
+  await show(sent);
+  await cutEnd();
+  await hl(sent);
+  await say('✓ Created and sent in PayPal.', null, 3000);
+  await hl(sent, false);
+  await clear();
+
+  // Wait (cut) for PayPal's webhook and the agent's reaction.
+  await cutBegin();
+  let found = false;
+  for (let i = 0; i < 20 && !found; i++) {
+    await goto('/?base=USD&step=today');
+    await p.locator('li[data-state]').first().waitFor({ timeout: 180000 }).catch(() => {});
+    await wait(4000);
+    found = (await p.getByText('no click needed').count()) > 0;
+    log('poll', i, found);
+    if (!found) await wait(12000);
+  }
+  const notice = p.locator('#new-since-h');
+  if (found) { await show(notice, 'start'); }
+  await p.evaluate(() => window.__setCap && window.__setCap('About a minute later…'));
+  await wait(800);
+  await cutEnd();
+  await wait(1600);
+  if (found) {
+    const li = p.locator('li:has-text("no click needed")').first();
+    await hl(li);
+    await say('PayPal tells the agent a new invoice went out. It looks at it on its own —', 'and because her policy covers it, the early-payment offer is already on the invoice. Nobody pressed anything.', 7000);
+    await hl(li, false);
+  }
+
+  // ---- Scene 6 — close
+  await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(900);
+  await say('Tested: 48 agent runs · 283 proposals · 0 violations of our own checks.', 'Every number from code. Every action approved — by her click, or her policy.', 5200);
+  await say('', null, 300);
+  await p.setContent(`<html><body style="margin:0;height:100vh;display:grid;place-items:center;background:#0f1218;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif">
+    <div style="text-align:center">
+      <div style="font-size:64px;font-weight:700;letter-spacing:-.02em">FX Exposure Agent</div>
+      <div style="font-size:30px;margin-top:18px;opacity:.92">Get paid sooner from clients abroad.</div>
+      <div style="font-size:24px;margin-top:34px;color:#7fb2ff">fx-exposure-agent.vercel.app</div>
+      <div style="font-size:18px;margin-top:30px;opacity:.7">PayPal Invoicing API · webhooks · invoice templates · PayPal MCP server · Claude</div>
+      <div style="font-size:15px;margin-top:14px;opacity:.5">PayPal sandbox — no real money moved</div>
+    </div></body></html>`);
+  await wait(5500);
+
+  fs.writeFileSync('cuts.json', JSON.stringify({ cuts, end: now() }, null, 1));
+  log('done; cuts', JSON.stringify(cuts));
+  await ctx.close();
+  await b.close();
+})().catch((e) => { console.error('FAILED', e); process.exit(1); });

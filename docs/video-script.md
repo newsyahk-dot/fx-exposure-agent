@@ -1,5 +1,7 @@
 # Demo video — script and shot list (target 2:30, hard limit 3:00)
 
+An automated captioned recording of this script: `docs/video/` (see its README).
+
 Judges score five things equally: technical implementation, design, potential impact, innovation, presentation
 ("does the video show it working end to end; what problem, for whom, why it matters"). The first 30 seconds must run the
 whole loop once. Everything shown must work exactly as shown (Official Rules: "must function as depicted in the video").
