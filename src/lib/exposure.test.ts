@@ -117,3 +117,23 @@ describe("fx helpers", () => {
     expect(oneSigma(1_000_000, 0.01, 0)).toBe(0);
   });
 });
+
+describe("ecb fixings before a day", () => {
+  it("keeps only fixings published before the day and uses the last one as latest", async () => {
+    const { ecbBefore } = await import("./fx");
+    const q: EcbQuotes = {
+      date: "2026-10-27",
+      latest: { USD: 3 },
+      history: { "2026-10-23": { USD: 1 }, "2026-10-26": { USD: 2 }, "2026-10-27": { USD: 3 } },
+    };
+    const r = ecbBefore(q, "2026-10-27");
+    expect(r.date).toBe("2026-10-26");
+    expect(r.latest).toEqual({ USD: 2 });
+    expect(Object.keys(r.history)).toEqual(["2026-10-23", "2026-10-26"]);
+  });
+  it("returns the quotes unchanged when nothing is older", async () => {
+    const { ecbBefore } = await import("./fx");
+    const q: EcbQuotes = { date: "2026-10-27", latest: { USD: 3 }, history: { "2026-10-27": { USD: 3 } } };
+    expect(ecbBefore(q, "2026-10-01")).toBe(q);
+  });
+});

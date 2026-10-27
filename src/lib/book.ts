@@ -9,7 +9,7 @@
 
 import demo from "../data/demo-snapshot.json";
 import type { AgentRun } from "./agent";
-import { fetchEcbQuotes, type EcbQuotes } from "./fx";
+import { ecbBefore, fetchEcbQuotes, type EcbQuotes } from "./fx";
 import { PayPalClient, toInvoice, type PPInvoice } from "./paypal";
 import { DEFAULT_POLICY, parsePolicy, POLICY_TEMPLATE, type Policy } from "./policy";
 import { addDays, parseSeedNumber } from "./seed-data";
@@ -36,9 +36,26 @@ export function demoMode(): boolean {
   return process.env.DEMO_MODE === "1" || !process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET;
 }
 
-export async function loadLiveInputs(asOf = new Date().toISOString().slice(0, 10)): Promise<BookInputs> {
+// The day the book is measured on. For the demo book that is the day it was last started over, for up to
+// BOOK_DAY_HOLD_HOURS: the nightly reset (Vercel Cron, which only promises "within the hour") then decides when the
+// day turns, and it plans every currency before visitors see the new book. Without this, every visit between 00:00
+// UTC and the reset waited about a minute for a new plan (measured 2026-10-27). A real seller's book has no demo
+// start, so its day is today.
+export const BOOK_DAY_HOLD_HOURS = 36;
+export function bookDay(startedAt: string | undefined, now: Date): string {
+  const today = now.toISOString().slice(0, 10);
+  const age = startedAt ? now.getTime() - Date.parse(startedAt) : NaN;
+  return startedAt && age >= 0 && age < BOOK_DAY_HOLD_HOURS * 3_600_000 ? startedAt.slice(0, 10) : today;
+}
+
+export async function loadLiveInputs(day?: string): Promise<BookInputs> {
   const pp = new PayPalClient();
-  const [raw, ecb, policy] = await Promise.all([pp.listInvoices(), fetchEcbQuotes(addDays(asOf, -HISTORY_DAYS), asOf), loadPolicy(pp)]);
+  const now = new Date();
+  const until = day ?? now.toISOString().slice(0, 10);
+  const [raw, allEcb, policy] = await Promise.all([pp.listInvoices(), fetchEcbQuotes(addDays(until, -HISTORY_DAYS - 7), until), loadPolicy(pp)]);
+  const startedAt = bookStartedAt(raw);
+  const asOf = day ?? bookDay(startedAt, now);
+  const ecb = ecbBefore(allEcb, asOf); // the last complete fixing before the book day
 
   // The list endpoint carries no payment dates; fetch them for recently paid invoices only.
   const since = addDays(asOf, -200); // payment dates are needed for the last 90 days of payments only
@@ -62,7 +79,7 @@ export async function loadLiveInputs(asOf = new Date().toISOString().slice(0, 10
     if (!("invoice" in r)) skipped.push(r.skipped);
     else invoices.push(r.invoice);
   }
-  return { source: "live", asOf, fetchedAt: new Date().toISOString(), ecb, invoices, skipped, archived, policy, startedAt: bookStartedAt(raw) };
+  return { source: "live", asOf, fetchedAt: now.toISOString(), ecb, invoices, skipped, archived, policy, startedAt };
 }
 
 // Demo housekeeping. The sandbox account is reset by seeding a new generation of demo invoices
