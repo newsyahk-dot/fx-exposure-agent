@@ -58,7 +58,13 @@ const INIT = `(() => {
   await p.setContent('<html><body style="margin:0;background:#0f1218;height:100vh"></body></html>');
   const now = () => (Date.now() - t0) / 1000;
   const cuts = []; let cutAt = null;
-  const setMark = (c) => p.evaluate((c) => window.__setMark && window.__setMark(c), c).catch(() => {});
+  // Pages made with setContent (title cards) have no init script, so draw the square directly there.
+  const setMark = (c) => p.evaluate((c) => {
+    if (window.__setMark) return window.__setMark(c);
+    let m = document.getElementById('__mark');
+    if (!m) { m = document.createElement('div'); m.id = '__mark'; document.body.appendChild(m); }
+    m.style.cssText = 'position:fixed;left:0;top:0;width:24px;height:24px;z-index:2147483647;background:' + (c || 'transparent');
+  }, c).catch(() => {});
   const cutBegin = async () => { cutAt = now(); await setMark('#ff00ff'); await p.waitForTimeout(250); };
   const cutEnd = async () => { await setMark('#00ffff'); await p.waitForTimeout(350); await setMark(''); await p.waitForTimeout(150); cuts.push([cutAt, now()]); cutAt = null; };
   const log = (...a) => console.log(now().toFixed(1), ...a);
@@ -272,8 +278,11 @@ const INIT = `(() => {
   await say('What is waiting, what is late, and the exchange-rate risk — by currency.', null, 3800);
   const ownTimeline = ownHero.locator('figure').first();
   if (await ownTimeline.count()) { await show(ownTimeline); await hl(ownTimeline); await say('And what the agent would do today.', null, 3200); await hl(ownTimeline, false); }
+  await cutBegin();
   await goto('/?base=USD&step=today');
   await p.locator('li[data-state]').first().waitFor({ timeout: 180000 }).catch(() => {});
+  await wait(800);
+  await cutEnd();
 
   // ---- Scene 7 — close. The total now includes the invoice she just sent, so say so instead of leaving a number
   // that seems to have gone back up.
@@ -283,6 +292,9 @@ const INIT = `(() => {
   for (const m of evalMd.matchAll(/^\| [^|]+ \| (\d+) \| \d+ \| (\d+) \([^|]*\| [^|]*\| \*\*(\d+)\*\*/gm)) { runs += +m[1]; props += +m[2]; probs += +m[3]; }
   await say(`Tested: ${runs} agent runs · ${props} proposals · ${probs} violations of our own checks.`, 'Every number from code. Every action approved — by her click, or her policy.', 5200);
   await say('', null, 300);
+  // Leave the app first: its 10-second refresh would otherwise replace the end card with an error page.
+  await p.goto('about:blank');
+  await p.mouse.move(W - 5, H - 5);
   await p.setContent(`<html><body style="margin:0;height:100vh;display:grid;place-items:center;background:#0f1218;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif">
     <div style="text-align:center">
       <div style="font-size:64px;font-weight:700;letter-spacing:-.02em">FX Exposure Agent</div>
