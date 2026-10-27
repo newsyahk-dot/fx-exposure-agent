@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { REQUEST_MAX, rulesRun, type AgentInput, type AgentRun } from "@/lib/agent";
@@ -59,6 +60,11 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
         </div>
         <p className={styles.lede}>
           Get paid sooner from clients abroad — and see what exchange rates can do to the money you&apos;re still waiting for.
+        </p>
+        <p>
+          <Link href="/try" className={`${styles.link} ${styles.tryLink}`}>
+            Try it with your own invoices →
+          </Link>
         </p>
       </header>
       <Suspense fallback={<p className={styles.muted}>Loading your PayPal invoices…</p>}>

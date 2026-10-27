@@ -13,6 +13,12 @@ export const BASES = ["USD", "EUR", "GBP", "JPY", "KRW"] as const;
 export type Base = (typeof BASES)[number];
 export const isBase = (s: string | undefined | null): s is Base => !!s && (BASES as readonly string[]).includes(s);
 
+// Every ECB reference currency (Frankfurter serves them all), so invoices in any of them can be valued.
+export const ECB_CURRENCIES = [
+  "AUD", "BGN", "BRL", "CAD", "CHF", "CNY", "CZK", "DKK", "EUR", "GBP", "HKD", "HUF", "IDR", "ILS", "INR", "ISK",
+  "JPY", "KRW", "MXN", "MYR", "NOK", "NZD", "PHP", "PLN", "RON", "SEK", "SGD", "THB", "TRY", "USD", "ZAR",
+] as const;
+
 // Raw ECB quotes: per EUR. `history` is keyed by ECB business day (YYYY-MM-DD).
 export type PerEur = Record<string, number>;
 export type EcbQuotes = { date: string; latest: PerEur; history: Record<string, PerEur> };
@@ -63,7 +69,7 @@ export function volsFor(q: EcbQuotes, base: string, symbols: string[], from: str
 }
 
 export async function fetchEcbQuotes(from: string, to: string): Promise<EcbQuotes> {
-  const symbols = BASES.filter((b) => b !== "EUR").join(",");
+  const symbols = ECB_CURRENCIES.filter((b) => b !== "EUR").join(",");
   const [latest, hist] = await Promise.all([
     fetch(`${API}/latest?base=EUR&symbols=${symbols}`),
     fetch(`${API}/${from}..${to}?base=EUR&symbols=${symbols}`),

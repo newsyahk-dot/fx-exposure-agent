@@ -67,6 +67,11 @@ days, and replay the seller's open book: paid the way the agent proposes, it wou
 it into an invoice; the app prices four ways to bill it — as asked, in dollars, on 14-day terms, half up front — using
 that client's own payment history, and Claude compares them in plain words. One click creates and sends it in PayPal.
 
+**Try it with your own invoices.** Any seller can paste an invoice list (CSV — an export from PayPal or any invoicing
+tool) at /try and see the same analysis on their own numbers: what is waiting from clients abroad in any ECB currency,
+what is late, where the exchange-rate risk sits, and what the agent would do today (rule-based for everyone; Claude's
+own plan with the access code). Nothing is stored and no PayPal account is touched.
+
 **Routine work handed over.** The seller approves a standing policy once (reminders yes; discounts up to 1%; at most
 three actions a run). Every weekday morning the agent runs what fits; everything else still waits for a click. The
 policy is stored in the seller's PayPal account as an invoice template.
