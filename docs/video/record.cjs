@@ -147,9 +147,11 @@ const INIT = `(() => {
     await hl(rewritten, false);
   }
   const planned = p.locator('details:has(> summary:text("How the agent planned this"))');
-  await show(planned.locator('summary'));
-  await click(planned.locator('summary'));
+  await show(planned.locator('summary').first());
+  await click(planned.locator('summary').first());
   await wait(600);
+  const toolLog = planned.locator('details > summary', { hasText: 'Every tool call' });
+  if (await toolLog.count()) { await show(toolLog); await click(toolLog); await wait(500); }
   const firstRead = planned.locator('li:has(code:text-matches("^paypal\\\\."))').first();
   if (await firstRead.count()) { await show(firstRead); await hl(firstRead); }
   await say('Claude reads her invoices straight from PayPal, through PayPal\'s own MCP server (read-only tools).', 'Code decides every number; every change still goes through her approval.');

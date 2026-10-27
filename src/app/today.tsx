@@ -74,19 +74,16 @@ export async function TodayPlan({
       <TodayBar bar={bar} c={c} />
       <div className={styles.agentStatus}>
         <p>
-          <strong>{r.source === "agent" ? "Claude's plan for today" : "Today's plan (rule-based)"}</strong>
-          {r.plannedAt && <span className={styles.muted}> · made {r.plannedAt.slice(11, 16)} UTC</span>}
-        </p>
-        <p>
-          {lead ? <>Proposes {lead}</> : "No actions proposed"}
-          {r.notProposed.length > 0 && <>; leaves {r.notProposed.length} alone</>}.
+          <strong>{r.source === "agent" ? "Claude's plan for today" : "Today's plan (rule-based)"}:</strong>{" "}
+          {lead ? lead : "nothing to do"}
+          {r.notProposed.length > 0 && <>; {r.notProposed.length} left alone</>}.
+          {r.plannedAt && <span className={styles.muted}> Made {r.plannedAt.slice(11, 16)} UTC.</span>}
         </p>
         {ratio != null && ratio < 0.95 && (
           <p className={styles.muted}>
-            In a replay of the last two years, getting paid as proposed would have kept the range your total moved{" "}
-            {widthPhrase(ratio)}.{" "}
+            Replayed over two years of rates, getting paid this way kept the range {widthPhrase(ratio)}.{" "}
             <Link href={evidenceHref} className={styles.link}>
-              See the evidence and its assumptions →
+              Evidence →
             </Link>
           </p>
         )}
@@ -103,8 +100,7 @@ export async function TodayPlan({
       )}
       {sharedDemo && ranCount > 0 && openCount > 0 && (
         <p className={styles.muted}>
-          {ranCount} of today&apos;s {cards.length} proposals already ran — this demo book is shared by every visitor
-          {sharedDemo.startedAt && <> (started {sharedDemo.startedAt.slice(11, 16)} UTC)</>}. The rest are yours to try.
+          {ranCount} of {cards.length} already ran — the demo is shared by every visitor. The rest are yours to try.
         </p>
       )}
       {cards.length === 0 ? (
@@ -168,14 +164,20 @@ export async function TodayPlan({
           </>
         )}
         {r.steps.length > 0 && (
-          <ol className={styles.steps}>
-            {r.steps.map((st, i) => (
-              <li key={i} data-ok={st.ok}>
-                <code>{st.tool}</code>
-                {st.invoice && <> · {st.invoice}</>} — {st.ok ? st.detail : `rejected: ${st.detail}`}
-              </li>
-            ))}
-          </ol>
+          <details className={styles.stepLog}>
+            <summary>
+              Every tool call ({r.steps.length}
+              {r.rejections > 0 && <>, {r.rejections} rejected by the checks</>})
+            </summary>
+            <ol className={styles.steps}>
+              {r.steps.map((st, i) => (
+                <li key={i} data-ok={st.ok}>
+                  <code>{st.tool}</code>
+                  {st.invoice && <> · {st.invoice}</>} — {st.ok ? st.detail : `rejected: ${st.detail}`}
+                </li>
+              ))}
+            </ol>
+          </details>
         )}
       </details>
     </>
@@ -219,8 +221,9 @@ export function ProposalCard({
             : `Offer ${p.percent}% off for an earlier due date`}
       </p>
       <p className={styles.cardTitle}>
-        {p.invoiceNumber}
-        {client && <> · {client}</>} · {money(p.currency, p.amount)} <span className={styles.muted}>≈ {c(p.value)}</span>
+        {client ?? p.invoiceNumber} · {money(p.currency, p.amount)}
+        {p.kind !== "reminder" && <span className={styles.muted}> ≈ {c(p.value)}</span>}
+        {client && <span className={styles.cardNumber}>{p.invoiceNumber}</span>}
       </p>
       {p.kind === "reminder" ? (
         <p className={styles.cardPitch}>
@@ -241,7 +244,7 @@ export function ProposalCard({
             )}
           </p>
           {s.state === "open" && (
-            <p className={styles.muted}>The {p.percent}% comes off when you approve — a PayPal invoice cannot make a discount conditional.</p>
+            <p className={styles.muted}>Comes off when you approve (PayPal can&apos;t make a discount conditional).</p>
           )}
         </>
       )}
