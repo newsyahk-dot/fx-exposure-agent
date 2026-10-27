@@ -255,8 +255,16 @@ const INIT = `(() => {
     await hl(li, false);
   }
 
-  // ---- Scene 6 — close
+  // ---- Scene 6 — close. The total now includes the invoice she just sent, so say so instead of leaving a number
+  // that seems to have gone back up.
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(900);
+  const delta = hero.locator('p').filter({ hasText: 'Start of today' }).first();
+  if (await delta.count()) {
+    await hl(delta);
+    const added = ((await delta.innerText()).match(/\+(\$[\d.,]+K?) new invoice/) || [, ''])[1];
+    await say(`Today: ${collected || 'one payment'} collected.`, added ? `The new invoice she just sent (${added}) is waiting too — with its early-payment offer already on it.` : null, 4200);
+    await hl(delta, false);
+  }
   await say('Tested: 48 agent runs · 283 proposals · 0 violations of our own checks.', 'Every number from code. Every action approved — by her click, or her policy.', 5200);
   await say('', null, 300);
   await p.setContent(`<html><body style="margin:0;height:100vh;display:grid;place-items:center;background:#0f1218;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif">
