@@ -46,7 +46,9 @@ actions that shorten that exposure (payment reminders, early-payment discount te
 - **Agent reacts to PayPal events**: a verified `INVOICING.INVOICE.SENT` webhook for a non-seed invoice runs
   `reactToNewInvoices` (`src/lib/autopilot.ts`) in `after()`: the agent looks at open invoices the day's plan has not
   seen (`newInvoicesRequest`, cached per set of invoices), and proposals inside the approved policy run through the same
-  path as the autopilot. Today shows the answer under "New since today's plan". Sandbox sends CREATED/SENT for
+  path as the autopilot. The autopilot never changes the terms of an invoice sent in the last `NEW_TERMS_DAYS` (7) days
+  (`outsidePolicy` in `src/lib/policy.ts`; 2026-10-27, after a blind review read it as overriding terms she just chose);
+  such an offer waits for her click. Seed offer invoices are dated 8+ days back so the demo autopilot has work. Today shows the answer under "New since today's plan". Sandbox sends CREATED/SENT for
   API-created invoices (measured 2026-10-26). Seed invoices are skipped so a reset does not start 22 runs.
 - **Home currency** is chosen on screen (`?base=`), default `FXA_DEFAULT_BASE` or USD. Raw ECB quotes are stored, so any
   of USD/EUR/GBP/JPY/KRW works in live and demo mode.
@@ -65,7 +67,7 @@ actions that shorten that exposure (payment reminders, early-payment discount te
 - **Hosted demo access**: with `FXA_ACCESS_CODE` set, every write action and every on-demand model call needs the code
   (httpOnly cookie holding a hash, `src/lib/access.ts`); every server action checks it. Without the code the planner
   uses rules only. The agent plan is one per day, so visitors cannot multiply model calls.
-- **API cost** (measured 2026-10-24, Haiku 5.5 $0.10/$0.50 per MTok): one agent plan ≈ $0.01 with prompt caching and PayPal MCP reads, ~66 s (eval 2026-10-26, `docs/agent-eval.md`; $0.0056 / 26 s without the reads); an "Ask the agent" request ≈ $0.004
+- **API cost** (measured 2026-10-24, Haiku 5.5 $0.10/$0.50 per MTok): one agent plan ≈ $0.007–0.01 with prompt caching and PayPal MCP reads, ~50–60 s (eval 2026-10-27, `docs/agent-eval.md`; $0.0056 / 26 s without the reads); an "Ask the agent" request ≈ $0.004
   (≈ $0.005–0.012 without). Model calls happen only (1) for the daily agent plan per home currency (new day, new ECB fixing,
   changed notes, or Re-plan; warmed by cron) — shared cache (`"use cache: remote"`), so visits and the autopilot reuse it; (2) for the invoice planner
   with the access code — the comparison is cached per request; (3) never from visitors without the code beyond (1). Each run logs `[agent-usage]` with tokens and cost to the host logs (`src/lib/usage.ts`; update

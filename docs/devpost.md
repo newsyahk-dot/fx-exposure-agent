@@ -54,22 +54,27 @@ business the view a treasury desk has."]
 ### What it does
 
 **What she's waiting for, at a glance.** The app reads the seller's open PayPal invoices and shows how much is still
-owed from clients abroad (about [$31,000] in the demo book), what is already overdue, and what a 3% move either way
-would do to it (about [$929]). That last figure is the size of the risk, not a forecast.
+owed from clients abroad, what is already overdue, and what a 3% move either way would do to it. That last figure is
+the size of the risk, not a forecast.
 
 **The day's work, done with a click.** An AI agent goes through the invoices and proposes today's actions: a reminder
 for an overdue invoice, written for that client, or a small early-payment discount on a large invoice that isn't due
 for two months — shown as a price for getting paid weeks sooner, with its cost as a yearly rate. A discount is not an
 exchange-rate hedge (it is a certain cost; a rate move can go either way), so the app never sells it as one. The seller approves; the action runs in
 PayPal; the card shows "sent". When the client pays, the card shows "paid", the top of the screen shows
-"+[$2,807] collected", and what is still waiting goes down: "Start of today [$31K] → now [$28K]".
+"+ collected" with the amount, and what is still waiting goes down ("Start of today → now").
+
+**When the money comes in.** A week-by-week chart of money from clients abroad: as invoiced, and if clients pay as the
+agent proposes — late invoices count as not yet in, a reminded invoice is assumed paid within 7 days and an offer by its
+new due date, net of the discount. The headline line says how much would arrive within two weeks either way. It is
+labelled a scenario, not a promise.
 
 **Where the risk sits.** Every open invoice in one grid, ranked by what it puts at risk, with what the agent is doing
 about each one — searchable, sortable, and downloadable as CSV.
 
 **Evidence, not forecasts.** Two years of ECB rates show how far each currency moved for money that waited 7 to 90
 days, and replay the seller's open book: paid the way the agent proposes, it would have moved in a narrower range
-([copy the phrase from the Today screen on submission day, e.g. "about two-thirds as wide (37% narrower)"]). History, labelled as history.
+(the screen says how much narrower, recomputed daily). History, labelled as history.
 
 **Before the next invoice.** The seller types "Bill Sakura Games ¥480,000 for the level art pack, net 45". Claude turns
 it into an invoice; the app prices four ways to bill it — as asked, in dollars, on 14-day terms, half up front — using
@@ -81,7 +86,8 @@ what is late, where the exchange-rate risk sits, and what the agent would do tod
 own plan with the access code). Nothing is stored and no PayPal account is touched.
 
 **Routine work handed over.** The seller approves a standing policy once (reminders yes; discounts up to 1%; at most
-three actions a run). Every weekday morning the agent runs what fits; everything else still waits for a click. The
+three actions a run). Every weekday morning the agent runs what fits; everything else still waits for a click, and
+terms she set in the last 7 days are never changed on its own. The
 policy is stored in the seller's PayPal account as an invoice template.
 
 The app never says which way rates will go and never says which option is better. It shows the cost and the risk side
@@ -104,7 +110,8 @@ by side; the seller decides.
   through MCP; they take the checked, approved path.
 - **The agent works three ways**: a daily plan; plain-words requests from the seller ("Chase everyone more than 10 days
   late, gently"); and PayPal events — a verified `INVOICING.INVOICE.SENT` webhook makes it look at the new invoice on
-  its own and run what the seller's approved policy covers.
+  its own and run what the seller's approved policy covers — except that it never changes the terms of an invoice sent
+  in the last 7 days: she just chose them, so an offer there waits for her click.
 - **A checker on every sentence Claude writes**: only numbers that appear in the facts it was given, each figure under
   its own label, no forecasts, no advice, no links, no conditional promises to clients. A draft that fails goes back to
   Claude with the reason and is rewritten; the seller can see how many were.
@@ -134,8 +141,8 @@ by side; the seller decides.
   the real PayPal sandbox.
 - The AI is genuinely in charge of judgement (what to propose, how to say it) while code stays in charge of every
   number and every permission.
-- Measured over 48 agent runs (283 proposals): 0 violations of our own checks in the final output, including 10 runs with seller notes that
-  told the agent to break its rules and a request to tell clients "the yen will fall" (declined, with a reason); 128
+- Measured over 48 agent runs (293 proposals): 0 violations of our own checks in the final output, including 10 runs with seller notes that
+  told the agent to break its rules and a request to tell clients "the yen will fall" (declined, with a reason); 143
   drafts were caught and rewritten. A daily plan costs about $0.01.
 
 ### What I learned

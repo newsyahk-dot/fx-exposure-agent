@@ -71,11 +71,20 @@ export function parsePolicy(memo: string | undefined, note: string | undefined):
   }
 }
 
-// Does the policy cover this proposal? null = yes, otherwise why not.
-export function outsidePolicy(p: AgentProposal, policy: Policy): string | null {
+// The autopilot never changes the terms of an invoice the seller sent this recently: she just chose them. An offer on
+// such an invoice stays a proposal waiting for her click.
+export const NEW_TERMS_DAYS = 7;
+
+// Does the policy cover this proposal? null = yes, otherwise why not. `invoiceDate` (YYYY-MM-DD) and `today` let it
+// leave recently sent invoices alone.
+export function outsidePolicy(p: AgentProposal, policy: Policy, invoiceDate?: string, today?: string): string | null {
   if (!policy.enabled) return "autopilot is off";
   if (p.kind === "reminder") return policy.reminders ? null : "the policy does not cover reminders";
   if (!policy.discounts) return "the policy does not cover discounts";
   if (p.percent > policy.maxDiscountPct) return `${p.percent}% is above the policy's ${policy.maxDiscountPct}% limit`;
+  if (invoiceDate && today) {
+    const age = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${invoiceDate}T00:00:00Z`)) / 86_400_000);
+    if (age < NEW_TERMS_DAYS) return `sent ${age === 0 ? "today" : `${age} day${age === 1 ? "" : "s"} ago`} — the autopilot leaves terms you set this week alone`;
+  }
   return null;
 }

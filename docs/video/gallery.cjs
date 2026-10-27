@@ -42,6 +42,13 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
   await topAt(hero, 20);
   await shot('1-today', 'Get paid sooner from clients abroad', 'What she is still owed, what is late, and the day\'s work an AI agent proposes — one click each.');
 
+  // 1b — getting paid sooner: the money-in timeline and an offer card priced as a yearly rate
+  const timeline = p.locator('figure:has-text("When the money comes in")').first();
+  if (await timeline.count()) {
+    await topAt(timeline, 20);
+    await shot('1b-sooner', 'When the money comes in', 'Week by week: as invoiced, and if clients pay as the agent proposes — a scenario with its assumptions on screen.');
+  }
+
   // 3 — the agent's own log: PayPal reads and a rejected draft
   const planned = p.locator('details:has(> summary:text("How the agent planned this"))');
   await planned.locator('summary').first().click();
@@ -67,6 +74,15 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
   await chart.waitFor({ timeout: 60000 });
   await topAt(p.locator('h2').first(), 16);
   await shot('7-evidence', 'History, never forecasts', 'Two years of ECB rates: how far money moved while it waited — and her open book replayed both ways.');
+
+  // 8 — try it with your own invoices (read-only, nothing stored)
+  await goto('/try');
+  await p.getByRole('button', { name: 'Load a sample' }).click();
+  await p.getByRole('button', { name: "Show what's waiting" }).click();
+  const own = p.locator('section[aria-label="Your invoices"]');
+  await own.waitFor({ timeout: 90000 });
+  await topAt(own, 16);
+  await shot('8-try', 'Try it with your own invoices', 'Paste an invoice list from PayPal or any tool: what is waiting, what is late, the exchange-rate risk and the plan. Nothing stored.');
 
   // 2 — approve, pay as the client, collected
   await goto('/?base=USD&step=today');
@@ -108,13 +124,13 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
     await goto('/?base=USD&step=today');
     await p.locator('li[data-state]').first().waitFor({ timeout: 180000 }).catch(() => {});
     await wait(4000);
-    found = (await p.getByText('no click needed').count()) > 0;
+    found = (await p.getByText(/the agent looked at (it|them) on its own/).count()) > 0;
     if (!found) await wait(12000);
   }
   if (found) {
     await topAt(p.locator('#new-since-h'), 16);
-    await hl(p.locator('li:has-text("no click needed")').first());
-    await shot('6-autopilot', 'PayPal tells the agent; her policy lets it act', 'A new invoice went out. The agent looked at it on its own and applied the offer her standing policy allows.');
+    await hl(p.locator('section[aria-labelledby="new-since-h"]'));
+    await shot('6-autopilot', 'PayPal tells the agent, and it looks on its own', 'A new invoice went out. The agent looked at it at once; the terms she just set stay hers — any offer waits for her click.');
   }
 
   // Compose: headline bar + screenshot, 1500×1000.

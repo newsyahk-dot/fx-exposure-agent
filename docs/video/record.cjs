@@ -55,10 +55,16 @@ const INIT = `(() => {
   await ctx.addInitScript(INIT);
   const p = await ctx.newPage();
   const t0 = Date.now();
-  await p.setContent('<html><body style="margin:0;background:#fff;height:100vh"></body></html>');
+  await p.setContent('<html><body style="margin:0;background:#0f1218;height:100vh"></body></html>');
   const now = () => (Date.now() - t0) / 1000;
   const cuts = []; let cutAt = null;
-  const setMark = (c) => p.evaluate((c) => window.__setMark && window.__setMark(c), c).catch(() => {});
+  // Pages made with setContent (title cards) have no init script, so draw the square directly there.
+  const setMark = (c) => p.evaluate((c) => {
+    if (window.__setMark) return window.__setMark(c);
+    let m = document.getElementById('__mark');
+    if (!m) { m = document.createElement('div'); m.id = '__mark'; document.body.appendChild(m); }
+    m.style.cssText = 'position:fixed;left:0;top:0;width:24px;height:24px;z-index:2147483647;background:' + (c || 'transparent');
+  }, c).catch(() => {});
   const cutBegin = async () => { cutAt = now(); await setMark('#ff00ff'); await p.waitForTimeout(250); };
   const cutEnd = async () => { await setMark('#00ffff'); await p.waitForTimeout(350); await setMark(''); await p.waitForTimeout(150); cuts.push([cutAt, now()]); cutAt = null; };
   const log = (...a) => console.log(now().toFixed(1), ...a);
@@ -76,6 +82,15 @@ const INIT = `(() => {
   const clear = () => p.evaluate(() => window.__setCap && window.__setCap('')).catch(() => {});
   const goto = async (path) => { await clear(); await p.goto(URL + path, { waitUntil: 'domcontentloaded', timeout: 180000 }); };
   const navTo = async (label) => { await clear(); await click(p.locator('nav[aria-label="Steps"] a', { hasText: label })); };
+
+  // ---- Opening — the problem, from a public source (README "Why it matters")
+  await p.setContent(`<html><body style="margin:0;height:100vh;display:grid;place-items:center;background:#0f1218;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif">
+    <div style="text-align:center;max-width:1050px">
+      <div style="font-size:52px;font-weight:700;letter-spacing:-.02em;line-height:1.2">35% of UK freelancers were not paid on time by a client in the past year.</div>
+      <div style="font-size:22px;margin-top:20px;opacity:.6">IPSE, late payment research, 2022</div>
+      <div style="font-size:30px;margin-top:44px;opacity:.92">When the client is abroad, the exchange rate keeps moving while she waits.</div>
+    </div></body></html>`);
+  await wait(6500);
 
   // ---- Scene 1 — paid, once
   await cutBegin();
@@ -123,29 +138,31 @@ const INIT = `(() => {
   const shockChip = hero.getByText(/if rates move/);
   const shock = ((await shockChip.innerText()).match(/±\$[\d,]+/) || ['±$900'])[0];
   await hl(shockChip);
-  await say('Waiting costs more than patience.', 'Until foreign money arrives, the exchange rate decides what she actually earns.');
+  await say('While she waits, the exchange rate keeps moving.', 'Until foreign money arrives, the rate decides what she actually earns.');
   await say(`A 3% move either way is about ${shock} on what she's still owed.`, 'Up or down, equally likely — the size of the risk, never a forecast.');
   await hl(shockChip, false);
-  await say('Banks hedge this for big companies.', 'This app helps a one-person business get paid sooner.', 3200);
+  await say('Banks hedge this for big companies.', 'This app never predicts rates — it helps a one-person business get paid sooner.', 3600);
+  const timeline = p.locator('figure:has-text("When the money comes in")').first();
+  if (await timeline.count()) {
+    await show(timeline);
+    const cap = (await timeline.locator('figcaption').innerText()).replace(/^When the money comes in\s*—\s*/, '');
+    await hl(timeline);
+    await say('When the money comes in, week by week.', cap ? cap.charAt(0).toUpperCase() + cap.slice(1) + ' — a scenario, not a promise.' : 'As invoiced, and if clients pay as proposed — a scenario, not a promise.', 6000);
+    await hl(timeline, false);
+  }
 
   // ---- Scene 3 — the agent, checked by code
   const offer = p.locator('li[data-state]:has-text("sooner, for")').first();
   await show(offer);
   const pitch = offer.locator('p').nth(2);
   await hl(offer);
-  await say('For a large invoice due in two months, it can offer a small early-payment discount.', 'The cost is shown next to how much it shortens the wait. She decides.');
+  const annual = ((await offer.innerText()).match(/about ([\d.]+)% a year/) || [, ''])[1];
+  await say('For an invoice due in two months, it can ask to be paid weeks sooner for a small discount.', `A price for getting paid sooner${annual ? ` — about ${annual}% a year here` : ''}. Code allows only offers at least 3 weeks sooner and at most 12% a year. She decides.`, 7000);
   await hl(offer, false);
   const badgeCheck = offer.getByText(/Written by Claude, checked by code/);
   await hl(badgeCheck);
   await say('Claude writes every proposal. Code checks it before she sees it:', 'only numbers from the facts, no forecasts, no advice, no links — a draft that fails is sent back and rewritten.');
   await hl(badgeCheck, false);
-  const rewritten = p.locator('p[data-rewritten]').first();
-  if (await rewritten.count()) {
-    await show(rewritten);
-    await hl(rewritten);
-    await say('Like this one: a draft broke a rule, so code sent it back and Claude rewrote it.', null, 4200);
-    await hl(rewritten, false);
-  }
   const planned = p.locator('details:has(> summary:text("How the agent planned this"))');
   await show(planned.locator('summary').first());
   await click(planned.locator('summary').first());
@@ -169,20 +186,8 @@ const INIT = `(() => {
   const answer = ask.locator('p:has(strong:text("Claude:"))').first();
   await show(answer);
   await hl(answer);
-  await say('It does it — and says what it left alone, and why.', null, 6000);
+  await say('It does it — and says what it left alone, and why. Ask it to forecast a currency, and it declines.', null, 6000);
   await hl(answer, false);
-  await show(ask, 'start');
-  await click(ask.getByRole('button', { name: 'Tell my clients the yen will fall so they pay now' }));
-  await cutBegin();
-  await ask.getByText('"Tell my clients the yen will fall so they pay now"').or(ask.getByText('“Tell my clients the yen will fall so they pay now”')).first().waitFor({ timeout: 120000 });
-  await wait(800);
-  await cutEnd();
-  const refusal = ask.locator('p:has(strong:text("Claude:"))').first();
-  await show(refusal);
-  await hl(refusal);
-  await say('Ask it to forecast the yen, and it says no.', null, 5500);
-  await hl(refusal, false);
-
   // ---- Scene 5 — hand it over
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(700);
   await navTo('Autopilot');
@@ -199,7 +204,21 @@ const INIT = `(() => {
   await p.getByText('Autopilot is on').first().waitFor({ timeout: 60000 });
   await cutEnd();
   await show(p.getByText('Autopilot is on').first());
-  await say('Autopilot is on.', 'Anything outside the policy still waits for her click.', 3200);
+  await say('Autopilot is on.', 'Anything outside the policy still waits for her click.', 2400);
+  const runNow = p.getByRole('button', { name: 'Run autopilot now' });
+  await show(runNow);
+  await click(runNow);
+  await cutBegin();
+  const ran = p.locator('[role=status]:has-text("Autopilot ran")').first();
+  await ran.waitFor({ timeout: 180000 }).catch(() => log('autopilot result not seen'));
+  await wait(600);
+  await cutEnd();
+  if (await ran.count()) {
+    await show(ran);
+    await hl(ran);
+    await say('It runs what her policy covers, through the same checks — and says what it left for her.', null, 4200);
+    await hl(ran, false);
+  }
 
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(700);
   await navTo('Next invoice');
@@ -217,7 +236,7 @@ const INIT = `(() => {
   await cutEnd();
   const compared = p.getByText('Compared by Claude').first();
   await show(compared, 'start');
-  await say('Claude reads it into fields; code prices each way of billing it from this client\'s payment history.', 'Billing in yen, in dollars, on shorter terms, or half up front — side by side.');
+  await say('Code prices four ways to bill it from this client\'s payment history.', null, 3400);
   await show(create);
   await say('She picks one and approves it.', null, 1800);
   await click(create);
@@ -227,7 +246,7 @@ const INIT = `(() => {
   await show(sent);
   await cutEnd();
   await hl(sent);
-  await say('✓ Created and sent in PayPal.', null, 3000);
+  await say('✓ Created and sent in PayPal.', null, 1800);
   await hl(sent, false);
   await clear();
 
@@ -238,7 +257,7 @@ const INIT = `(() => {
     await goto('/?base=USD&step=today');
     await p.locator('li[data-state]').first().waitFor({ timeout: 180000 }).catch(() => {});
     await wait(4000);
-    found = (await p.getByText('no click needed').count()) > 0;
+    found = (await p.getByText(/the agent looked at (it|them) on its own/).count()) > 0;
     log('poll', i, found);
     if (!found) await wait(12000);
   }
@@ -249,24 +268,47 @@ const INIT = `(() => {
   await cutEnd();
   await wait(1600);
   if (found) {
-    const li = p.locator('li:has-text("no click needed")').first();
-    await hl(li);
-    await say('PayPal tells the agent a new invoice went out. It looks at it on its own —', 'and because her policy covers it, the early-payment offer is already on the invoice. Nobody pressed anything.', 7000);
-    await hl(li, false);
+    const sect = p.locator('section[aria-labelledby="new-since-h"]');
+    await hl(sect);
+    await say('PayPal tells the agent a new invoice went out. It looks at it on its own —', 'and leaves the terms she just chose alone: any offer on it waits for her click.', 6500);
+    await hl(sect, false);
   }
 
-  // ---- Scene 6 — close. The total now includes the invoice she just sent, so say so instead of leaving a number
+  // ---- Scene 6 — any seller can try it on their own invoice list
+  await goto('/try');
+  const loadSample = p.getByRole('button', { name: 'Load a sample' });
+  await loadSample.waitFor({ timeout: 60000 });
+  await wait(600);
+  await say('Any seller can try it on their own invoices: paste a list from PayPal or any invoicing tool.', 'Nothing is stored, and nothing in PayPal is touched.', 4200);
+  await click(loadSample);
+  await wait(500);
+  await click(p.getByRole('button', { name: "Show what's waiting" }));
+  await cutBegin();
+  const ownHero = p.locator('section[aria-label="Your invoices"]');
+  await ownHero.waitFor({ timeout: 90000 });
+  await wait(800);
+  await cutEnd();
+  await show(ownHero, 'start');
+  await say('What is waiting, what is late, and the exchange-rate risk — by currency.', null, 3800);
+  const ownTimeline = ownHero.locator('figure').first();
+  if (await ownTimeline.count()) { await show(ownTimeline); await hl(ownTimeline); await say('And what the agent would do today.', null, 3200); await hl(ownTimeline, false); }
+  await cutBegin();
+  await goto('/?base=USD&step=today');
+  await p.locator('li[data-state]').first().waitFor({ timeout: 180000 }).catch(() => {});
+  await wait(800);
+  await cutEnd();
+
+  // ---- Scene 7 — close. The total now includes the invoice she just sent, so say so instead of leaving a number
   // that seems to have gone back up.
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(900);
-  const delta = hero.locator('p').filter({ hasText: 'Start of today' }).first();
-  if (await delta.count()) {
-    await hl(delta);
-    const added = ((await delta.innerText()).match(/\+(\$[\d.,]+K?) new invoice/) || [, ''])[1];
-    await say(`Today: ${collected || 'one payment'} collected.`, added ? `The new invoice she just sent (${added}) is waiting too — with its early-payment offer already on it.` : null, 4200);
-    await hl(delta, false);
-  }
-  await say('Tested: 48 agent runs · 283 proposals · 0 violations of our own checks.', 'Every number from code. Every action approved — by her click, or her policy.', 5200);
+  const evalMd = fs.readFileSync(require('path').join(__dirname, '..', 'agent-eval.md'), 'utf8');
+  let runs = 0, props = 0, probs = 0;
+  for (const m of evalMd.matchAll(/^\| [^|]+ \| (\d+) \| \d+ \| (\d+) \([^|]*\| [^|]*\| \*\*(\d+)\*\*/gm)) { runs += +m[1]; props += +m[2]; probs += +m[3]; }
+  await say(`Tested: ${runs} agent runs · ${props} proposals · ${probs} violations of our own checks.`, 'Every number from code. Every action approved — by her click, or her policy.', 5200);
   await say('', null, 300);
+  // Leave the app first: its 10-second refresh would otherwise replace the end card with an error page.
+  await p.goto('about:blank');
+  await p.mouse.move(W - 5, H - 5);
   await p.setContent(`<html><body style="margin:0;height:100vh;display:grid;place-items:center;background:#0f1218;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif">
     <div style="text-align:center">
       <div style="font-size:64px;font-weight:700;letter-spacing:-.02em">FX Exposure Agent</div>

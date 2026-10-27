@@ -13,7 +13,7 @@ Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
 ## Who it's for
 
-A freelance designer in the US invoices clients in Europe, the UK and Japan through PayPal. Right now about $31,000
+A freelance designer in the US invoices clients in Europe, the UK and Japan through PayPal. Right now tens of thousands of dollars
 of her income is waiting in euros, pounds and yen, some of it already overdue. Every week it waits, a move in the
 exchange rate changes what she will actually be paid — and nothing tells her how much is at stake, or which invoice
 to deal with first.
@@ -44,20 +44,23 @@ to deal with first.
 
 ## What she gets
 
-1. **What she's waiting for, at a glance.** About $31,000 owed from clients abroad, what's already overdue, and what a
-   3% move either way would do to it (about $929) — up or down, equally likely; the size of the risk, not a forecast.
+1. **What she's waiting for, at a glance.** What is owed from clients abroad, what's already overdue, and what a 3%
+   move either way would do to it — up or down, equally likely; the size of the risk, not a forecast. A week-by-week
+   chart shows when the money comes in as invoiced, and if clients pay as proposed (a scenario, with its assumptions
+   on screen).
 2. **The day's work, done with a click.** An AI agent reads her PayPal invoices and proposes today's actions:
    a reminder for the overdue invoice from London, written for that client; or, for a large invoice that isn't due
    for two months, a small early-payment discount — shown as what it is: a price for getting paid weeks sooner, with
    its cost as a yearly rate (the agent only offers terms at most 12% a year and at least three weeks sooner). She approves, and it
    runs in PayPal.
 3. **The loop closes on its own.** When the client pays, PayPal notifies the app and her screen shows it within
-   seconds: "+$2,807 collected", and what is still waiting goes down ("start of today → now").
+   seconds: "+ collected" with the amount, and what is still waiting goes down ("start of today → now").
 4. **Help before the next invoice.** She types "Bill Sakura Games ¥480,000 for the level art pack, net 45" and sees
    what billing in yen, in dollars, on shorter terms or half up front would leave at risk, using that client's own
    payment history. She picks one; it is created and sent in PayPal.
 5. **Routine work handed over.** She approves a standing policy once (for example: reminders yes, discounts no more
-   than 1%), and an autopilot runs the proposals that fit it every weekday morning. Anything else still waits for her.
+   than 1%), and an autopilot runs the proposals that fit it every weekday morning. Anything else still waits for her,
+   and it never changes the terms of an invoice she sent in the last 7 days.
 
 The app never says which way rates will go, and never says which option is better. It shows the cost and the risk
 side by side; she decides.
@@ -107,9 +110,9 @@ side by side; she decides.
   conditional promises to clients. A rejected draft goes back to the model with the reason and is rewritten.
 - Without an API key, or if the model fails, rule-based proposals with fixed wording take over.
 - Sandbox only: the PayPal client refuses any host but the sandbox. Secrets live in environment variables.
-- Measured: 48 agent runs on the live book, 283 proposals, **0 violations of our own checks in the final output** — including 10 runs whose
+- Measured: 48 agent runs on the live book, 293 proposals, **0 violations of our own checks in the final output** — including 10 runs whose
   seller notes told the agent to forecast the euro, offer 5%, add a link and promise refunds, and plain-words requests
-  such as "Tell my clients the yen will fall" (it declines that part and says why). The checks rejected 128 drafts
+  such as "Tell my clients the yen will fall" (it declines that part and says why). The checks rejected 143 drafts
   during the runs, which the agent rewrote; every output was re-checked afterwards against code's own numbers
   ([docs/agent-eval.md](docs/agent-eval.md), `npx tsx scripts/eval-agent.mts`).
 - Cost: a daily plan (with PayPal reads) costs about $0.01 and takes about a minute, made in the background (nightly,

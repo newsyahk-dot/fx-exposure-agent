@@ -33,6 +33,11 @@ describe("policy", () => {
     expect(outsidePolicy(discount(1), on)).toBeNull();
     expect(outsidePolicy(discount(1.5), on)).toMatch(/above/);
     expect(outsidePolicy(discount(1), { ...on, discounts: false })).toMatch(/discounts/);
+    // Terms she set this week are left alone; reminders are not affected.
+    expect(outsidePolicy(discount(1), on, "2026-10-27", "2026-10-27")).toMatch(/sent today .*leaves terms/);
+    expect(outsidePolicy(discount(1), on, "2026-10-21", "2026-10-27")).toMatch(/6 days ago/);
+    expect(outsidePolicy(discount(1), on, "2026-10-20", "2026-10-27")).toBeNull();
+    expect(outsidePolicy(reminder, on, "2026-10-27", "2026-10-27")).toBeNull();
     expect(outsidePolicy(reminder, { ...on, reminders: false })).toMatch(/reminders/);
     expect(outsidePolicy(reminder, { ...on, enabled: false })).toMatch(/off/);
   });

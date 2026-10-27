@@ -29,7 +29,7 @@ node reset.cjs                 # clean up: autopilot off, fresh book
 Devpost gallery images (3:2, 1500×1000, headline bar over a real screenshot) — on a fresh, pre-run book:
 
 ```bash
-node gallery.cjs               # writes gallery/1-today.png … 7-evidence.png, then reset again
+node gallery.cjs               # writes gallery/1-today.png … 8-try.png, then reset again
 ```
 
 ## How the cuts work

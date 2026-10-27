@@ -7,10 +7,11 @@ raw = sorted(glob.glob("raw/*.webm"))[-1]
 FPS = 25
 probe = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", raw, "-vf", f"crop=12:12:4:4,scale=1:1,fps={FPS}",
                         "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True, check=True).stdout
-kinds = []
+kinds, dark = [], []
 for i in range(0, len(probe) - 2, 3):
     r, g, b = probe[i], probe[i + 1], probe[i + 2]
     kinds.append("m" if r > 200 and g < 80 and b > 200 else "c" if r < 80 and g > 200 and b > 200 else ".")
+    dark.append(max(r, g, b) < 40)
 n = len(kinds)
 end = n / FPS
 
@@ -18,7 +19,12 @@ end = n / FPS
 cuts, i = [], 0
 while i < n:
     if kinds[i] in "mc":
-        start = 0 if not cuts and "m" not in kinds[:i] and kinds[i] == "c" else i
+        start = i
+        if not cuts and "m" not in kinds[:i] and kinds[i] == "c":
+            # No start marker (older takes): cut the loading frames before the cyan, back to the dark title card
+            # (or to the start if there is none).
+            while start > 0 and not dark[start - 1]:
+                start -= 1
         j = i
         while j < n and kinds[j] != "c":
             j += 1
@@ -28,9 +34,6 @@ while i < n:
         i = j
     else:
         i += 1
-# Everything before the first site frame (blank page) goes too.
-if cuts and 0 < cuts[0][0] < 4:
-    cuts[0] = (0.0, cuts[0][1])
 print("cuts:", [(round(a, 2), round(b, 2)) for a, b in cuts])
 
 keep, t = [], 0.0

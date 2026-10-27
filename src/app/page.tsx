@@ -13,7 +13,7 @@ import { OPEN_STATUSES } from "@/lib/exposure";
 import { BASES, type EcbQuotes } from "@/lib/fx";
 import { cell, compact, full, money } from "@/lib/format";
 import { clientViewUrl } from "@/lib/paypal";
-import { DEFAULT_POLICY } from "@/lib/policy";
+import { DEFAULT_POLICY, NEW_TERMS_DAYS } from "@/lib/policy";
 import { dayChange, paidToday } from "@/lib/today";
 import { BUCKETS, type Bucket, type Invoice } from "@/lib/types";
 import { pickBase, SHOCK_PCT, TIMING_DAYS, VOL_LOOKBACK_DAYS, viewFor, type BookView } from "@/lib/view";
@@ -507,6 +507,11 @@ async function NewSincePlan({
   return (
     <section aria-labelledby="new-since-h" className={styles.newSince}>
       <h2 id="new-since-h">New since today&apos;s plan</h2>
+      {missing.length > 0 && inputs.policy?.enabled && inputs.policy.discounts && (
+        <p className={styles.muted}>
+          Your autopilot leaves invoices sent in the last {NEW_TERMS_DAYS} days on the terms you chose — any offer here waits for your click.
+        </p>
+      )}
       {autoDone.length > 0 && (
         <ul className={styles.notices} aria-label="Done by the autopilot after a PayPal event">
           {autoDone.map(({ inv, a }) => (
@@ -664,7 +669,7 @@ function Replay({ r, ecb, input }: { r: AgentRun; ecb: EcbQuotes; input: AgentIn
       <p>
         <strong>Your open book, replayed over two years of ECB rates.</strong> If clients pay on the current dates, the
         total in {input.base} would have moved between {signed(a.p5)} and {signed(a.p95)} nine times out of ten. If they
-        pay as these proposals ask, between {signed(b.p5)} and {signed(b.p95)}
+        pay sooner, as these proposals ask, between {signed(b.p5)} and {signed(b.p95)}
         {wa > 0 && (
           <>
             {" "}
@@ -672,7 +677,8 @@ function Replay({ r, ecb, input }: { r: AgentRun; ecb: EcbQuotes; input: AgentIn
           </>
         )}
         .
-        {cost > 0 && <> The discounts offered cost {c(cost)} whichever way rates move.</>}
+        {" "}A narrower range is not a gain: the money could have moved either way.
+        {cost > 0 && <> The discounts offered cost {c(cost)} for certain — a price for being paid sooner, not a hedge.</>}
       </p>
       <p className={styles.muted}>
         Assumptions: an overdue invoice is paid {ASSUME.overdueWaitDays} days from today without a reminder and{" "}
