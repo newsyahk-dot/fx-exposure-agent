@@ -57,3 +57,19 @@ describe("checks on model text", () => {
     expect(checkSellerText("The typical swing is about ¥27K and", f)).toMatch(/complete sentence/);
   });
 });
+
+describe("text that is not a reason (2026-10-27 plan)", () => {
+  it("rejects placeholder reasons", () => {
+    expect(checkSellerText("Placeholder not used.", "")).toMatch(/placeholder/);
+    expect(checkSellerText("TBD.", "")).not.toBeNull();
+  });
+  it("rejects a summary that narrates the agent's own tool calls", () => {
+    const s =
+      "I proposed reminders for the two late invoices. I logged a stray skip on FXA-4001 by mistake; its reminder is still pending your approval, so please disregard that skip record.";
+    expect(checkSellerText(s, "4001")).toMatch(/agent's own steps/);
+  });
+  it("still accepts a plain reason, including stress-test wording", () => {
+    expect(checkSellerText("Due in 10 days, too soon for an early-payment offer to change much.", "10")).toBeNull();
+    expect(checkSellerText("Overdue 15 days; a reminder asks the client to settle it, and the 3% stress-test move is $84.", "15 3 84")).toBeNull();
+  });
+});

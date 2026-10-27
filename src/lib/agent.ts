@@ -506,10 +506,12 @@ export async function runAgent(input: AgentInput): Promise<AgentRun> {
         if (over) return over;
         const cand = find(invoice_id);
         if (!cand) return reject("skip_invoice", cand, "unknown invoice");
+        // A skip must not silently delete a proposal already made (2026-10-27: a reminder vanished from the plan).
+        if (proposals.has(cand.invoiceId))
+          return reject("skip_invoice", cand, "this invoice already has your proposal, which stays on the seller's screen; do not skip it");
         const tried = pricedBy.get(cand.invoiceId) ?? [];
         const bad = checkSellerText(why, `${cand.facts} ${tried.map((x) => x.facts).join(" ")}`, 300, labelContext(cand, input, tried));
         if (bad) return reject("skip_invoice", cand, `why: ${bad}`);
-        proposals.delete(cand.invoiceId);
         skipped.set(cand.invoiceId, why.trim());
         steps.push({ tool: "skip_invoice", invoice: cand.invoiceNumber, ok: true, detail: "skipped" });
         return "Noted.";
