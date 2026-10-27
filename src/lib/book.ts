@@ -122,3 +122,19 @@ export async function loadPolicy(pp: PayPalClient): Promise<Policy> {
 export function demoInputs(): BookInputs {
   return { ...(demo as unknown as Omit<BookInputs, "source">), source: "demo" };
 }
+
+// PayPal's invoice list can lag a few seconds behind the invoices a reset just created. Planning from a half-listed
+// book gives the plans a wrong key (and a partial book), so visitors would plan again. Wait until the new generation
+// is listed and its count stops changing (two reads 4 s apart), up to about a minute.
+export async function settledBook(gen: number): Promise<BookInputs> {
+  let last = -1;
+  let inputs = await loadLiveInputs();
+  for (let i = 0; i < 15; i++) {
+    const n = inputs.invoices.filter((x) => parseSeedNumber(x.number)?.gen === gen).length;
+    if (n > 0 && n === last) break;
+    last = n;
+    await new Promise((r) => setTimeout(r, 4000));
+    inputs = await loadLiveInputs();
+  }
+  return inputs;
+}
