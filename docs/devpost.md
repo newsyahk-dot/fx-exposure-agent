@@ -35,10 +35,18 @@ treasury teams for this. A one-person business finds out at the end, when the pa
   ([PayPal 10-K for 2025](https://s205.q4cdn.com/875401827/files/doc_financials/2025/q4/10-K.pdf); the dollar figure is 12% × $1.79 trillion).
 - **The wait is long and often longer than agreed.** In Bonsai's analysis of three years of its users' invoices, 29%
   of freelance invoices were paid at least a day late; 90% of the late ones were paid within a month
-  ([Bonsai](https://www.hellobonsai.com/blog/late-freelance-payment)).
-- **While it waits, the money moves.** Over the last two years of ECB rates, foreign money that waited 60 days moved by
-  several percent either way against the home currency — the app's Evidence step shows the exact range for each
-  currency, recomputed daily. History, not a forecast.
+  ([Bonsai](https://www.hellobonsai.com/blog/late-freelance-payment)). In IPSE's 2022 research on UK freelancers, 35%
+  had not been paid on time by a client in the previous 12 months, 18% had waited more than three months past the
+  deadline, and the average amount owed was £5,230
+  ([IPSE](https://www.ipse.co.uk/policy/research/financial-wellbeing/late-payment-within-the-self-employed-sector.html)).
+- **Small firms feel exchange rates most.** In a May 2025 survey of over 500 UK SMEs for Bibby Financial Services, 54%
+  of those trading overseas said volatile currency movements had hit them in the past year, losing more than £53,000 on
+  average; among firms with fewer than ten employees, 72% reported losses
+  ([report coverage](https://finance.yahoo.com/news/uk-smes-count-cost-currency-150648091.html)).
+- **While it waits, the money moves.** Our own calculation from ECB reference rates (start days from October 2024,
+  each followed for 60 days): money in euros owed to a US seller moved 3% or more against the dollar on 28% of start
+  days, in yen on 33%, in pounds on 24% — as much as 10.2% for euros (11 Feb → 14 Apr 2025). Moves went both ways;
+  history, not a forecast. The app's Evidence step recomputes this daily.
 
 [Optional, one sentence about you — e.g. "I work with exchange-rate risk every day, and wanted to give a one-person
 business the view a treasury desk has."]
