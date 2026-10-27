@@ -138,7 +138,7 @@ export async function TodayPlan({
               Claude ({r.model}) read the invoices through {calls} tool calls and chose what to propose. Code decided which
               invoices were eligible and computed every number; every text it wrote was checked before it reached this
               screen
-              {r.rejections > 0 ? ` (${r.rejections} draft${r.rejections === 1 ? "" : "s"} were rejected and rewritten)` : ""}.
+              {r.rejections > 0 ? ` (${r.rejections === 1 ? "1 draft was" : `${r.rejections} drafts were`} rejected and rewritten)` : ""}.
               {paypalReads > 0 && (
                 <>
                   {" "}
