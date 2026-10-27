@@ -28,9 +28,6 @@ while i < n:
         i = j
     else:
         i += 1
-# Everything before the first site frame (blank page) goes too.
-if cuts and 0 < cuts[0][0] < 4:
-    cuts[0] = (0.0, cuts[0][1])
 print("cuts:", [(round(a, 2), round(b, 2)) for a, b in cuts])
 
 keep, t = [], 0.0

@@ -55,7 +55,7 @@ const INIT = `(() => {
   await ctx.addInitScript(INIT);
   const p = await ctx.newPage();
   const t0 = Date.now();
-  await p.setContent('<html><body style="margin:0;background:#fff;height:100vh"></body></html>');
+  await p.setContent('<html><body style="margin:0;background:#0f1218;height:100vh"></body></html>');
   const now = () => (Date.now() - t0) / 1000;
   const cuts = []; let cutAt = null;
   const setMark = (c) => p.evaluate((c) => window.__setMark && window.__setMark(c), c).catch(() => {});
@@ -157,13 +157,6 @@ const INIT = `(() => {
   await hl(badgeCheck);
   await say('Claude writes every proposal. Code checks it before she sees it:', 'only numbers from the facts, no forecasts, no advice, no links — a draft that fails is sent back and rewritten.');
   await hl(badgeCheck, false);
-  const rewritten = p.locator('p[data-rewritten]').first();
-  if (await rewritten.count()) {
-    await show(rewritten);
-    await hl(rewritten);
-    await say('Like this one: a draft broke a rule, so code sent it back and Claude rewrote it.', null, 4200);
-    await hl(rewritten, false);
-  }
   const planned = p.locator('details:has(> summary:text("How the agent planned this"))');
   await show(planned.locator('summary').first());
   await click(planned.locator('summary').first());
@@ -187,20 +180,8 @@ const INIT = `(() => {
   const answer = ask.locator('p:has(strong:text("Claude:"))').first();
   await show(answer);
   await hl(answer);
-  await say('It does it — and says what it left alone, and why.', null, 6000);
+  await say('It does it — and says what it left alone, and why. Ask it to forecast a currency, and it declines.', null, 6000);
   await hl(answer, false);
-  await show(ask, 'start');
-  await click(ask.getByRole('button', { name: 'Tell my clients the yen will fall so they pay now' }));
-  await cutBegin();
-  await ask.getByText('"Tell my clients the yen will fall so they pay now"').or(ask.getByText('“Tell my clients the yen will fall so they pay now”')).first().waitFor({ timeout: 120000 });
-  await wait(800);
-  await cutEnd();
-  const refusal = ask.locator('p:has(strong:text("Claude:"))').first();
-  await show(refusal);
-  await hl(refusal);
-  await say('Ask it to forecast the yen, and it says no.', null, 5500);
-  await hl(refusal, false);
-
   // ---- Scene 5 — hand it over
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(700);
   await navTo('Autopilot');
@@ -217,7 +198,7 @@ const INIT = `(() => {
   await p.getByText('Autopilot is on').first().waitFor({ timeout: 60000 });
   await cutEnd();
   await show(p.getByText('Autopilot is on').first());
-  await say('Autopilot is on.', 'Anything outside the policy still waits for her click.', 3200);
+  await say('Autopilot is on.', 'Anything outside the policy still waits for her click.', 2400);
 
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(700);
   await navTo('Next invoice');
@@ -235,7 +216,7 @@ const INIT = `(() => {
   await cutEnd();
   const compared = p.getByText('Compared by Claude').first();
   await show(compared, 'start');
-  await say('Claude reads it into fields; code prices each way of billing it from this client\'s payment history.', 'Billing in yen, in dollars, on shorter terms, or half up front — side by side.');
+  await say('Code prices four ways to bill it from this client\'s payment history.', null, 3400);
   await show(create);
   await say('She picks one and approves it.', null, 1800);
   await click(create);
@@ -245,7 +226,7 @@ const INIT = `(() => {
   await show(sent);
   await cutEnd();
   await hl(sent);
-  await say('✓ Created and sent in PayPal.', null, 3000);
+  await say('✓ Created and sent in PayPal.', null, 1800);
   await hl(sent, false);
   await clear();
 
@@ -297,13 +278,6 @@ const INIT = `(() => {
   // ---- Scene 7 — close. The total now includes the invoice she just sent, so say so instead of leaving a number
   // that seems to have gone back up.
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(900);
-  const delta = hero.locator('p').filter({ hasText: 'Start of today' }).first();
-  if (await delta.count()) {
-    await hl(delta);
-    const added = ((await delta.innerText()).match(/\+(\$[\d.,]+K?) new invoice/) || [, ''])[1];
-    await say(`Today: ${collected || 'one payment'} collected.`, added ? `The new invoice she just sent (${added}) is waiting too — with its early-payment offer already on it.` : null, 4200);
-    await hl(delta, false);
-  }
   const evalMd = fs.readFileSync(require('path').join(__dirname, '..', 'agent-eval.md'), 'utf8');
   let runs = 0, props = 0, probs = 0;
   for (const m of evalMd.matchAll(/^\| [^|]+ \| (\d+) \| \d+ \| (\d+) \([^|]*\| [^|]*\| \*\*(\d+)\*\*/gm)) { runs += +m[1]; props += +m[2]; probs += +m[3]; }

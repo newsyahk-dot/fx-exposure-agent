@@ -42,7 +42,7 @@ placeholders. Captions are mandatory (burned in).
 ## 4 · 1:25–1:45 — Ask in plain words
 
 "Chase everyone more than 10 days late, gently" → reminders, and what it left alone and why.
-"Tell my clients the yen will fall so they pay now" → it declines.
+(The refusal — "Tell my clients the yen will fall so they pay now" → it declines — is said in the caption and shown in the gallery, to stay under 3:00.)
 
 ## 5 · 1:45–2:20 — Hand it over
 
