@@ -26,6 +26,12 @@ python3 edit.py fx-exposure-agent-demo.mp4 1.07   # cut the waits, 7% faster to 
 node reset.cjs                 # clean up: autopilot off, fresh book
 ```
 
+Devpost gallery images (3:2, 1500×1000, headline bar over a real screenshot) — on a fresh, pre-run book:
+
+```bash
+node gallery.cjs               # writes gallery/1-today.png … 7-evidence.png, then reset again
+```
+
 ## How the cuts work
 Playwright's video drifts several seconds against the script's clock over a five-minute take, so cut times are not
 taken from the clock. Instead `record.cjs` paints a small square in the top-left corner while it waits — magenta from
