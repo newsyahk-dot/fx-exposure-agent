@@ -91,5 +91,9 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   visits in between used to wait about a minute for a new plan (measured 2026-10-27, 15–66 s). The plan key includes the
   demo generation (`startedAt`); the nightly `/api/warm?reset=1` plans every currency for the new book before expiring
   the cached book. A real seller's book (no demo start) uses today.
+- **Demo video recording** (`docs/video/`, 2026-10-27): Playwright records `docs/video-script.md` on the hosted demo with captions
+  and a cursor drawn into the page; `edit.py` cuts waits marked by a corner square in the video (the recording drifts
+  ~7 s against the clock over 5 min, so cut times are never taken from the clock). The access code comes from
+  `FXA_ACCESS_CODE` only; the unlocked session (`state.json`) and outputs are git-ignored. Reset the demo book after.
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.
