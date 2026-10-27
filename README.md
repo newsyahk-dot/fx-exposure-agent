@@ -35,8 +35,9 @@ to deal with first.
 1. **What she's waiting for, at a glance.** About $31,000 owed from clients abroad, what's already overdue, and what a
    3% move either way would do to it (about $929) — up or down, equally likely; the size of the risk, not a forecast.
 2. **The day's work, done with a click.** An AI agent reads her PayPal invoices and proposes today's actions:
-   a reminder for the overdue invoice from London, written for that client; a small early-payment discount on a
-   large invoice that isn't due for two months, with its cost next to how much risk it removes. She approves, and it
+   a reminder for the overdue invoice from London, written for that client; or, for a large invoice that isn't due
+   for two months, a small early-payment discount — shown as what it is: a price for getting paid weeks sooner, with
+   its cost as a yearly rate (the agent only offers terms at most 12% a year and at least three weeks sooner). She approves, and it
    runs in PayPal.
 3. **The loop closes on its own.** When the client pays, PayPal notifies the app and her screen shows it within
    seconds: "+$2,807 collected", and what is still waiting goes down ("start of today → now").

@@ -26,11 +26,17 @@ export const AGENT_MODEL = process.env.FXA_AGENT_MODEL || process.env.FXA_EXPLAI
 // Server-side refusal fallback exists only on some models (Haiku 5.5 has none); send it only where it applies.
 export const FALLBACK_MODELS = new Set(["claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
 const SHOCK_PCT = 3;
-const MIN_DAYS_FOR_OFFER = 14;
 const REMIND_COOLDOWN_DAYS = 3;
 const TOOL_BUDGET = 40;
 export const DISCOUNT_PCTS = [1, 1.5, 2] as const;
 export const WINDOW_DAYS = { min: 5, max: 10 } as const;
+// The app's rule for early-payment offers (code enforces it; the seller decides): an offer must bring the money in
+// at least OFFER_MIN_DAYS_SOONER days sooner, and its cost as a yearly rate — the standard trade-credit formula,
+// percent / (100 − percent) × 365 / days sooner — must be at most OFFER_MAX_ANNUAL_PCT. A discount is a price for
+// getting paid sooner, not an exchange-rate hedge: it is a certain cost, while a rate move can go either way.
+export const OFFER_MIN_DAYS_SOONER = 21;
+export const OFFER_MAX_ANNUAL_PCT = 12;
+const MIN_DAYS_FOR_OFFER = OFFER_MIN_DAYS_SOONER + WINDOW_DAYS.min;
 
 // --- Candidates: what code knows about each open invoice ------------------------------------------
 
@@ -172,8 +178,16 @@ export type Pricing = {
   swingNow: number | null;
   swingIfEarly: number | null;
   swingLabels: string[]; // the swing figures as shown: now, if early, reduction
+  daysSooner: number; // how much sooner the client is asked to pay
+  annualPct: number; // the discount's cost as a yearly rate (trade-credit formula)
+  withinRule: boolean; // the app's rule for offers (see OFFER_MIN_DAYS_SOONER / OFFER_MAX_ANNUAL_PCT)
   facts: string;
 };
+
+// The discount's cost as a yearly rate: percent / (100 − percent) × 365 / days sooner, rounded to 0.1%.
+export function annualCostPct(percent: number, daysSooner: number): number {
+  return daysSooner > 0 ? Math.round((percent / (100 - percent)) * (365 / daysSooner) * 1000) / 10 : Infinity;
+}
 
 export function priceDiscount(cand: Candidate, base: string, asOf: string, percent: number, withinDays: number): Pricing {
   const c = (n: number) => compact(base, n);
@@ -181,16 +195,22 @@ export function priceDiscount(cand: Candidate, base: string, asOf: string, perce
   const swingNow = cand.vol == null || cand.daysToDue == null ? null : oneSigma(cand.value, cand.vol, toBusinessDays(cand.daysToDue));
   const swingIfEarly = cand.vol == null ? null : oneSigma(cand.value, cand.vol, toBusinessDays(withinDays));
   const newDueDate = addDays(asOf, withinDays);
+  const daysSooner = Math.max(0, (cand.daysToDue ?? 0) - withinDays);
+  const annualPct = annualCostPct(percent, daysSooner);
+  const withinRule = daysSooner >= OFFER_MIN_DAYS_SOONER && annualPct <= OFFER_MAX_ANNUAL_PCT;
+  const weeks = Math.round(daysSooner / 7);
   const swingLabels =
     swingNow != null && swingIfEarly != null ? [c(swingNow), c(swingIfEarly), c(roundAsShown(swingNow) - roundAsShown(swingIfEarly))] : [];
   const facts = [
     `Offer: ${percent}% off, new due date ${newDueDate} (${withinDays} days from today); the discount costs about ${c(cost)}.`,
+    `The client is asked to pay ${daysSooner} days (about ${weeks} weeks) sooner than the current due date.`,
+    `As a yearly rate this discount costs about ${annualPct}% (${percent} / (100 − ${percent}) × 365 / ${daysSooner}); the app's rule for offers is at least ${OFFER_MIN_DAYS_SOONER} days sooner and at most ${OFFER_MAX_ANNUAL_PCT}% a year, and these terms are ${withinRule ? "within" : "outside"} it.`,
     swingNow != null && swingIfEarly != null
       ? `A typical swing either way (one standard deviation) until the current due date is about ${c(swingNow)}; if paid within ${withinDays} days it is about ${c(swingIfEarly)}, a reduction of about ${c(roundAsShown(swingNow) - roundAsShown(swingIfEarly))}.`
       : "Not enough rate history to size the swing.",
     "The discount stays even if the client pays late (PayPal sandbox limitation).",
   ].join(" ");
-  return { percent, withinDays, newDueDate, cost, swingNow, swingIfEarly, swingLabels, facts };
+  return { percent, withinDays, newDueDate, cost, swingNow, swingIfEarly, swingLabels, daysSooner, annualPct, withinRule, facts };
 }
 
 // What figures carry which label for one invoice, and what other invoices it must not talk about.
@@ -274,9 +294,7 @@ export function rationaleTemplate(cand: Candidate, base: string, p?: Pricing) {
   const c = (n: number) => compact(base, n);
   if (!p)
     return `${money(cand.currency, cand.amount)} is ${cand.daysOverdue} days late; until it is paid, its value moves with the rate — about ${c((cand.value * SHOCK_PCT) / 100)} for a ${SHOCK_PCT}% stress-test move either way.`;
-  return p.swingNow != null && p.swingIfEarly != null
-    ? `${p.percent}% off costs about ${c(p.cost)}; if the client pays within ${p.withinDays} days, the typical swing either way on this invoice shrinks from about ${c(p.swingNow)} to ${c(p.swingIfEarly)}.`
-    : `${p.percent}% off costs about ${c(p.cost)} and moves the due date to ${p.newDueDate}.`;
+  return `${p.percent}% off costs about ${c(p.cost)} and asks the client to pay ${p.daysSooner} days sooner, by ${p.newDueDate}; as a yearly rate that is about ${p.annualPct}%.`;
 }
 
 function toReminder(cand: Candidate, subject: string, message: string, rationale: string): AgentProposal {
@@ -319,16 +337,21 @@ const order = (a: AgentProposal, b: AgentProposal) => (a.kind === b.kind ? b.val
 
 export function rulesRun(input: AgentInput, reason: string): AgentRun {
   const proposals: AgentProposal[] = [];
+  const outsideRule: AgentRun["notProposed"] = [];
   for (const cand of input.candidates) {
     if (cand.eligible.includes("reminder")) {
       const t = reminderTemplate(cand);
       proposals.push(toReminder(cand, t.subject, t.message, rationaleTemplate(cand, input.base)));
     } else if (cand.eligible.includes("early_pay_discount")) {
       const p = priceDiscount(cand, input.base, input.asOf, 1, 7);
-      proposals.push(toDiscount(cand, p, discountNoteTemplate(p), rationaleTemplate(cand, input.base, p)));
+      if (p.withinRule) proposals.push(toDiscount(cand, p, discountNoteTemplate(p), rationaleTemplate(cand, input.base, p)));
+      else outsideRule.push({ invoiceNumber: cand.invoiceNumber, why: `1% for ${p.daysSooner} days sooner costs about ${p.annualPct}% a year, outside the app's rule for offers`, by: "code" as const });
     }
   }
-  const notProposed = input.candidates.filter((x) => !x.eligible.length).map((x) => ({ invoiceNumber: x.invoiceNumber, why: x.notEligible.join("; "), by: "code" as const }));
+  const notProposed = [
+    ...input.candidates.filter((x) => !x.eligible.length).map((x) => ({ invoiceNumber: x.invoiceNumber, why: x.notEligible.join("; "), by: "code" as const })),
+    ...outsideRule,
+  ];
   return {
     base: input.base,
     asOf: input.asOf,
@@ -344,14 +367,14 @@ export function rulesRun(input: AgentInput, reason: string): AgentRun {
 
 // --- The model run --------------------------------------------------------------------------------
 
-const SYSTEM = `You are the FX exposure agent inside an app for a solo seller who is paid in foreign currencies through PayPal invoices. Money that is owed but not yet paid changes value in the seller's home currency whenever exchange rates move. Your job: look at the open invoices and decide which PayPal actions to propose so that less money stays exposed for less time. The seller approves or ignores each proposal; nothing runs without their click.
+const SYSTEM = `You are the FX exposure agent inside an app for a solo seller who is paid in foreign currencies through PayPal invoices. Money that is owed but not yet paid changes value in the seller's home currency whenever exchange rates move. Your job: help the seller get paid sooner. Look at the open invoices and decide which PayPal actions to propose; foreign money also moves with exchange rates while it waits, which is why sooner matters more for it. The seller approves or ignores each proposal; nothing runs without their click.
 
 How to work:
 1. Call get_exposure and list_open_invoices.
 2. Go through every invoice marked eligible and either propose the action or skip it with a one-sentence reason. Only eligible invoices can be proposed.
 3. Reminder (overdue invoices): write a short, polite e-mail to that client — a subject and a message. Greet the client by name when the invoice has one. Mention the invoice number, the amount and how late it is. Do not mention exchange rates, discounts, fees or penalties. Match the tone to how late it is: gentle when a few days late, firmer but still courteous after several weeks; if a reminder was already sent, acknowledge it.
-4. Early-payment offer (invoices due far ahead): call price_discount to compare 1%, 1.5% or 2% with a 5–10 day window. Rule of thumb for what to put in front of the seller: propose the terms whose reduction in typical swing is largest relative to their cost, and only if that reduction is larger than the cost; otherwise skip the invoice. In the text, state the cost and the reduction side by side — the seller decides. Write a one-sentence client note saying the discount has been applied and giving the new due date. In this PayPal sandbox the discount is applied right away and stays even if the client pays late, so the note must not make it conditional ("if paid by…").
-5. Each rationale is one or two sentences for the seller about that invoice only: what the action changes about their exposure, using numbers from the tool results. Do not compare it with other invoices.
+4. Early-payment offer (invoices due far ahead): a discount is a price the seller pays to get the money sooner — not an exchange-rate hedge. Call price_discount to compare 1%, 1.5% or 2% with a 5–10 day window. Code allows only terms within the app's rule (at least ${OFFER_MIN_DAYS_SOONER} days sooner, at most ${OFFER_MAX_ANNUAL_PCT}% as a yearly rate); among those, propose the cheapest as a yearly rate, or skip the invoice if none is within the rule. In the text, state the cost, how many days sooner, and the yearly rate — the seller decides. Write a one-sentence client note saying the discount has been applied and giving the new due date. In this PayPal sandbox the discount is applied right away and stays even if the client pays late, so the note must not make it conditional ("if paid by…").
+5. Each rationale is one or two sentences for the seller about that invoice only: what the action asks for and what it costs, using numbers from the tool results. Do not compare it with other invoices.
 
 Rules — code checks every call, and a rejected call tells you why; fix the text and call again:
 - Every number you write must appear in the tool results for that invoice, written the same way.
@@ -485,6 +508,12 @@ export async function runAgent(input: AgentInput): Promise<AgentRun> {
         if (!cand?.eligible.includes("early_pay_discount"))
           return reject("propose_early_payment_discount", cand, "invoice is not eligible for an early-payment offer");
         const p = priceDiscount(cand, input.base, input.asOf, percent, within_days);
+        if (!p.withinRule)
+          return reject(
+            "propose_early_payment_discount",
+            cand,
+            `these terms are outside the app's rule for offers (${p.daysSooner} days sooner, about ${p.annualPct}% a year; needs at least ${OFFER_MIN_DAYS_SOONER} days sooner and at most ${OFFER_MAX_ANNUAL_PCT}% a year) — try other terms or skip the invoice`,
+          );
         const tried = [...(pricedBy.get(cand.invoiceId) ?? []), p];
         const facts = `${cand.facts} ${tried.map((x) => x.facts).join(" ")}`;
         const why =

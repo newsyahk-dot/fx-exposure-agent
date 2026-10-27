@@ -50,9 +50,13 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   API-created invoices (measured 2026-10-26). Seed invoices are skipped so a reset does not start 22 runs.
 - **Home currency** is chosen on screen (`?base=`), default `FXA_DEFAULT_BASE` or USD. Raw ECB quotes are stored, so any
   of USD/EUR/GBP/JPY/KRW works in live and demo mode.
-- **What the agent puts in front of the seller** follows a stated rule of thumb: an offer is proposed only if its
-  reduction in 1σ swing is larger than its cost; both numbers are shown and the seller decides. Change the rule in the
-  prompt *and* this line together.
+- **What the agent puts in front of the seller** (2026-10-27): the story is getting paid sooner; FX is why sooner matters
+  more for foreign money. An early-payment discount is a price for getting paid sooner, **not an FX hedge** (a certain
+  cost vs a move that can go either way — a blind review called the old "swing reduction > cost" rule shaky). Code
+  enforces the app's rule for offers (`OFFER_MIN_DAYS_SOONER` 21 days, `OFFER_MAX_ANNUAL_PCT` 12% as a yearly rate by the
+  trade-credit formula percent / (100 − percent) × 365 / days sooner) in `priceDiscount` and the propose tool; cards show
+  cost, days sooner and the yearly rate; the swing stays as information. The default autopilot policy is reminders only.
+  Change the rule in code, prompt, eval and this line together.
 - **New invoices** (`src/lib/invoice-plan.ts`): Claude only reads the seller's sentence into fields and writes the
   comparison (same checks, never says which option to pick). Code computes every option from the client's payment
   history and ECB rates; the create action re-validates and recomputes before calling PayPal. No KRW invoices (PayPal).

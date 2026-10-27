@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  annualCostPct,
   buildAgentInput,
   discountNoteTemplate,
   labelContext,
+  OFFER_MAX_ANNUAL_PCT,
+  OFFER_MIN_DAYS_SOONER,
   priceDiscount,
   rationaleTemplate,
   reminderTemplate,
@@ -110,9 +113,29 @@ describe("rules fallback", () => {
     const r = rulesRun(inputFor("KRW"), "test");
     expect(r.source).toBe("rules");
     expect(r.proposals.filter((p) => p.kind === "reminder")).toHaveLength(5);
-    expect(r.proposals.filter((p) => p.kind === "early_pay_discount")).toHaveLength(8);
     expect(r.proposals[0].kind).toBe("reminder");
-    expect(r.notProposed.map((n) => n.invoiceNumber).sort()).toEqual(["FXA-1002", "FXA-1007", "FXA-2003", "FXA-3003"]);
+    // Every candidate is either proposed or listed with a reason; offers only within the app's rule.
+    const input = inputFor("KRW");
+    const seen = new Set([...r.proposals.map((p) => p.invoiceNumber), ...r.notProposed.map((n) => n.invoiceNumber)]);
+    expect(input.candidates.every((c) => seen.has(c.invoiceNumber))).toBe(true);
+    const offers = r.proposals.filter((p) => p.kind === "early_pay_discount");
+    expect(offers.length).toBeGreaterThan(0);
+    for (const o of offers) {
+      const cand = input.candidates.find((c) => c.invoiceId === o.invoiceId)!;
+      expect(priceDiscount(cand, input.base, input.asOf, o.percent, o.withinDays).withinRule).toBe(true);
+    }
+  });
+
+  it("prices an offer's cost as a yearly rate and keeps only terms within the rule", () => {
+    expect(annualCostPct(1, 49)).toBe(7.5); // 1/99 × 365/49
+    expect(annualCostPct(2, 30)).toBe(24.8);
+    expect(annualCostPct(1, 0)).toBe(Infinity);
+    const input = inputFor("USD");
+    const far = input.candidates.find((c) => c.eligible.includes("early_pay_discount"))!;
+    const p = priceDiscount(far, input.base, input.asOf, 1, 7);
+    expect(p.daysSooner).toBe((far.daysToDue ?? 0) - 7);
+    expect(p.withinRule).toBe(p.daysSooner >= OFFER_MIN_DAYS_SOONER && p.annualPct <= OFFER_MAX_ANNUAL_PCT);
+    expect(p.facts).toContain(`about ${p.annualPct}%`);
   });
 
   it("is what runs without an API key — never an exception", async () => {
