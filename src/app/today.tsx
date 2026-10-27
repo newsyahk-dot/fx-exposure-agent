@@ -13,6 +13,8 @@ import { todayBar, type BarKey } from "@/lib/today-bar";
 import { SHOCK_PCT } from "@/lib/view";
 import { ApproveForm } from "./approve-button";
 import { SimulatePayment } from "./client-pay";
+import { MoneyTimeline } from "./money-timeline";
+import { moneyTimeline } from "@/lib/money-timeline";
 import { ResetDemoButton } from "./reset-demo";
 import styles from "./page.module.css";
 
@@ -88,6 +90,8 @@ export async function TodayPlan({
           </p>
         )}
       </div>
+
+      <MoneyTimeline t={moneyTimeline(input, r)} base={base} />
 
       {sharedDemo && cards.length > 0 && openCount === 0 && (
         <div className={styles.freshStart}>

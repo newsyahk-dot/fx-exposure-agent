@@ -1437,3 +1437,57 @@
   font-size: 15px;
   font-weight: 600;
 }
+
+/* When the money comes in (Today and /try) */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.timeline svg {
+  width: 100%;
+  height: auto;
+  max-height: 210px;
+}
+
+.timeline figcaption {
+  font-size: 15px;
+}
+
+.timelineUp {
+  color: var(--accent);
+}
+
+.barInvoiced {
+  fill: color-mix(in srgb, var(--text-secondary) 35%, transparent);
+  background: color-mix(in srgb, var(--text-secondary) 35%, transparent);
+}
+
+.barProposed {
+  fill: var(--accent);
+  background: var(--accent);
+}
+
+.timeline text[data-late] {
+  fill: var(--warning);
+  font-weight: 600;
+}
+
+.timelineLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.timelineLegend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 5px;
+  vertical-align: -1px;
+}

@@ -6,6 +6,7 @@
 import { writesAllowed } from "@/lib/access";
 import { runAgent } from "@/lib/agent";
 import { quotesFor } from "@/lib/ecb-cache";
+import { moneyTimeline } from "@/lib/money-timeline";
 import { analyzeOwn, type OwnAnalysis } from "@/lib/own-analysis";
 import { OWN_MAX_CHARS } from "@/lib/own-invoices";
 import { pickBase } from "@/lib/view";
@@ -26,6 +27,7 @@ export async function analyzeOwnAction(_: OwnState, form: FormData): Promise<Own
       else {
         const run = await runAgent({ ...agentInput, readPayPal: false });
         analysis.run = run;
+        analysis.timeline = moneyTimeline(agentInput, run);
         if (run.source !== "agent") note = `Claude did not run (${run.reason}); this is the rule-based plan.`;
       }
     }

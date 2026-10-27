@@ -5,6 +5,7 @@
 import { rulesRun, type AgentInput, type AgentRun } from "./agent";
 import type { BookInputs } from "./book";
 import { ECB_CURRENCIES, type Base, type EcbQuotes } from "./fx";
+import { moneyTimeline, type MoneyTimeline } from "./money-timeline";
 import { parseOwnInvoices } from "./own-invoices";
 import { viewFor } from "./view";
 
@@ -22,6 +23,7 @@ export type OwnAnalysis = {
   baseTotal: number; // invoices already in the home currency
   rows: { currency: string; total: number; value: number; shock: number; overdue: number; count: number }[];
   run: AgentRun;
+  timeline: MoneyTimeline;
 };
 
 export function analyzeOwn(text: string, base: Base, ecb: EcbQuotes, today: string, now = new Date()): { analysis: OwnAnalysis; agentInput: AgentInput } {
@@ -47,6 +49,8 @@ export function analyzeOwn(text: string, base: Base, ecb: EcbQuotes, today: stri
     baseTotal: e.baseTotal,
     rows: e.rows.map((r) => ({ currency: r.currency, total: r.total, value: r.value, shock: r.shock, overdue: overdueOf(r.currency), count: r.invoiceCount })),
     run: rulesRun(view.agentInput, "your invoices — rules"),
+    timeline: { bins: [], soon: { days: 14, asInvoiced: 0, asProposed: 0 }, total: 0 },
   };
+  analysis.timeline = moneyTimeline(view.agentInput, analysis.run);
   return { analysis, agentInput: view.agentInput };
 }
