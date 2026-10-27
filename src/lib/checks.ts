@@ -67,6 +67,20 @@ function labelCheck(text: string, ctx: LabelContext): string | null {
   return null;
 }
 
+// Text that is not a reason ("Placeholder not used.") or that narrates the agent's own tool calls ("I logged a stray
+// skip by mistake; please disregard it") instead of telling the seller what was done. Both reached the screen once
+// (2026-10-27); the seller should only ever read about invoices.
+const PLACEHOLDER = /\b(?:placeholder|lorem ipsum|tbd|todo|to be decided)\b/i;
+const MECHANICS = /\b(?:skip record|stray|by mistake|my mistake|disregard|tool calls?|logged an?\b)/i;
+
+function substanceCheck(text: string): string | null {
+  const p = PLACEHOLDER.exec(text);
+  if (p) return `placeholder text instead of a reason: "${p[0]}"`;
+  if (text.trim().split(/\s+/).length < 4) return "too short to be a reason the seller can read";
+  const m = MECHANICS.exec(text);
+  return m ? `talks about the agent's own steps ("${m[0]}"); say what was done for the seller` : null;
+}
+
 // Seller-facing: rationales, summaries, reasons for skipping.
 export function checkSellerText(text: string, facts: string, maxLen = 450, ctx?: LabelContext): string | null {
   if (!text.trim()) return "empty";
@@ -74,6 +88,7 @@ export function checkSellerText(text: string, facts: string, maxLen = 450, ctx?:
   const mis = MISFRAMED.exec(text);
   return (
     shapeCheck(text) ??
+    substanceCheck(text) ??
     numbersCheck(text, facts) ??
     wordingCheck(text) ??
     (mis ? `treats a swing or a discount as money gained or saved: "${mis[0]}"` : null) ??
