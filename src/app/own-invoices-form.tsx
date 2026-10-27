@@ -10,6 +10,7 @@ import { annualCostPct } from "@/lib/offer-rule";
 import { BASES } from "@/lib/fx";
 import { compact, money } from "@/lib/format";
 import { sampleCsv } from "@/lib/own-invoices";
+import { MoneyTimeline } from "./money-timeline";
 import { analyzeOwnAction, type OwnState } from "./try-actions";
 import styles from "./page.module.css";
 
@@ -141,6 +142,7 @@ function OwnResult({ s }: { s: Extract<OwnState, { ok: true }> }) {
           </p>
           {s.note && <p className={styles.warn}>{s.note}</p>}
           {a.run.source === "agent" && a.run.summary && <p>{a.run.summary}</p>}
+          <MoneyTimeline t={a.timeline} base={a.base} />
           {a.run.proposals.length === 0 ? (
             <p className={styles.muted}>Nothing to do today: no overdue invoices to chase and no offer within the app&apos;s rule.</p>
           ) : (

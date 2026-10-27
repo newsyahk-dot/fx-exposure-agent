@@ -104,5 +104,9 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   the demo as of today (`quotesFor`, every ECB currency), and `try-actions.ts` adds Claude's plan only with the access
   code (`readPayPal: false`). Nothing is stored or logged; nothing in PayPal is touched. The offer rule's constants live
   in `src/lib/offer-rule.ts` (no imports, safe for client components).
+- **Money-in timeline** (2026-10-27, `src/lib/money-timeline.ts` + `src/app/money-timeline.tsx`, Today and /try): money
+  from clients abroad by the week it is due, as invoiced vs if clients pay as proposed (reminder → paid within
+  `ASSUME.afterReminderDays`, offer → by its new due date net of the discount). Always labelled a scenario; late
+  invoices count as not yet in. Plain SVG, no client code.
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.
