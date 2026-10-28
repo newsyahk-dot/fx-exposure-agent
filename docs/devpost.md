@@ -74,7 +74,8 @@ labelled a scenario, not a promise.
 **Where the risk sits (AG Grid).** Every open invoice in one grid, ranked by what it puts at risk, with what the
 agent is doing about each one, any early-payment offer that is out, and how each client has paid before. Tick the
 invoices with a proposal waiting and approve them together — a confirmation lists exactly what will run, and each one
-goes through the same checks as a single approval. One click narrows it to what needs attention —
+goes through the same checks as a single approval. Open any invoice (▸) to see, right under it, how that client has
+paid before next to the agent's draft for it — and approve just that one. One click narrows it to what needs attention —
 Late, Agent acting, Offers out, Paid today — and the total row follows. When the client pays, PayPal's webhook updates
 the book and the changed cells flash; the paid invoice stays in the list, greyed, so the seller sees what just happened.
 Searchable, sortable, and downloadable as CSV.
@@ -126,7 +127,8 @@ by side; the seller decides.
 - **Next.js 16 on Vercel**: server actions re-check everything before calling PayPal; a shared cache keeps one agent
   plan per day and currency; Vercel Cron warms the plans, resets the demo book nightly and runs the autopilot.
 - **AG Grid Community** for the invoice grid: row selection (checkboxes only on rows with a proposal waiting) to approve
-  several actions at once through the same server action, a two-line client cell with the client's payment history,
+  several actions at once through the same server action, full-width detail rows (client's paid invoices + the agent's
+  draft + approve one) kept under their invoice through sorting and filtering, a two-line client cell with the client's payment history,
   an external filter for the quick views, a pinned total row that follows
   the filter, cell change flash on PayPal updates, row class rules, custom cell renderers (risk bars, PayPal links),
   quick-filter search and CSV export. **ECB reference rates via Frankfurter** for exchange rates.

@@ -100,7 +100,9 @@ side by side; she decides.
   with what the agent proposed or did for it today, any early-payment offer that is out, and how each client has paid
   before ("pays ~18 days late", from their paid invoices). She can tick the rows with a proposal waiting (row selection
   with checkboxes only where there is something to approve) and approve them together: a confirmation lists exactly
-  what will run, then each one goes through the same server-side checks as the card's own button. Quick views (Late · Agent
+  what will run, then each one goes through the same server-side checks as the card's own button. Opening a row (▸)
+  shows a full-width detail row under it: the client's last paid invoices (due date, paid date, days late) next to the
+  agent's draft for this invoice, with a button to approve just that one. Quick views (Late · Agent
   acting · Offers out · Paid today) run as an AG Grid external filter; the pinned total row follows whatever is shown;
   cells flash when a PayPal webhook changes an invoice (the page refreshes every 10 s); an invoice paid today stays in
   the list, greyed, so the change is visible; every number opens the invoice in PayPal as the client sees it; CSV

@@ -1528,3 +1528,58 @@
   margin: 6px 0;
   padding-left: 18px;
 }
+
+/* Invoice grid: expandable detail rows (full-width rows) */
+.gridInvoice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.gridToggle {
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  line-height: 18px;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  color: var(--text-secondary);
+}
+.gridDetail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 12px 20px 12px 64px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.45;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: auto;
+  white-space: normal;
+}
+.gridDetail p {
+  margin: 0 0 6px;
+}
+.gridDetail ul {
+  margin: 0;
+  padding-left: 16px;
+}
+.gridDraft {
+  color: var(--text-secondary);
+  max-height: 96px;
+  overflow: auto;
+}
+@media (max-width: 719px) {
+  .gridDetail {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding-left: 16px;
+  }
+}
+.gridLateText {
+  color: var(--critical);
+}
