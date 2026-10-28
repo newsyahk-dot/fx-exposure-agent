@@ -673,7 +673,7 @@ function Replay({ r, ecb, input }: { r: AgentRun; ecb: EcbQuotes; input: AgentIn
         {wa > 0 && (
           <>
             {" "}
-            — {wb / wa < 0.8 ? `${widthPhrase(wb / wa)} (${Math.round((1 - wb / wa) * 100)}% narrower)` : `a range ${Math.round((1 - wb / wa) * 100)}% narrower`}
+            — {widthPhrase(wb / wa)}
           </>
         )}
         .

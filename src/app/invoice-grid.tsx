@@ -85,8 +85,9 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
         field: "daysToDue",
         headerName: "Due",
         minWidth: 104,
-        valueFormatter: (p) => (p.value == null ? "" : p.value < 0 ? `${-p.value} days late` : p.value === 0 ? "today" : `in ${p.value} days`),
-        cellClassRules: { [styles.gridLate]: (p) => (p.value ?? 0) < 0 },
+        valueFormatter: (p) =>
+          p.value == null ? "" : p.data?.paidToday ? "paid today" : p.value < 0 ? `${-p.value} days late` : p.value === 0 ? "today" : `in ${p.value} days`,
+        cellClassRules: { [styles.gridLate]: (p) => !p.data?.paidToday && (p.value ?? 0) < 0 },
       },
       {
         field: "atRisk",
@@ -205,7 +206,7 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
 function total(all: InvoiceRow[]): TotalRow {
   const rows = all.filter((r) => !r.paidToday);
   return {
-    number: `${rows.length} invoice${rows.length === 1 ? "" : "s"}`,
+    number: `${rows.length} open invoice${rows.length === 1 ? "" : "s"}`,
     value: rows.reduce((s, r) => s + r.value, 0),
     atRisk: rows.reduce((s, r) => s + r.atRisk, 0),
   };

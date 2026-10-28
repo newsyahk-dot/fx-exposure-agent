@@ -69,7 +69,7 @@ side by side; she decides.
 ## Try it (about two minutes)
 
 1. Open the live demo and enter the access code.
-2. **Today:** approve a proposal. It runs in the PayPal sandbox (a reminder e-mail or an edited invoice).
+2. **Today:** approve a proposal. It runs in the PayPal sandbox (a reminder e-mail, or a separate early-payment offer invoice).
 3. In the same card, pay it as the client — "Open as client ↗" for the real PayPal invoice page, or
    "Simulate client payment". Watch "+… collected" appear at the top.
 4. **Next invoice:** describe an invoice in a sentence and compare the options.
@@ -80,7 +80,8 @@ side by side; she decides.
 
 ## How it works
 
-- **PayPal (sandbox), Invoicing v2:** list, create, send, remind, update (discount and due date), record payments;
+- **PayPal (sandbox), Invoicing v2:** list, create, send, remind, record payments, cancel; an early-payment offer is a
+  separate invoice for the discounted amount that settles the original when paid;
   invoice templates store the seller's standing policy; webhooks (`INVOICING.INVOICE.PAID` and other invoice events,
   each verified with PayPal) update the screen when a client pays, and a newly sent invoice wakes the agent.
 - **PayPal's own MCP server** (`mcp.sandbox.paypal.com`, through Claude's MCP connector): Claude reads invoices directly
@@ -134,7 +135,7 @@ side by side; she decides.
 
 ## User tests
 
-Planned for Nov 7–9 with three freelancers and small sellers who invoice abroad. Results will be added here.
+Planned for Nov 7–10 with three to five freelancers and small sellers who invoice abroad. Results will be added here.
 
 ## Run locally
 

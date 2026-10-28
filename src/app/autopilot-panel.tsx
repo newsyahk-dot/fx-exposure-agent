@@ -113,7 +113,7 @@ function RunResult({ r }: { r: NonNullable<RunState> }) {
         ))}
         {r.left.map((x, i) => (
           <li key={`l${i}`} className={styles.muted}>
-            {x.invoiceNumber}: left for your click — {x.why}
+            {x.invoiceNumber}: {/^(already|no longer)/.test(x.why) ? "skipped" : "left for your click"} — {x.why}
           </li>
         ))}
       </ul>

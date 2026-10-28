@@ -101,7 +101,8 @@ by side; the seller decides.
 ### How I built it
 
 - **PayPal Invoicing API v2 (sandbox)** is the backbone: listing and reading invoices, creating and sending them,
-  sending reminders, editing a sent invoice (discount and new due date), recording payments, and cancelling. Every
+  sending reminders, sending a separate early-payment offer invoice (paying it settles the original), recording
+  payments, and cancelling. Every
   action the agent takes is written into the invoice's private memo, so the history lives in PayPal, not in my
   database (there isn't one).
 - **PayPal invoice templates** store the seller's standing policy and notes for the agent.
@@ -190,7 +191,7 @@ paypal, paypal-invoicing-api, paypal-webhooks, claude, anthropic, next.js, react
 
 **Claude Haiku 5.5 (Anthropic API)**, used in four places:
 
-1. **The daily agent.** Claude runs as a tool-using agent (Anthropic SDK tool runner) over six tools that read the
+1. **The daily agent.** Claude runs as a tool-using agent (Anthropic SDK tool runner) over seven tools that read the
    seller's PayPal invoices, price discount terms and record proposals. It decides which actions to put in front of the
    seller and writes each client e-mail, each invoice note and each reason. Every number it may use comes from the
    tools; every sentence is checked by code before it is accepted, and rejected drafts are returned to it with the

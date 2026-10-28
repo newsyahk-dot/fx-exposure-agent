@@ -47,6 +47,7 @@ export function invoiceRows(
       const what = proposal.kind === "reminder" ? "Reminder" : `${proposal.percent}% offer`;
       agent = s === "open" ? `${what} proposed` : s === "done" ? `${what} sent` : s === "paid" ? "Paid" : `${what} (changed)`;
     } else if (o.run?.notProposed.some((n) => n.invoiceNumber === inv.number)) agent = "Left alone";
+    else if (o.run && !home) agent = "New — see Today"; // arrived after the day's plan; the agent's answer is on Today
     if (paidToday) agent = inv.offer?.state === "paid" ? "Paid today (offer)" : "Paid today";
     rows.push({
       id: inv.id,

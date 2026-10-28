@@ -22,7 +22,7 @@ describe("invoice grid rows", () => {
   });
   it("home-currency invoices carry no FX risk; overdue ones have no swing to their due date", () => {
     const usd = rows.find((r) => r.currency === "USD")!;
-    expect([usd.atRisk, usd.swing, usd.agent]).toEqual([0, 0, "No FX risk"]);
+    expect([usd.atRisk, usd.swing]).toEqual([0, 0]);
     const late = rows.find((r) => r.currency !== "USD" && r.daysToDue < 0)!;
     expect(late.swing).toBeNull();
     expect(late.atRisk).toBeCloseTo(late.value * 0.03, 9);

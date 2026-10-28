@@ -66,9 +66,15 @@ describe("what code lets the agent do", () => {
     expect(inputFor("KRW", [soon]).candidates[0].notEligible[0]).toMatch(/too soon/);
   });
 
-  it("leaves invoices in the home currency out: they carry no FX risk", () => {
+  it("chases late invoices in the home currency too, but offers only on money from abroad", () => {
     const usdHome = inputFor("USD");
-    expect(usdHome.candidates.some((c) => c.currency === "USD")).toBe(false);
+    const usd = usdHome.candidates.filter((c) => c.currency === "USD");
+    expect(usd.length).toBeGreaterThan(0);
+    for (const c of usd) {
+      expect(c.eligible).not.toContain("early_pay_discount");
+      expect(c.facts).toMatch(/exchange rates do not change it/);
+      if (c.daysOverdue && c.value >= 700) expect(c.eligible).toContain("reminder");
+    }
     expect(usdHome.candidates.some((c) => c.currency === "EUR")).toBe(true);
   });
 

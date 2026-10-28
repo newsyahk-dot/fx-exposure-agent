@@ -217,7 +217,7 @@ export function ProposalCard({
   rejected?: string[]; // why the checks rejected earlier drafts for this invoice (from the run's steps)
   featured?: boolean; // the first card shows the agent's reason and draft without a click
 }) {
-  const atRisk = (p.value * SHOCK_PCT) / 100;
+  const atRisk = p.currency === base ? 0 : (p.value * SHOCK_PCT) / 100; // home-currency invoices carry no exchange-rate risk
   const daysSooner = p.kind === "early_pay_discount" ? Math.max(0, p.daysToDue - p.withinDays) : 0;
   const weeksSooner = Math.round(daysSooner / 7);
   const annual = p.kind === "early_pay_discount" ? annualCostPct(p.percent, daysSooner) : 0;
@@ -300,7 +300,7 @@ export function ProposalCard({
           )}
           <div>
             <dt title="A stress test: what a 3% move either way would change. Up or down — not a forecast.">If rates move {SHOCK_PCT}%</dt>
-            <dd>±{c(atRisk)}</dd>
+            <dd>{atRisk ? `±${c(atRisk)}` : `none (in ${base})`}</dd>
           </div>
         </dl>
         <p>{p.rationale}</p>
@@ -354,12 +354,10 @@ export function ProposalCard({
 
 const shortDate = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
-// "about half as wide" — a plain-words size for a replayed range, not a precise claim.
+// The replayed range as one number: "about 42% narrower" — a word like "half" next to a percent read as a contradiction.
 export function widthPhrase(ratio: number): string {
-  if (ratio < 0.35) return "about a third as wide";
-  if (ratio < 0.6) return "about half as wide";
-  if (ratio < 0.8) return "about two-thirds as wide";
-  return "a little narrower";
+  const pct = Math.round((1 - ratio) * 100);
+  return pct >= 5 ? `about ${pct}% narrower` : "about as wide";
 }
 
 // Why the checks rejected drafts for this invoice during the run, in plain words.
@@ -395,13 +393,8 @@ function TodayBar({ bar, c }: { bar: ReturnType<typeof todayBar>; c: (n: number)
   return (
     <figure className={styles.todayBar} aria-label="Where today's money stands">
       <figcaption>
-        <strong>Where today&apos;s {c(total)} stands</strong>
-        {bar.morning > bar.now && (
-          <span className={styles.ok}>
-            {" "}
-            — {c(bar.morning - bar.now)} collected, {c(bar.now)} still waiting
-          </span>
-        )}
+        <strong>Where today&apos;s money stands</strong> — {c(bar.now)} still waiting
+        {bar.morning > bar.now && <span className={styles.ok}>, {c(bar.morning - bar.now)} collected today</span>}
       </figcaption>
       <div className={styles.barTrack}>
         {shown.map((s) => (
