@@ -158,8 +158,9 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
   await p.getByRole('button', { name: /^Late/ }).click().catch(() => {});
   await wait(600);
   // Prefer a late invoice whose client has paid before, so the history half has something in it.
-  const withHistory = p.locator('.ag-row', { hasText: /pays / }).locator('button[aria-label^="Open details for"]');
-  const open = (await withHistory.count()) ? withHistory : p.locator('button[aria-label^="Open details for"]');
+  // (The invoice column is pinned, so the toggle and the client cell sit in different row elements: match by row index.)
+  const idx = await p.locator('.ag-center-cols-container .ag-row', { hasText: /pays / }).first().getAttribute('row-index', { timeout: 3000 }).catch(() => null);
+  const open = idx != null ? p.locator(`.ag-row[row-index="${idx}"] button[aria-label^="Open details for"]`) : p.locator('button[aria-label^="Open details for"]');
   if (await open.count()) {
     await open.first().click();
     await wait(800);
