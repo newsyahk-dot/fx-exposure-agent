@@ -154,6 +154,17 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
   await wait(1500);
   await topAt(p.getByRole('group', { name: 'Quick views' }), 70);
   await shot('9-grid', 'Every invoice in one AG Grid', 'Ranked by what it puts at risk, with what the agent is doing, the offers out and how each client usually pays.');
+  // 9c — open one late invoice: the client's past payments next to the agent's draft, approve just that one (not run)
+  await p.getByRole('button', { name: /^Late/ }).click().catch(() => {});
+  await wait(600);
+  const open = p.locator('button[aria-label^="Open details for"]');
+  if (await open.count()) {
+    await open.nth(Math.min(2, (await open.count()) - 1)).click();
+    await wait(800);
+    await topAt(p.getByRole('group', { name: 'Quick views' }), 70);
+    await shot('9c-grid-detail', 'Open an invoice: how this client pays, and the draft', 'A detail row under the invoice: the client\'s past payments next to the agent\'s draft, with a button to approve just that one.');
+    await p.getByRole('button', { name: 'Close' }).first().click().catch(() => {});
+  }
   // 9b — tick the invoices with a proposal waiting and approve them together (shown at the confirmation, not run)
   await p.getByRole('button', { name: /^All/ }).click().catch(() => {});
   const boxes = p.locator('.ag-row:not(.ag-row-pinned) .ag-selection-checkbox input:visible');
