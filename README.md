@@ -102,7 +102,10 @@ side by side; she decides.
   with checkboxes only where there is something to approve) and approve them together: a confirmation lists exactly
   what will run, then each one goes through the same server-side checks as the card's own button. Opening a row (▸)
   shows a full-width detail row under it: the client's last paid invoices (due date, paid date, days late) next to the
-  agent's draft for this invoice, with a button to approve just that one. Quick views (Late · Agent
+  agent's draft for this invoice, with a button to approve just that one. She can change the draft in the grid before
+  approving: the e-mail in AG Grid's large-text cell editor, the discount in a small custom cell editor that offers only
+  the percents the app's rule allows for that invoice. An edit is checked again on the server like the agent's own
+  text (a reminder that says "the euro will fall" is refused, not sent). Quick views (Late · Agent
   acting · Offers out · Paid today) run as an AG Grid external filter; the pinned total row follows whatever is shown;
   cells flash when a PayPal webhook changes an invoice (the page refreshes every 10 s); an invoice paid today stays in
   the list, greyed, so the change is visible; every number opens the invoice in PayPal as the client sees it; CSV

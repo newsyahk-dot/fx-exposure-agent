@@ -5,6 +5,7 @@ import { toBusinessDays, type AgentInput, type AgentRun } from "./agent";
 import { daysBetween, OPEN_STATUSES } from "./exposure";
 import { oneSigma } from "./fx";
 import { clientHistory, sameClient } from "./invoice-plan";
+import { offerNoteTemplate, percentsWithinRule } from "./offer-rule";
 import { proposalState } from "./plan-state";
 import type { Invoice, Rates } from "./types";
 
@@ -23,14 +24,25 @@ export type InvoiceRow = {
   offer: string; // the early-payment offer sent for it ("EUR 4,950.00 by 2026-11-01"), or ""
   offerState: "" | "open" | "paid" | "expired" | "closed";
   paidToday: boolean; // paid since the start of the book day: kept in the grid so the change is visible
+  paidAmount: number; // what was paid since the start of the book day (shown on a paid-today row)
   usuallyPays: string; // this client's history: "on time", "~6 days late", or "" when there is none
   detailOf?: string; // grid only: an expanded detail row under the invoice with this id
   history: { number: string; amount: number; currency: string; dueDate: string; paidOn: string; daysLate: number }[]; // their paid invoices, newest first
   // The agent's proposal for this invoice when it still waits for a click: approvable from the grid with the
   // agent's own wording, through the same server action and checks as the card.
   action?:
-    | { kind: "reminder"; label: string; subject: string; message: string }
-    | { kind: "early_pay_discount"; label: string; percent: number; withinDays: number; clientNote: string };
+    | { kind: "reminder"; label: string; subject: string; message: string; edited?: boolean }
+    | {
+        kind: "early_pay_discount";
+        label: string;
+        percent: number;
+        withinDays: number;
+        clientNote: string;
+        newDueDate: string;
+        percents: number[]; // what the seller may pick instead, within the app's offer rule
+        edited?: boolean;
+      };
+
 };
 
 // "on time" / "~6 days late" from the client's fully paid invoices; "" when there are none.
@@ -72,6 +84,8 @@ export function invoiceRows(
                 percent: proposal.percent,
                 withinDays: proposal.withinDays,
                 clientNote: proposal.clientNote,
+                newDueDate: proposal.newDueDate,
+                percents: percentsWithinRule(d - proposal.withinDays),
               };
       const what = proposal.kind === "reminder" ? "Reminder" : `${proposal.percent}% offer`;
       agent = s === "open" ? `${what} proposed` : s === "done" ? `${what} sent` : s === "paid" ? "Paid" : `${what} (changed)`;
@@ -96,6 +110,7 @@ export function invoiceRows(
       offer: inv.offer ? `${inv.currency} ${Math.round(inv.offer.amount).toLocaleString("en-US")} · ${shortDay(inv.offer.dueDate)}` : "",
       offerState: inv.offer?.state ?? "",
       paidToday,
+      paidAmount: paidToday ? (inv.payments ?? []).filter((x) => x.date >= o.asOf).reduce((s, x) => s + x.amount, 0) : 0,
       usuallyPays: usuallyPays(invoices, inv.recipientName),
       history: paidHistory(invoices, inv.recipientName),
       ...(action ? { action } : {}),
@@ -124,4 +139,20 @@ function paidHistory(invoices: Invoice[], client: string | undefined): InvoiceRo
     })
     .sort((a, b) => b.paidOn.localeCompare(a.paidOn))
     .slice(0, 6);
+}
+
+// A seller's edit to the agent's draft, applied to the row's action. A changed percent replaces the client note with
+// code's own sentence, since the agent's named the old percent. The server checks the result again on approval.
+export type DraftEdit = { message?: string; percent?: number };
+export function applyEdit(a: NonNullable<InvoiceRow["action"]>, e: DraftEdit | undefined): NonNullable<InvoiceRow["action"]> {
+  if (!e) return a;
+  if (a.kind === "reminder") return e.message != null && e.message !== a.message ? { ...a, message: e.message, edited: true } : a;
+  if (e.percent == null || e.percent === a.percent || !a.percents.includes(e.percent)) return a;
+  return {
+    ...a,
+    percent: e.percent,
+    clientNote: offerNoteTemplate(a.newDueDate, e.percent),
+    label: a.label.replace(/^[\d.]+% /, `${e.percent}% `),
+    edited: true,
+  };
 }

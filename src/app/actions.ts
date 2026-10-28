@@ -10,7 +10,7 @@
 import { refresh, updateTag } from "next/cache";
 import { after } from "next/server";
 import { BOOK_TAG } from "@/lib/book-cache";
-import { PLAN_TAG, planFor } from "@/lib/agent-cache";
+import { PLAN_TAG, planFor, planTag } from "@/lib/agent-cache";
 import { lastResetAt, RESET_COOLDOWN_MIN, resetDemo, resetWait } from "@/lib/demo-reset";
 import { LOCKED_MESSAGE, writesAllowed } from "@/lib/access";
 import { demoMode, loadLiveInputs, settledBook } from "@/lib/book";
@@ -96,12 +96,13 @@ export async function simulateClientPayment(_prev: ApproveState, form: FormData)
   }
 }
 
-// Drops the day's plan so the next view asks the agent again with the current invoices (~20–30 s, one model run
-// per home currency viewed). Needs the access code like every other action that spends model calls.
-export async function replan(): Promise<ApproveState> {
+// Drops the day's plan for this home currency, so the next view asks the agent again with the current invoices
+// (~30-60 s). Only this currency: dropping every plan made each other currency's next visitor wait a minute too.
+// Needs the access code like every other action that spends model calls.
+export async function replan(_prev: ApproveState, form: FormData): Promise<ApproveState> {
   if (demoMode()) return { ok: false, message: "This is a read-only demo snapshot." };
   if (!(await writesAllowed())) return { ok: false, message: LOCKED_MESSAGE };
-  updateTag(PLAN_TAG);
+  updateTag(planTag(pickBase(str(form, "base"))));
   refresh();
   return { ok: true, message: "Re-planning." };
 }

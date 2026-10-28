@@ -9,7 +9,9 @@
 //
 // No key, an API error or a refusal falls back to rule-based proposals with fixed wording.
 
-import { annualCostPct, OFFER_MAX_ANNUAL_PCT, OFFER_MIN_DAYS_SOONER } from "./offer-rule";
+import { annualCostPct, DISCOUNT_PCTS, OFFER_MAX_ANNUAL_PCT, OFFER_MIN_DAYS_SOONER, offerNoteTemplate } from "./offer-rule";
+
+export { DISCOUNT_PCTS };
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
@@ -29,7 +31,6 @@ export const FALLBACK_MODELS = new Set(["claude-fable-5-1", "claude-opus-5-5", "
 const SHOCK_PCT = 3;
 const REMIND_COOLDOWN_DAYS = 3;
 const TOOL_BUDGET = 40;
-export const DISCOUNT_PCTS = [1, 1.5, 2] as const;
 export const WINDOW_DAYS = { min: 5, max: 10 } as const;
 const MIN_DAYS_FOR_OFFER = OFFER_MIN_DAYS_SOONER + WINDOW_DAYS.min;
 export { annualCostPct, OFFER_MAX_ANNUAL_PCT, OFFER_MIN_DAYS_SOONER };
@@ -286,7 +287,7 @@ export function reminderTemplate(cand: Candidate) {
 }
 
 export function discountNoteTemplate(p: Pricing) {
-  return `Early-payment offer: pay by ${p.newDueDate} and take ${p.percent}% off. Thank you for your business!`;
+  return offerNoteTemplate(p.newDueDate, p.percent);
 }
 
 export function rationaleTemplate(cand: Candidate, base: string, p?: Pricing) {
