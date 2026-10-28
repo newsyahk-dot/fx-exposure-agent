@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { connection } from "next/server";
+import { after, connection } from "next/server";
 import { Suspense } from "react";
 import { REQUEST_MAX, rulesRun, type AgentInput, type AgentRun } from "@/lib/agent";
-import { askFor, planFor } from "@/lib/agent-cache";
+import { askFor, planFor, warmOtherPlans } from "@/lib/agent-cache";
 import { newInvoicesRequest } from "@/lib/autopilot";
 import { notInPlan } from "@/lib/plan-state";
 import { writesAllowed } from "@/lib/access";
@@ -122,6 +122,9 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   // The day's plan (one per home currency); the demo shows the saved one.
   const plan = (): Promise<AgentRun> =>
     demo ? Promise.resolve(inputs.agentRuns?.[base] ?? rulesRun(view.agentInput, "demo snapshot")) : planFor(inputs, base);
+
+  // Keep the other home currencies' plans ready, so a currency switch never waits a minute for the agent.
+  if (!demo) after(() => warmOtherPlans(inputs, base, BASES));
 
   // Before/after for today: payments that arrived today no longer count as exposure.
   const paid = paidToday(inputs.invoices, rates, base, inputs.asOf);
@@ -545,7 +548,7 @@ async function NewSincePlan({
       )}
       <div className={styles.replanRow}>
         <span className={styles.muted}>Or make a fresh plan for the whole book:</span>
-        <ReplanButton disabledReason={lockReason} />
+        <ReplanButton base={base} disabledReason={lockReason} />
       </div>
     </section>
   );

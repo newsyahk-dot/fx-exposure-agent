@@ -54,7 +54,7 @@ export function ApproveForm({ p, base, disabledReason, openDraft = false }: { p:
             {/access code/.test(disabledReason) &&
               (p.kind === "reminder"
                 ? " — approving sends this e-mail to the client through PayPal"
-                : ` — approving takes ${p.percent}% off this invoice in PayPal and moves its due date to ${shortDate(p.newDueDate)}`)}
+                : ` — approving sends the client a separate early-payment invoice in PayPal for ${p.percent}% less, due ${shortDate(p.newDueDate)}; this invoice stays as it is`)}
           </span>
         )}
         {state && (

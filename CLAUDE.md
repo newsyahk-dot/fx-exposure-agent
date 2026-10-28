@@ -33,7 +33,9 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   Model: `FXA_AGENT_MODEL` (default claude-haiku-5-5, effort medium). **One plan per day** per home currency, ECB
   fixing and seller notes (`src/lib/agent-cache.ts`); each proposal is reconciled with its invoice at render time
   (`src/lib/plan-state.ts`: open / sent / paid / changed), so approvals and payments never wait for a new plan.
-  "Re-plan" (access code) expires the plan tag. The demo snapshot stores one run per home currency. No key or an
+  "Re-plan" (access code) expires only that currency's tag (`planTag(base)`; it used to expire every currency, and the
+  next visitor of each waited ~60 s — measured 2026-10-28). Every page visit warms the other currencies' plans in
+  `after()` (`warmOtherPlans`, one run per missing plan per instance). The demo snapshot stores one run per home currency. No key or an
   error → rule-based fallback.
 - **PayPal MCP (read-only)**: `runAgent` connects PayPal's sandbox MCP server (`PAYPAL_MCP_URL`, beta `mcp-client-2025-11-20`,
   the PayPal OAuth token as `authorization_token`) with an allowlist of `get_invoice` / `search_invoicing`
@@ -126,6 +128,13 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   server action as the card (access code, re-checks). ▸ opens a full-width detail row (client's paid invoices + the
   agent's draft + approve one); grid callbacks are module-level or memoized because a changing `doesExternalFilterPass`
   or full-width renderer made the grid re-filter and re-render in a loop once a row was open (measured 2026-10-28).
+  Draft column: the seller edits the agent's e-mail (`agLargeTextCellEditor`) or discount (`PercentEditor`, only
+  `percentsWithinRule`; `agSelectCellEditor` crashed in this build: "i is not iterable"); edits live in client state,
+  `applyEdit` (src/lib/invoice-rows.ts) replaces the client note with code's own sentence for a new percent, and
+  `executeAction` re-checks the text and now also enforces the offer rule on the server. Detail rows are measured
+  (ResizeObserver) instead of estimated; the risk column uses `initialSort` (a column rebuild brought `sort` back);
+  paid-today rows sort last and show the amount paid; on phones nothing is pinned and Client / home value are hidden.
+  `body { overflow-x: clip }`, not `hidden`: hidden made body a scroll container and broke the sticky approve bar.
   Late home-currency invoices are now candidates for reminders
   (offers stay for money from abroad); the timeline and Evidence still count money from abroad only.
 - **Money-in timeline** (2026-10-27, `src/lib/money-timeline.ts` + `src/app/money-timeline.tsx`, Today and /try): money

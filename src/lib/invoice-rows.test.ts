@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { buildAgentInput, rulesRun } from "./agent";
 import { computeExposure } from "./exposure";
 import { ratesFor, volsFor } from "./fx";
-import { invoiceRows } from "./invoice-rows";
+import { applyEdit, invoiceRows } from "./invoice-rows";
+import { annualCostPct, OFFER_MAX_ANNUAL_PCT, OFFER_MIN_DAYS_SOONER } from "./offer-rule";
+import { checkClientText } from "./checks";
 import { addDays } from "./seed-data";
 import { DAY, SEED_BOOK, syntheticEcb } from "./test-fixtures";
 
@@ -38,6 +40,7 @@ describe("invoice grid rows", () => {
     const r = invoiceRows([paid, withOffer], rates, vols, { base: "USD", asOf: DAY, shockPct: 3, input, run });
     const p = r.find((x) => x.id === eur.id)!;
     expect([p.paidToday, p.agent, p.atRisk]).toEqual([true, "Paid today", 0]);
+    expect(p.paidAmount).toBe(eur.amountDue);
     const o = r.find((x) => x.id === "X2")!;
     expect(o.offerState).toBe("open");
     expect(o.offer).toMatch(/^EUR 990 · [A-Z][a-z]{2} \d{1,2}$/);
@@ -61,5 +64,44 @@ describe("invoice grid rows", () => {
       for (const h of r.history) expect(h.daysLate).toBeGreaterThanOrEqual(0);
     }
     expect(rows.filter((r) => r.usuallyPays).every((r) => r.history.length > 0)).toBe(true);
+  });
+  it("lets the seller edit a draft: offers only within the rule, with code's own note for a new percent", () => {
+    const offer = rows.find((r) => r.action?.kind === "early_pay_discount")!;
+    const a = offer.action!;
+    if (a.kind !== "early_pay_discount") throw new Error("expected an offer");
+    const sooner = offer.daysToDue - a.withinDays;
+    for (const pct of a.percents) {
+      expect(sooner).toBeGreaterThanOrEqual(OFFER_MIN_DAYS_SOONER);
+      expect(annualCostPct(pct, sooner)).toBeLessThanOrEqual(OFFER_MAX_ANNUAL_PCT);
+    }
+    expect(a.percents).toContain(a.percent);
+    const other = a.percents.find((x) => x !== a.percent);
+    if (other != null) {
+      const e = applyEdit(a, { percent: other });
+      if (e.kind !== "early_pay_discount") throw new Error("kind changed");
+      expect([e.percent, e.edited]).toEqual([other, true]);
+      expect(e.clientNote).toContain(`${other}% off`);
+      expect(e.clientNote).toContain(a.newDueDate);
+      expect(e.label.startsWith(`${other}% `)).toBe(true);
+    }
+    // A percent outside the rule (or the same one) leaves the draft as it was.
+    expect(applyEdit(a, { percent: 5 })).toBe(a);
+    expect(applyEdit(a, { percent: a.percent })).toBe(a);
+    const rem = rows.find((r) => r.action?.kind === "reminder")!.action!;
+    const edited = applyEdit(rem, { message: "Hello, just checking in on this invoice. Thank you!" });
+    expect(edited.edited).toBe(true);
+    expect(applyEdit(rem, { message: rem.kind === "reminder" ? rem.message : "" })).toBe(rem);
+  });
+  it("code's note for an edited percent passes the client-text check against the new terms", () => {
+    const cand = input.candidates.find((c) => c.eligible.includes("early_pay_discount"))!;
+    const row = rows.find((r) => r.id === cand.invoiceId)!;
+    const a = row.action!;
+    if (a.kind !== "early_pay_discount") return;
+    for (const pct of a.percents) {
+      const e = applyEdit(a, { percent: pct });
+      if (e.kind !== "early_pay_discount") continue;
+      const facts = `${cand.facts} Offer: ${pct}% off, new due date ${a.newDueDate}.`;
+      expect(checkClientText(e.clientNote, facts, { maxLen: 300, allowOffer: true })).toBeNull();
+    }
   });
 });

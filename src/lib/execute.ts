@@ -43,6 +43,9 @@ export async function executeAction(
     if (!(DISCOUNT_PCTS as readonly number[]).includes(percent) || !Number.isInteger(withinDays) || withinDays < WINDOW_DAYS.min || withinDays > WINDOW_DAYS.max)
       return { ok: false, message: "Those discount terms are outside the allowed range." };
     const p = priceDiscount(cand, o.base, o.asOf, percent, withinDays);
+    // The app's offer rule holds for the seller's own edits too, not only for what the agent proposes.
+    if (!p.withinRule)
+      return { ok: false, message: `Not sent — ${percent}% for ${p.daysSooner} days sooner is outside the app's offer rule (at least 21 days sooner, at most 12% a year).` };
     const why = checkClientText(req.clientNote, `${cand.facts} ${p.facts}`, { maxLen: 300, allowOffer: true });
     if (why) return { ok: false, message: `Not sent — the client note failed a check: ${why}.` };
     // A separate offer invoice; the seller's invoice stays as it is (src/lib/offer-invoice.ts).
