@@ -114,3 +114,13 @@ export function checkClientText(
     return "makes the discount conditional, but it is applied now and stays even if the client pays late";
   return numbersCheck(text, facts) ?? wordingCheck(text);
 }
+
+// A summary that says it cannot tell anyone which way rates will move, when nobody asked, reads like a canned
+// disclaimer (a blind review flagged it). Allowed only when the seller's request is about rate direction.
+const DIRECTION_NOTE = /\b(?:can'?t|cannot|can not|won'?t|will not|do not|don'?t|not able to)\b[^.]{0,80}\b(?:which way|direction|where)\b[^.]{0,60}\b(?:rate|rates|yen|euro|pound|dollar|won|currenc\w*|headed|going)\b/i;
+const ASKS_DIRECTION = /\b(?:fall|falls|rise|rises|drop|drops|weaken\w*|strengthen\w*|forecast\w*|predict\w*|direction|which way|headed|will (?:go|move))\b/i;
+export function unaskedDirectionNote(summary: string, request?: string): string | null {
+  if (!DIRECTION_NOTE.test(summary)) return null;
+  if (request && ASKS_DIRECTION.test(request)) return null;
+  return "mentions exchange-rate direction though nobody asked; leave that sentence out";
+}

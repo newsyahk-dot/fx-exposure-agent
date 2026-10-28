@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkClientText, checkSellerText, type LabelContext } from "./checks";
+import { checkClientText, checkSellerText, unaskedDirectionNote, type LabelContext } from "./checks";
 
 const facts = "Invoice FXA-1001-r4 for Brightline Media: USD 4,200.00 still owed, worth about €3.75M. Due date 2026-10-10. It is 13 days overdue. Discount costs about ₩86K.";
 
@@ -71,5 +71,19 @@ describe("text that is not a reason (2026-10-27 plan)", () => {
   it("still accepts a plain reason, including stress-test wording", () => {
     expect(checkSellerText("Due in 10 days, too soon for an early-payment offer to change much.", "10")).toBeNull();
     expect(checkSellerText("Overdue 15 days; a reminder asks the client to settle it, and the 3% stress-test move is $84.", "15 3 84")).toBeNull();
+  });
+});
+
+describe("unaskedDirectionNote", () => {
+  const note = "I proposed a 1% offer, and I can't tell clients which direction any exchange rate is headed.";
+  it("rejects a direction disclaimer nobody asked for", () => {
+    expect(unaskedDirectionNote(note)).toMatch(/nobody asked/);
+    expect(unaskedDirectionNote(note, "Chase everyone more than 10 days late, gently")).toMatch(/nobody asked/);
+  });
+  it("allows it when the request asks about direction", () => {
+    expect(unaskedDirectionNote(note, "Tell my clients the yen will fall so they pay now")).toBeNull();
+  });
+  it("leaves ordinary summaries alone", () => {
+    expect(unaskedDirectionNote("I proposed two reminders and left the rest alone.")).toBeNull();
   });
 });
