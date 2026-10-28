@@ -1,5 +1,7 @@
 # User test — guide (Nov 7–10)
 
+(Korean version: [user-test.ko.md](user-test.ko.md))
+
 Goal: hear from 3–5 people who invoice clients in other currencies, in time to quote one or two of them on Devpost
 (only with their written OK). About 15 minutes each.
 
