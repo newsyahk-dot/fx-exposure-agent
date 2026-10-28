@@ -154,10 +154,24 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
   await wait(1500);
   await topAt(p.getByRole('group', { name: 'Quick views' }), 70);
   await shot('9-grid', 'Every invoice in one AG Grid', 'Ranked by what it puts at risk, with what the agent is doing, the offers out and how each client usually pays.');
+  // 9c — open one late invoice: the client's past payments next to the agent's draft, approve just that one (not run)
+  await p.getByRole('button', { name: /^Late/ }).click().catch(() => {});
+  await wait(600);
+  // Prefer a late invoice whose client has paid before, so the history half has something in it.
+  // (The invoice column is pinned, so the toggle and the client cell sit in different row elements: match by row index.)
+  const idx = await p.locator('.ag-center-cols-container .ag-row', { hasText: /pays / }).first().getAttribute('row-index', { timeout: 3000 }).catch(() => null);
+  const open = idx != null ? p.locator(`.ag-row[row-index="${idx}"] button[aria-label^="Open details for"]`) : p.locator('button[aria-label^="Open details for"]');
+  if (await open.count()) {
+    await open.first().click();
+    await wait(800);
+    await topAt(p.getByRole('group', { name: 'Quick views' }), 70);
+    await shot('9c-grid-detail', 'Open an invoice: how this client pays, and the draft', 'A detail row under the invoice: the client\'s past payments next to the agent\'s draft, with a button to approve just that one.');
+    await p.getByRole('button', { name: 'Close' }).first().click().catch(() => {});
+  }
   // 9b — tick the invoices with a proposal waiting and approve them together (shown at the confirmation, not run)
   await p.getByRole('button', { name: /^All/ }).click().catch(() => {});
   const boxes = p.locator('.ag-row:not(.ag-row-pinned) .ag-selection-checkbox input:visible');
-  for (let i = 0; i < Math.min(4, await boxes.count()); i++) await boxes.nth(i).check({ force: true });
+  for (let i = 0; i < Math.min(4, await boxes.count()); i++) await boxes.nth(i).click({ force: true }).catch(() => {});
   const sel = p.getByRole('button', { name: /^Approve selected/ });
   if (await sel.count()) {
     await sel.click();

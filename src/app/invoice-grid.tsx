@@ -33,6 +33,7 @@ const theme = themeQuartz.withParams({
   fontFamily: "inherit",
   fontSize: 14,
   headerFontWeight: 600,
+  cellHorizontalPadding: 10, // nine columns at desktop width: the default padding truncated "18 days late"
 });
 
 type TotalRow = Partial<InvoiceRow> & { number: string };
@@ -140,7 +141,7 @@ export function InvoiceGrid({
         field: "number",
         headerName: "Invoice",
         pinned: "left",
-        minWidth: 172,
+        minWidth: 164,
         // The invoice number opens PayPal's client view (a separate column did not fit at desktop width).
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.data?.id && clientUrls[p.data.id] ? (
@@ -165,7 +166,7 @@ export function InvoiceGrid({
       {
         field: "client",
         headerName: "Client",
-        minWidth: 116,
+        minWidth: 136,
         tooltipField: "client",
         // Name, and underneath how this client has paid before (from their fully paid invoices).
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
@@ -180,7 +181,7 @@ export function InvoiceGrid({
       {
         field: "amount",
         headerName: "Still owed",
-        minWidth: 120,
+        minWidth: 128,
         type: "rightAligned",
         enableCellChangeFlash: true,
         valueFormatter: (p) =>
@@ -189,7 +190,7 @@ export function InvoiceGrid({
       {
         field: "daysToDue",
         headerName: "Due",
-        minWidth: 96,
+        minWidth: 116,
         valueFormatter: (p) =>
           p.value == null ? "" : p.data?.paidToday ? "paid today" : p.value < 0 ? `${-p.value} days late` : p.value === 0 ? "today" : `in ${p.value} days`,
         cellClassRules: { [styles.gridLate]: (p) => !p.data?.paidToday && (p.value ?? 0) < 0 },
@@ -197,7 +198,7 @@ export function InvoiceGrid({
       {
         field: "atRisk",
         headerName: "At risk ±3%",
-        minWidth: 100,
+        minWidth: 88,
         sort: "desc",
         valueFormatter: (p) => (p.value ? `±${home(p.value)}` : "none"), // used by the CSV export
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
@@ -215,7 +216,7 @@ export function InvoiceGrid({
       {
         field: "agent",
         headerName: "Agent today",
-        minWidth: 164,
+        minWidth: 156,
         tooltipField: "agent",
         enableCellChangeFlash: true,
         cellClassRules: { [styles.gridActive]: (p) => /proposed|sent|Paid/.test(p.value ?? "") },
@@ -224,7 +225,7 @@ export function InvoiceGrid({
         field: "offer",
         headerName: "Offer",
         headerTooltip: "A separate PayPal invoice for the discounted amount; it lapses after its date and the original applies",
-        minWidth: 116,
+        minWidth: 104,
         hide: !hasOffers,
         tooltipField: "offer",
         enableCellChangeFlash: true,
