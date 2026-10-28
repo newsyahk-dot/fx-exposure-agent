@@ -71,7 +71,7 @@ function labelCheck(text: string, ctx: LabelContext): string | null {
 // skip by mistake; please disregard it") instead of telling the seller what was done. Both reached the screen once
 // (2026-10-27); the seller should only ever read about invoices.
 const PLACEHOLDER = /\b(?:placeholder|lorem ipsum|tbd|todo|to be decided)\b/i;
-const MECHANICS = /\b(?:skip record|stray|by mistake|my mistake|disregard|tool calls?|logged an?\b)/i;
+const MECHANICS = /\b(?:skip record|stray|by mistake|my mistake|disregard|tool calls?|logged an?\b|errors?\b|lookup (?:returned|failed)|MCP\b)/i;
 
 function substanceCheck(text: string): string | null {
   const p = PLACEHOLDER.exec(text);
@@ -118,7 +118,13 @@ export function checkClientText(
 
 // A summary that says it cannot tell anyone which way rates will move, when nobody asked, reads like a canned
 // disclaimer (a blind review flagged it). Allowed only when the seller's request is about rate direction.
-const DIRECTION_NOTE = /\b(?:can'?t|cannot|can not|won'?t|will not|do not|don'?t|not able to)\b[^.]{0,80}\b(?:which way|direction|where)\b[^.]{0,60}\b(?:rate|rates|yen|euro|pound|dollar|won|currenc\w*|headed|going)\b/i;
+const NEGATION = String.raw`\b(?:can'?t|cannot|can not|could not|couldn'?t|won'?t|will not|do not|don'?t|did not|didn'?t|not able to|no)\b`;
+const DIRECTION_NOTE = new RegExp(
+  `${NEGATION}[^.]{0,80}(?:\\b(?:which way|direction|where)\\b[^.]{0,60}\\b(?:rates?|yen|euro|pound|dollar|won|currenc\\w*|headed|going)\\b` +
+    `|\\b(?:views?|opinions?|outlook|forecasts?|predictions?)\\b[^.]{0,40}\\b(?:exchange[- ]rates?|currenc\\w*|rates?)\\b` +
+    `|\\b(?:exchange[- ]rates?|currenc\\w*)\\b[^.]{0,20}\\b(?:movements?|direction|outlook)\\b)`,
+  "i",
+);
 const ASKS_DIRECTION = /\b(?:fall|falls|rise|rises|drop|drops|weaken\w*|strengthen\w*|forecast\w*|predict\w*|direction|which way|headed|will (?:go|move))\b/i;
 export function unaskedDirectionNote(summary: string, request?: string): string | null {
   if (!DIRECTION_NOTE.test(summary)) return null;

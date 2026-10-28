@@ -85,5 +85,15 @@ describe("unaskedDirectionNote", () => {
   });
   it("leaves ordinary summaries alone", () => {
     expect(unaskedDirectionNote("I proposed two reminders and left the rest alone.")).toBeNull();
+    expect(unaskedDirectionNote("I did not offer a discount on FXA-1; a 3% exchange rate move either way is about $90 on it.")).toBeNull();
+    expect(unaskedDirectionNote("Invoices in USD carry no exchange-rate risk, so I left them alone.")).toBeNull();
+  });
+  it("catches other ways of saying it (seen 2026-10-28)", () => {
+    expect(unaskedDirectionNote("I proposed one offer, and I could not give any view on exchange-rate movement.")).toMatch(/nobody asked/);
+    expect(unaskedDirectionNote("I won't give a currency outlook.")).toMatch(/nobody asked/);
+  });
+  it("rejects tool errors and agent mechanics in seller text", () => {
+    const facts = "FXA-1 3,041";
+    expect(checkSellerText("I could not read FXA-1 in PayPal because that lookup returned a setup error.", facts)).toMatch(/agent's own steps/);
   });
 });
