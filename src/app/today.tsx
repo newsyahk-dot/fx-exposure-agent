@@ -219,15 +219,14 @@ export function ProposalCard({
 }) {
   const atRisk = p.currency === base ? 0 : (p.value * SHOCK_PCT) / 100; // home-currency invoices carry no exchange-rate risk
   const daysSooner = p.kind === "early_pay_discount" ? Math.max(0, p.daysToDue - p.withinDays) : 0;
-  const weeksSooner = Math.round(daysSooner / 7);
   const annual = p.kind === "early_pay_discount" ? annualCostPct(p.percent, daysSooner) : 0;
   return (
     <li className={styles.card} data-state={s.state}>
       <p className={styles.cardKind}>
         {p.kind === "reminder"
           ? "Chase a late payment"
-          : weeksSooner >= 1
-            ? `Ask to be paid ${weeksSooner} week${weeksSooner === 1 ? "" : "s"} sooner, for ${p.percent}% off`
+          : daysSooner >= 1
+            ? `Ask to be paid ${daysSooner} days sooner, for ${p.percent}% off`
             : `Offer ${p.percent}% off for an earlier due date`}
       </p>
       <p className={styles.cardTitle}>
@@ -393,7 +392,7 @@ function TodayBar({ bar, c }: { bar: ReturnType<typeof todayBar>; c: (n: number)
   return (
     <figure className={styles.todayBar} aria-label="Where today's money stands">
       <figcaption>
-        <strong>Where today&apos;s money stands</strong> — {c(bar.now)} still waiting
+        <strong>Where today&apos;s money from abroad stands</strong> — {c(bar.now)} still waiting
         {bar.morning > bar.now && <span className={styles.ok}>, {c(bar.morning - bar.now)} collected today</span>}
       </figcaption>
       <div className={styles.barTrack}>

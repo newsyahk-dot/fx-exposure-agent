@@ -86,7 +86,7 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
 
   // 2 — approve, pay as the client, collected
   await goto('/?base=USD&step=today');
-  const first = p.locator('li[data-state]').first();
+  const first = p.locator('li[data-state]:has-text("Chase a late payment")').filter({ hasNotText: /· USD / }).first();
   await first.waitFor({ timeout: 180000 });
   await first.getByRole('button', { name: /Approve: send reminder/ }).click();
   await first.getByText(/Reminder sent in PayPal/).waitFor({ timeout: 60000 });

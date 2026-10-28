@@ -231,7 +231,9 @@ const INIT = `(() => {
     await click(p.getByRole('button', { name: /^Confirm: approve/ }));
     await cutBegin();
     await p.waitForFunction(() => !/Running in PayPal/.test(document.body.innerText), null, { timeout: 120000 }).catch(() => {});
-    await wait(1500);
+    // Wait until the grid itself shows the reminders as sent (the page refreshes after the approvals).
+    await p.waitForFunction(() => !/Reminder proposed/.test(document.querySelector('.ag-root')?.textContent ?? ''), null, { timeout: 30000 }).catch(() => {});
+    await wait(800);
     await cutEnd();
     await hl(panel);
     await say('✓ Sent in PayPal.', null, 2200);
@@ -290,7 +292,7 @@ const INIT = `(() => {
   await cutEnd();
   const compared = p.getByText('Compared by Claude').first();
   await show(compared, 'start');
-  await say('Code prices four ways to bill it from this client\'s payment history.', null, 2800);
+  await say('Code prices four ways to bill it, with this client\'s payment history when there is one.', null, 3000);
   await show(create);
   await say('She picks one and approves it.', null, 1800);
   await click(create);
@@ -358,7 +360,7 @@ const INIT = `(() => {
   const evalMd = fs.readFileSync(require('path').join(__dirname, '..', 'agent-eval.md'), 'utf8');
   let runs = 0, props = 0, probs = 0;
   for (const m of evalMd.matchAll(/^\| [^|]+ \| (\d+) \| \d+ \| (\d+) \([^|]*\| [^|]*\| \*\*(\d+)\*\*/gm)) { runs += +m[1]; props += +m[2]; probs += +m[3]; }
-  await say(`Tested: ${runs} agent runs · ${props} proposals · ${probs} violations of our own checks.`, 'Every number from code. Every action approved — by her click, or her policy.', 5200);
+  await say(`Tested on ${runs} agent runs · ${props} proposals: every final output re-checked afterwards — ${probs} problems.`, 'Every number from code. Every action approved — by her click, or her policy.', 5200);
   await say('', null, 300);
   // Leave the app first: its 10-second refresh would otherwise replace the end card with an error page.
   await p.goto('about:blank');

@@ -14,7 +14,7 @@ import { MoneyTimeline } from "./money-timeline";
 import { analyzeOwnAction, type OwnState } from "./try-actions";
 import styles from "./page.module.css";
 
-const PLACEHOLDER = "Invoice number,Client,Currency,Amount due,Due date\nINV-104,Studio Nord (Berlin),EUR,4200,2026-10-03\nINV-107,Hayashi Design,JPY,380000,2026-10-21";
+const PLACEHOLDER = "Invoice number,Client,Currency,Amount due,Due date\nINV-104,Studio Nord (Berlin),EUR,4200,YYYY-MM-DD\n… or click “Load a sample”";
 
 export function OwnInvoicesForm() {
   const [state, action, pending] = useActionState<OwnState, FormData>(analyzeOwnAction, null);
@@ -196,7 +196,7 @@ function OwnCard({ p, c }: { p: AgentProposal; c: (n: number) => string }) {
   return (
     <li className={styles.card} data-state="open">
       <p className={styles.cardKind}>
-        {p.kind === "reminder" ? "Chase a late payment" : `Ask to be paid ${Math.round(daysSooner / 7)} weeks sooner, for ${p.percent}% off`}
+        {p.kind === "reminder" ? "Chase a late payment" : `Ask to be paid ${daysSooner} days sooner, for ${p.percent}% off`}
       </p>
       <p className={styles.cardTitle}>
         {p.invoiceNumber} · {money(p.currency, p.amount)}
