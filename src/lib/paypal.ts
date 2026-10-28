@@ -4,6 +4,8 @@
 // Endpoint shapes follow the toolkit's own calls so the agent tools keep the same names and scope.
 
 import { appendAgentLog, parseAgentLog, type AgentActionKind } from "./agent-log";
+import { offerMemoLine, offerNumber, parseOfferMemo } from "./offer-invoice";
+import { money } from "./seed-data";
 import type { Invoice } from "./types";
 
 const SANDBOX_BASE = "https://api-m.sandbox.paypal.com";
@@ -142,22 +144,27 @@ export class PayPalClient {
     });
   }
 
-  // Fallback for the discount above. In this sandbox the conditional-rules endpoint answers HTTP 500
-  // for every variant tried (2026-10-23: PERCENT/AMOUNT, SPECIFIC_DATE/SEVEN_DAYS, draft/sent,
-  // USD/EUR/JPY, even AUTO_CANCEL). Editing a sent invoice does work: this puts a flat percent
-  // discount on it, moves the due date to `newDueDate` and re-sends it with a note.
-  // ⚠️ Not the same offer: the discount is unconditional (the buyer keeps it even if they pay late).
-  async offerEarlyPaymentByUpdate(id: string, percent: number, newDueDate: string, note: string, logAt?: Date, auto = false) {
+  // The conditional offer (src/lib/offer-invoice.ts): a second invoice to the same client for the discounted amount,
+  // due on the earlier date. The original stays as it is; its memo records that the offer was sent.
+  async sendEarlyPaymentOffer(id: string, o: { percent: number; amount: number; dueDate: string; note: string; at: Date; auto?: boolean }) {
     const cur = await this.getInvoice(id);
-    return this.putInvoice(id, cur, true, {
+    const ccy = cur.detail.currency_code;
+    const number = cur.detail.invoice_number ?? id;
+    const created = await this.createDraftInvoice({
       detail: {
-        ...cur.detail,
-        payment_term: { term_type: "DUE_ON_DATE_SPECIFIED", due_date: newDueDate },
-        note,
-        ...(logAt ? { memo: appendAgentLog(cur.detail.memo, "early_pay_discount", logAt, auto) } : {}),
+        currency_code: ccy,
+        invoice_number: offerNumber(number),
+        // No invoice_date: PayPal dates it by its own "today" (a UTC date ahead of the merchant's day makes it SCHEDULED).
+        payment_term: { term_type: "DUE_ON_DATE_SPECIFIED", due_date: o.dueDate },
+        note: o.note,
+        memo: offerMemoLine(id, o.percent),
       },
-      amount: { breakdown: { discount: { invoice_discount: { percent: String(percent) } } } },
+      primary_recipients: cur.primary_recipients,
+      items: [{ name: `Early payment of invoice ${number} (${o.percent}% off)`, quantity: "1", unit_amount: money(ccy, o.amount) }],
     });
+    await this.sendInvoice(created.id, { send_to_recipient: true });
+    await this.logAgentAction(id, "early_pay_discount", o.at, o.auto);
+    return created;
   }
 
   // Records an agent action in the invoice's private memo without e-mailing anyone.
@@ -279,6 +286,7 @@ export function toInvoice(pp: PPInvoice): { invoice: Invoice } | { skipped: { id
         .map((t) => ({ date: t.payment_date!, amount: Number(t.amount!.value) })),
       createdAt: pp.detail.metadata?.create_time,
       agentLog: parseAgentLog(pp.detail.memo),
+      ...(parseOfferMemo(pp.detail.memo) ? { offerFor: parseOfferMemo(pp.detail.memo)! } : {}),
     },
   };
 }

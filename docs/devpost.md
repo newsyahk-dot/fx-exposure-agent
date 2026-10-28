@@ -60,7 +60,9 @@ the size of the risk, not a forecast.
 **The day's work, done with a click.** An AI agent goes through the invoices and proposes today's actions: a reminder
 for an overdue invoice, written for that client, or a small early-payment discount on a large invoice that isn't due
 for two months — shown as a price for getting paid weeks sooner, with its cost as a yearly rate. A discount is not an
-exchange-rate hedge (it is a certain cost; a rate move can go either way), so the app never sells it as one. The seller approves; the action runs in
+exchange-rate hedge (a known cost if taken; a rate move can go either way), so the app never sells it as one. The offer
+is a separate early-payment invoice that lapses after its date — the seller's own invoice never changes, and the client
+gets the discount only by paying early. The seller approves; the action runs in
 PayPal; the card shows "sent". When the client pays, the card shows "paid", the top of the screen shows
 "+ collected" with the amount, and what is still waiting goes down ("Start of today → now").
 
@@ -121,9 +123,11 @@ by side; the seller decides.
 
 ### Challenges I ran into
 
-- **The early-payment-discount endpoint returned HTTP 500 in the sandbox** for every variant I tried. Instead, the
-  agent edits the sent invoice — discount plus an earlier due date — and re-sends it. That makes the discount
-  unconditional, so the screen and the client's note say exactly that.
+- **The early-payment-discount endpoint returned HTTP 500 in the sandbox** for every variant I tried. My first
+  workaround edited the sent invoice, which made the discount unconditional — the client kept it even when paying late,
+  and a reviewer rightly called that the agent undercutting the seller. Now the offer is its own PayPal invoice: the
+  discounted amount, due on the earlier date. If the client pays it, a verified PayPal webhook settles the original; if
+  the date passes, the offer lapses and the seller's invoice applies, unchanged.
 - **A language model will happily write "the euro is likely to weaken" or call a stress test a "typical swing".** In a
   money product that is not acceptable, so every sentence is checked by code and rewritten until it passes.
 - **Speed in the middle of the loop.** At first, every approval changed the book and made the agent re-plan for 20–30
@@ -153,7 +157,7 @@ by side; the seller decides.
 ### What's next for FX Exposure Agent
 
 - Live PayPal accounts behind a proper login, so real sellers can connect their own invoices.
-- True conditional early-payment discounts once the API accepts them in production.
+- PayPal's own conditional early-payment discount once its endpoint works, in place of the separate offer invoice.
 - Weekly e-mail summary: what the agent did, what was paid, how much risk is left.
 
 ### User tests

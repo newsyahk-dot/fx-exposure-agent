@@ -1,4 +1,5 @@
 import type { AgentLogEntry } from "./agent-log";
+import type { OfferInfo } from "./offer-invoice";
 
 // Shared types. Amounts are in the invoice's own currency unless noted ("value" = home currency).
 
@@ -16,6 +17,8 @@ export type Invoice = {
   payments?: { date: string; amount: number }[]; // recorded payments (filled for paid invoices only)
   createdAt?: string; // when the invoice was created in PayPal (ISO, UTC)
   agentLog?: AgentLogEntry[]; // actions the agent already took on this invoice (from the memo)
+  offerFor?: { originalId: string; percent: number }; // this is an early-payment offer for another invoice
+  offer?: OfferInfo; // the early-payment offer sent for this invoice, if any (src/lib/offer-invoice.ts)
 };
 
 // Home-currency units per 1 unit of each currency, e.g. with KRW home: { USD: 1324.63, JPY: 8.43 }.

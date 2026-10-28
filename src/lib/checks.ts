@@ -97,7 +97,8 @@ export function checkSellerText(text: string, facts: string, maxLen = 450, ctx?:
 }
 
 // Client-facing: reminder e-mails and the note added to a discounted invoice.
-// A discount applied by editing the invoice is unconditional; a note must not promise otherwise.
+// `unconditional`: for a discount applied by editing the invoice itself (no longer used — offers are now a separate
+// invoice that lapses, src/lib/offer-invoice.ts); such a note must not promise a condition.
 const CONDITIONAL = /\bif\b[^.]{0,60}\bpa(?:y|id|yment)\b|\bprovided (?:that|you)\b|\bas long as\b|\bon condition\b|\bonly when\b/i;
 
 export function checkClientText(

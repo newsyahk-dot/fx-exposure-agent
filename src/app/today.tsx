@@ -6,6 +6,7 @@ import { annualCostPct, type AgentInput, type AgentProposal, type AgentRun } fro
 import { timelines, replayBook } from "@/lib/evidence";
 import type { EcbQuotes } from "@/lib/fx";
 import { compact, money } from "@/lib/format";
+import type { OfferInfo } from "@/lib/offer-invoice";
 import { clientViewUrl } from "@/lib/paypal";
 import { proposalState, type ProposalState } from "@/lib/plan-state";
 import type { Invoice } from "@/lib/types";
@@ -120,6 +121,7 @@ export async function TodayPlan({
                 s={s}
                 client={inv?.recipientName}
                 due={inv?.dueDate}
+                offer={inv?.offer}
                 paidToday={paidValue[p.invoiceId]}
                 base={base}
                 c={c}
@@ -193,6 +195,7 @@ export function ProposalCard({
   s,
   client,
   due,
+  offer,
   paidToday,
   base,
   c,
@@ -204,7 +207,8 @@ export function ProposalCard({
   p: AgentProposal;
   s: ProposalState;
   client?: string;
-  due?: string; // the invoice's current due date (before an offer moves it)
+  due?: string; // the invoice's own due date (an offer never changes it)
+  offer?: OfferInfo; // the early-payment offer invoice sent for it, if any
   paidToday?: number;
   base: string;
   c: (n: number) => string;
@@ -238,14 +242,17 @@ export function ProposalCard({
       ) : (
         <>
           <p className={styles.cardPitch}>
-            <strong>{c(p.cost)}</strong> off · due <strong>{shortDate(p.newDueDate)}</strong>
+            <strong>{c(p.cost)}</strong> off if paid by <strong>{shortDate(p.newDueDate)}</strong>
             {due && due !== p.newDueDate && <> instead of {shortDate(due)}</>} ·{" "}
             <span title="The discount's cost as a yearly rate: percent / (100 − percent) × 365 / days sooner (the standard trade-credit formula)">
               about {annual}% a year
             </span>
           </p>
           {s.state === "open" && (
-            <p className={styles.muted}>Comes off when you approve (PayPal can&apos;t make a discount conditional).</p>
+            <p className={styles.muted}>
+              Your invoice stays as it is. The client also gets an early-payment invoice for the lower amount; if it is not paid
+              by that date it lapses and the original applies.
+            </p>
           )}
         </>
       )}
@@ -306,10 +313,17 @@ export function ProposalCard({
             ✓ {p.kind === "reminder" ? "Reminder sent" : "Offer sent"} in PayPal at {s.at.slice(11, 16)} UTC
             {s.auto && " by the autopilot"}
           </p>
+          {offer && (
+            <p className={styles.muted}>
+              {offer.state === "expired"
+                ? `Offer ${offer.number} lapsed on ${shortDate(offer.dueDate)}; the original invoice applies.`
+                : `Offer ${offer.number}: ${money(p.currency, offer.amount)} if paid by ${shortDate(offer.dueDate)}. ${p.invoiceNumber} is unchanged (due ${due ? shortDate(due) : "as before"}).`}
+            </p>
+          )}
           <div className={styles.inlineForm}>
             <span className={styles.muted}>Now play the client:</span>
-            <a href={clientViewUrl(p.invoiceId)} target="_blank" rel="noopener noreferrer" className={styles.link}>
-              Open as client ↗
+            <a href={clientViewUrl(offer?.state === "open" ? offer.id : p.invoiceId)} target="_blank" rel="noopener noreferrer" className={styles.link}>
+              {offer?.state === "open" ? "Open the offer as client ↗" : "Open as client ↗"}
             </a>
             <SimulatePayment invoiceId={p.invoiceId} disabledReason={lockReason} />
           </div>
@@ -320,6 +334,12 @@ export function ProposalCard({
           <p className={styles.ok}>
             ✓ Paid{paidToday ? <> today — {c(paidToday)} collected, no longer waiting on the client.</> : "."}
           </p>
+          {offer?.state === "paid" && (
+            <p className={styles.muted}>
+              The client took the early-payment offer: {money(p.currency, offer.amount)} paid through {offer.number}, which settled{" "}
+              {p.invoiceNumber}.
+            </p>
+          )}
           <p className={styles.muted}>
             If you keep it in {p.currency} in PayPal, it still moves with the exchange rate until you convert.
           </p>

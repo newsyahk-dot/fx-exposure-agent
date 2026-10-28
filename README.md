@@ -52,7 +52,8 @@ to deal with first.
    a reminder for the overdue invoice from London, written for that client; or, for a large invoice that isn't due
    for two months, a small early-payment discount — shown as what it is: a price for getting paid weeks sooner, with
    its cost as a yearly rate (the agent only offers terms at most 12% a year and at least three weeks sooner). She approves, and it
-   runs in PayPal.
+   runs in PayPal. The offer is a separate early-payment invoice that lapses after its date: her own invoice never
+   changes, and the client gets the discount only by paying early.
 3. **The loop closes on its own.** When the client pays, PayPal notifies the app and her screen shows it within
    seconds: "+ collected" with the amount, and what is still waiting goes down ("start of today → now").
 4. **Help before the next invoice.** She types "Bill Sakura Games ¥480,000 for the level art pack, net 45" and sees
@@ -118,8 +119,9 @@ side by side; she decides.
 - Cost: a daily plan (with PayPal reads) costs about $0.01 and takes about a minute, made in the background (nightly,
   after a reset, after a new invoice); visitors and the autopilot reuse it. A plain-words request costs about $0.004.
 - Known sandbox limits: the early-payment-discount rule endpoint (`/conditional-rules`) returns HTTP 500 for every
-  variant tried, so the agent edits the sent invoice instead (the discount is then unconditional, and the screen and
-  the client note say so). A payment recorded through the API does not raise a webhook event in the sandbox, so the
+  variant tried. So the offer is a second PayPal invoice instead: the client gets an early-payment invoice for the
+  discounted amount, due on the earlier date; paying it settles the original (recorded as paid, with a note), and if
+  the date passes it lapses and the original applies. Her own invoice and its terms never change. A payment recorded through the API does not raise a webhook event in the sandbox, so the
   "Simulate client payment" button updates the screen directly; a payment made on PayPal's invoice page reaches the
   screen through the webhook (tested: "Paid" in under 20 seconds). Transaction Search and Balances return 403, so the timing effect is computed from
   each invoice's own payment dates.

@@ -1491,3 +1491,13 @@
   margin-right: 5px;
   vertical-align: -1px;
 }
+
+/* Invoice grid: rows paid today stay listed, greyed */
+.gridPaid {
+  opacity: 0.6;
+}
+.chip[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}

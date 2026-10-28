@@ -1,6 +1,7 @@
 // Seeding and resetting the demo book on the PayPal sandbox seller account. Used by
 // scripts/seed-sandbox.mts. Sandbox only (PayPalClient refuses any other host).
 
+import { isOfferNumber } from "./offer-invoice";
 import { PayPalClient, PayPalError, type PPInvoice } from "./paypal";
 import { addDays, draftBody, money, parseSeedNumber, SEED_INVOICES, seedNumber } from "./seed-data";
 
@@ -71,7 +72,9 @@ async function inBatches<T>(items: T[], f: (x: T) => Promise<void>, size = 4) {
 export async function closeSeedInvoices(pp: PayPalClient, o: { apply: boolean; log: Log; today: string }) {
   let closed = 0;
   const open = (await pp.listInvoices()).filter(
-    (i) => (parseSeedNumber(i.detail.invoice_number) || isAssistantInvoice(i.detail.invoice_number)) && !CLOSED.has(i.status),
+    (i) =>
+      (parseSeedNumber(i.detail.invoice_number) || isAssistantInvoice(i.detail.invoice_number) || isOfferNumber(i.detail.invoice_number)) &&
+      !CLOSED.has(i.status),
   );
   await inBatches(open, async (i) => {
     const what = `${i.detail.invoice_number} ${i.status}`;

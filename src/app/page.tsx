@@ -518,7 +518,7 @@ async function NewSincePlan({
             <li key={`${inv.id}-${a.kind}-${a.at}`}>
               ✓ PayPal told the agent about <strong>{inv.number}</strong>
               {inv.recipientName && <> · {inv.recipientName}</>}; the autopilot{" "}
-              {a.kind === "reminder" ? "sent a reminder" : "applied an early-payment discount"} at {a.at.slice(11, 16)} UTC, as your
+              {a.kind === "reminder" ? "sent a reminder" : "sent an early-payment offer"} at {a.at.slice(11, 16)} UTC, as your
               approved policy allows — no click needed. Now {money(inv.currency, inv.amountDue)} owed, due {inv.dueDate}.
             </li>
           ))}
@@ -701,7 +701,7 @@ function DoneList({ done, closed, bare = false }: { done: { kind: string; at: st
             <li key={`${d.inv.id}-${d.kind}-${d.at}`}>
               <time dateTime={d.at}>{d.at.slice(0, 16).replace("T", " ")} UTC</time>
               <span>
-                {d.kind === "reminder" ? "Reminder sent" : d.kind === "created" ? "Invoice created" : "Early-payment discount applied"}
+                {d.kind === "reminder" ? "Reminder sent" : d.kind === "created" ? "Invoice created" : "Early-payment offer sent"}
                 {d.auto && <strong className={styles.autoTag}> · autopilot</strong>}
               </span>
               <span>

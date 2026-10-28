@@ -17,6 +17,8 @@ import { demoMode, loadLiveInputs, settledBook } from "@/lib/book";
 import { errorText, executeAction, type ActionRequest } from "@/lib/execute";
 import { PayPalClient } from "@/lib/paypal";
 import { BASES } from "@/lib/fx";
+import { offerNumber } from "@/lib/offer-invoice";
+import { settleOriginal } from "@/lib/offer-settle";
 import { pickBase, viewFor } from "@/lib/view";
 
 export type ApproveState = { ok: boolean; message: string } | null;
@@ -62,6 +64,24 @@ export async function simulateClientPayment(_prev: ApproveState, form: FormData)
     const inv = await pp.getInvoice(invoiceId);
     if (!["SENT", "UNPAID", "PARTIALLY_PAID", "SCHEDULED"].includes(inv.status) || !inv.due_amount || !(Number(inv.due_amount.value) > 0))
       return { ok: false, message: "This invoice has nothing left to pay." };
+    // An open early-payment offer: the client takes it — pays the offer invoice, which settles the original.
+    const all = await pp.listInvoices();
+    const offer = all.find((x) => x.detail.invoice_number === offerNumber(inv.detail.invoice_number ?? "") && ["SENT", "UNPAID"].includes(x.status));
+    if (offer?.due_amount && (offer.detail.payment_term?.due_date ?? "") >= new Date().toISOString().slice(0, 10)) {
+      await pp.recordPayment(offer.id, {
+        method: "PAYPAL",
+        payment_date: new Date().toISOString().slice(0, 10),
+        amount: offer.due_amount,
+        note: "Simulated client payment (sandbox demo)",
+      });
+      await settleOriginal(pp, await pp.getInvoice(offer.id), all);
+      updateTag(BOOK_TAG);
+      refresh();
+      return {
+        ok: true,
+        message: `Paid: ${offer.due_amount.currency_code} ${offer.due_amount.value} on the early-payment offer ${offer.detail.invoice_number}; ${inv.detail.invoice_number} is settled.`,
+      };
+    }
     await pp.recordPayment(invoiceId, {
       method: "PAYPAL",
       payment_date: new Date().toISOString().slice(0, 10),

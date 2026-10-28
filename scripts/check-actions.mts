@@ -1,13 +1,16 @@
 // Checks that the two agent actions work on the PayPal sandbox, using throw-away invoices
 // (numbers start with CHK-, so the demo book in seed-data.ts is left untouched):
 //   1. send_invoice_reminder         POST /v2/invoicing/invoices/{id}/remind
-//   2. early-payment discount rule   POST /v2/invoicing/invoices/{id}/conditional-rules
+//   2. early-payment discount rule   POST /v2/invoicing/invoices/{id}/conditional-rules (HTTP 500 in the sandbox)
+//   3. conditional offer as a separate invoice (what the app uses)
 // After the check the CHK- invoices are cancelled (pass --keep to leave them open).
 //
 //   npx tsx scripts/check-actions.mts
 
 import { PayPalClient, PayPalError } from "../src/lib/paypal";
 import { addDays, money } from "../src/lib/seed-data";
+import { offerAmount } from "../src/lib/offer-invoice";
+import { settleOriginal } from "../src/lib/offer-settle";
 
 const pp = new PayPalClient();
 const today = new Date().toISOString().slice(0, 10);
@@ -67,20 +70,28 @@ for (const [ccy, amount, tag] of [["EUR", 2000, "D1"], ["JPY", 300000, "D2"]] as
   });
 }
 
-// 3. Fallback: edit the sent invoice (flat 1% discount, due date pulled in to 7 days, re-sent).
+// 3. The conditional offer (src/lib/offer-invoice.ts): a separate early-payment invoice; paying it settles the original.
 for (const [ccy, amount, tag] of [["EUR", 2000, "F1"], ["JPY", 300000, "F2"]] as const) {
-  await step(`fallback: 1% discount + due in 7 days via invoice update (${ccy})`, async () => {
+  await step(`offer: early-payment invoice, paid -> original settled (${ccy})`, async () => {
     const id = await make(ccy, amount, -2, 30, tag);
     made.push(id);
     const due = addDays(today, 7);
-    const r = await pp.offerEarlyPaymentByUpdate(id, 1, due, `Early-payment offer: 1% off, now due ${due}.`);
-    return `${id}: status ${r.status}, due ${r.detail.payment_term?.due_date}, total ${r.amount?.value} ${ccy} (was ${amount}), due_amount ${r.due_amount?.value}`;
+    const amt = offerAmount(amount, 1, ccy);
+    const offer = await pp.sendEarlyPaymentOffer(id, { percent: 1, amount: amt, dueDate: due, note: `Early-payment offer: pay by ${due} and take 1% off.`, at: new Date() });
+    made.push(offer.id);
+    const sentOffer = await pp.getInvoice(offer.id);
+    const origBefore = await pp.getInvoice(id);
+    await pp.recordPayment(offer.id, { method: "PAYPAL", payment_date: today, amount: sentOffer.due_amount!, note: "check-actions" });
+    const settled = await settleOriginal(pp, await pp.getInvoice(offer.id));
+    const origAfter = await pp.getInvoice(id);
+    return `${offer.detail.invoice_number} ${sentOffer.status} ${sentOffer.amount?.value} ${ccy} due ${sentOffer.detail.payment_term?.due_date}; original ${origBefore.status} due ${origBefore.detail.payment_term?.due_date} -> settled ${settled ?? "no"}, now ${origAfter.status}`;
   });
 }
 
 if (!process.argv.includes("--keep")) {
   for (const id of made) {
     await step(`cancel ${id}`, async () => {
+      if (/PAID/.test((await pp.getInvoice(id)).status)) return "paid — left as is";
       await pp.cancelInvoice(id);
       return (await pp.getInvoice(id)).status;
     });

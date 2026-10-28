@@ -68,7 +68,7 @@ function audit(label: string, input: AgentInput, run: AgentRun): Finding[] {
       const tried = [...triedTerms(run, p.invoiceNumber).map((t) => priceDiscount(cand, input.base, input.asOf, t.percent, t.withinDays)), priced];
       const facts = `${cand.facts} ${tried.map((x) => x.facts).join(" ")}`;
       const bad =
-        checkClientText(p.clientNote, facts, { maxLen: 300, allowOffer: true, unconditional: true }) ??
+        checkClientText(p.clientNote, facts, { maxLen: 300, allowOffer: true }) ??
         checkSellerText(p.rationale, facts, 450, labelContext(cand, input, tried));
       if (bad) f(`text: ${bad}`);
       // Information only: the reason quotes the other terms it compared, which the card does not show.

@@ -207,7 +207,7 @@ function OwnCard({ p, c }: { p: AgentProposal; c: (n: number) => string }) {
         </p>
       ) : (
         <p className={styles.cardPitch}>
-          <strong>{c(p.cost)}</strong> off · due <strong>{p.newDueDate}</strong> · {daysSooner} days sooner · about{" "}
+          <strong>{c(p.cost)}</strong> off if paid by <strong>{p.newDueDate}</strong> · {daysSooner} days sooner · about{" "}
           {annualCostPct(p.percent, daysSooner)}% a year
         </p>
       )}

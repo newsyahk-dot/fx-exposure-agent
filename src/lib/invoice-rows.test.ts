@@ -31,4 +31,15 @@ describe("invoice grid rows", () => {
     expect(rows.some((r) => r.agent === "Reminder proposed")).toBe(true);
     expect(rows.some((r) => /% offer proposed$/.test(r.agent))).toBe(true);
   });
+  it("keeps an invoice paid today (greyed) and shows an open early-payment offer", () => {
+    const eur = SEED_BOOK.find((i) => i.currency === "EUR" && i.amountDue > 0 && i.dueDate > DAY)!;
+    const paid = { ...eur, status: "PAID", amountDue: 0, payments: [{ date: DAY, amount: eur.amountDue }] };
+    const withOffer = { ...eur, id: "X2", number: "X2", offer: { id: "O", number: "X2-EP", amount: 990, dueDate: addDays(DAY, 7), percent: 1, state: "open" as const } };
+    const r = invoiceRows([paid, withOffer], rates, vols, { base: "USD", asOf: DAY, shockPct: 3, input, run });
+    const p = r.find((x) => x.id === eur.id)!;
+    expect([p.paidToday, p.agent, p.atRisk]).toEqual([true, "Paid today", 0]);
+    const o = r.find((x) => x.id === "X2")!;
+    expect(o.offerState).toBe("open");
+    expect(o.offer).toMatch(/^EUR 990 · [A-Z][a-z]{2} \d{1,2}$/);
+  });
 });
