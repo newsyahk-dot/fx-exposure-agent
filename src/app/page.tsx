@@ -315,7 +315,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
               each invoice; an invoice number opens it in PayPal as the client sees it.
             </p>
             <Suspense key={base} fallback={<p className={`${styles.muted} ${styles.slowNote}`}>Loading the invoice list…</p>}>
-              <GridSection run={plan()} invoices={inputs.invoices} view={view} asOf={inputs.asOf} />
+              <GridSection run={plan()} invoices={inputs.invoices} view={view} asOf={inputs.asOf} lockReason={lockReason} />
             </Suspense>
           </section>
           <Timing view={view} />
@@ -551,10 +551,24 @@ async function NewSincePlan({
   );
 }
 
-async function GridSection({ run, invoices, view, asOf }: { run: Promise<AgentRun>; invoices: Invoice[]; view: BookView; asOf: string }) {
+async function GridSection({
+  run,
+  invoices,
+  view,
+  asOf,
+  lockReason,
+}: {
+  run: Promise<AgentRun>;
+  invoices: Invoice[];
+  view: BookView;
+  asOf: string;
+  lockReason?: string;
+}) {
   const r = await run.catch(() => null);
   const rows = invoiceRows(invoices, view.rates, view.vols, { base: view.base, asOf, shockPct: SHOCK_PCT, input: view.agentInput, run: r });
-  return <InvoiceGrid rows={rows} base={view.base} clientUrls={Object.fromEntries(rows.map((x) => [x.id, clientViewUrl(x.id)]))} />;
+  return (
+    <InvoiceGrid rows={rows} base={view.base} lockReason={lockReason} clientUrls={Object.fromEntries(rows.map((x) => [x.id, clientViewUrl(x.id)]))} />
+  );
 }
 
 async function ReplayFor({ run, ecb, input }: { run: Promise<AgentRun>; ecb: EcbQuotes; input: AgentInput }) {
@@ -673,7 +687,7 @@ function Replay({ r, ecb, input }: { r: AgentRun; ecb: EcbQuotes; input: AgentIn
         {wa > 0 && (
           <>
             {" "}
-            — {wb / wa < 0.8 ? `${widthPhrase(wb / wa)} (${Math.round((1 - wb / wa) * 100)}% narrower)` : `a range ${Math.round((1 - wb / wa) * 100)}% narrower`}
+            — {widthPhrase(wb / wa)}
           </>
         )}
         .

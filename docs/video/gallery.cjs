@@ -153,7 +153,18 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
   await grid.waitFor({ timeout: 120000 });
   await wait(1500);
   await topAt(p.getByRole('group', { name: 'Quick views' }), 70);
-  await shot('9-grid', 'Every invoice in one AG Grid', 'Ranked by what it puts at risk, with what the agent is doing and the offers out. Quick views, live updates from PayPal, CSV.');
+  await shot('9-grid', 'Every invoice in one AG Grid', 'Ranked by what it puts at risk, with what the agent is doing, the offers out and how each client usually pays.');
+  // 9b — tick the invoices with a proposal waiting and approve them together (shown at the confirmation, not run)
+  await p.getByRole('button', { name: /^All/ }).click().catch(() => {});
+  const boxes = p.locator('.ag-row:not(.ag-row-pinned) .ag-selection-checkbox input:visible');
+  for (let i = 0; i < Math.min(4, await boxes.count()); i++) await boxes.nth(i).check({ force: true });
+  const sel = p.getByRole('button', { name: /^Approve selected/ });
+  if (await sel.count()) {
+    await sel.click();
+    await wait(500);
+    await topAt(p.getByRole('group', { name: 'Quick views' }), 70);
+    await shot('9b-grid-approve', 'Approve several at once, from the grid', 'Tick the invoices with a proposal waiting; a confirmation lists exactly what will run, each through the same checks.');
+  }
 
   // Compose: headline bar + screenshot, 1500×1000.
   const comp = await b.newPage({ viewport: { width: W, height: HEAD + SHOT_H } });

@@ -102,8 +102,11 @@ export function buildAgentInput(
   const c = (n: number) => compact(base, n);
   const candidates: Candidate[] = [];
   for (const inv of invoices) {
-    if (!OPEN_STATUSES.has(inv.status) || inv.currency === base || !(inv.amountDue > 0)) continue;
-    const rate = rates[inv.currency];
+    if (!OPEN_STATUSES.has(inv.status) || !(inv.amountDue > 0)) continue;
+    // Home-currency invoices are chased too when late (getting paid sooner is the point); offers stay for money from
+    // abroad, where the wait also carries the exchange rate.
+    const home = inv.currency === base;
+    const rate = home ? 1 : rates[inv.currency];
     const d = daysBetween(asOf, inv.dueDate);
     if (!(rate > 0) || Number.isNaN(d)) continue; // exposure.skipped already reports these
     const value = inv.amountDue * rate;
@@ -117,7 +120,8 @@ export function buildAgentInput(
       const cooling = lastReminderAt && now.getTime() - Date.parse(lastReminderAt) < REMIND_COOLDOWN_DAYS * 86_400_000;
       if (cooling) notEligible.push(`a reminder was sent on ${lastReminderAt!.slice(0, 10)}; next one after ${REMIND_COOLDOWN_DAYS} days`);
       else eligible.push("reminder");
-    } else if (discounted) notEligible.push("an early-payment offer was already sent");
+    } else if (home) notEligible.push(`in ${base}, the home currency: not late, and offers are for money from abroad`);
+    else if (discounted) notEligible.push("an early-payment offer was already sent");
     else if (d < MIN_DAYS_FOR_OFFER) notEligible.push(`due in ${d} days, too soon for an early-payment offer`);
     else eligible.push("early_pay_discount");
 
@@ -125,7 +129,9 @@ export function buildAgentInput(
       `Invoice ${inv.number}${inv.recipientName ? ` for ${inv.recipientName}` : ""}: ${money(inv.currency, inv.amountDue)} still owed, worth about ${c(value)}.`,
       `Invoice date ${inv.invoiceDate}, due date ${inv.dueDate}.`,
       d < 0 ? `It is ${-d} days overdue.` : `It is due in ${d} days.`,
-      `A ${SHOCK_PCT}% stress-test move either way changes its value by about ${c((value * SHOCK_PCT) / 100)}.`,
+      home
+        ? `It is in ${base}, the home currency, so exchange rates do not change it.`
+        : `A ${SHOCK_PCT}% stress-test move either way changes its value by about ${c((value * SHOCK_PCT) / 100)}.`,
       lastReminderAt ? `A reminder was already sent on ${lastReminderAt.slice(0, 10)}.` : "",
     ]
       .filter(Boolean)
@@ -213,7 +219,7 @@ export function labelContext(cand: Candidate, input: AgentInput, priced: Pricing
     .flatMap((o) => [o.invoiceNumber, o.client && o.client !== cand.client ? o.client : ""])
     .filter(Boolean) as string[];
   return {
-    stress: [compact(input.base, (cand.value * SHOCK_PCT) / 100)],
+    stress: cand.currency === input.base ? [] : [compact(input.base, (cand.value * SHOCK_PCT) / 100)],
     swings: priced.flatMap((p) => p.swingLabels),
     others,
   };
@@ -286,7 +292,9 @@ export function discountNoteTemplate(p: Pricing) {
 export function rationaleTemplate(cand: Candidate, base: string, p?: Pricing) {
   const c = (n: number) => compact(base, n);
   if (!p)
-    return `${money(cand.currency, cand.amount)} is ${cand.daysOverdue} days late; until it is paid, its value moves with the rate — about ${c((cand.value * SHOCK_PCT) / 100)} for a ${SHOCK_PCT}% stress-test move either way.`;
+    return cand.currency === base
+      ? `${money(cand.currency, cand.amount)} is ${cand.daysOverdue} days late.`
+      : `${money(cand.currency, cand.amount)} is ${cand.daysOverdue} days late; until it is paid, its value moves with the rate — about ${c((cand.value * SHOCK_PCT) / 100)} for a ${SHOCK_PCT}% stress-test move either way.`;
   return `${p.percent}% off costs about ${c(p.cost)} and asks the client to pay ${p.daysSooner} days sooner, by ${p.newDueDate}; as a yearly rate that is about ${p.annualPct}%.`;
 }
 

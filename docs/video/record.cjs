@@ -201,6 +201,44 @@ const INIT = `(() => {
   await hl(answer);
   await say('It does it — and says what it left alone, and why. Ask it to forecast a currency, and it declines.', null, 6000);
   await hl(answer, false);
+  // ---- Scene 4b — every invoice in one AG Grid; approve the late ones together
+  await clear();
+  await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(600);
+  await navTo('Where it sits');
+  const grid = p.locator('.ag-root').first();
+  await cutBegin();
+  await grid.waitFor({ timeout: 120000 });
+  await wait(1200);
+  await cutEnd();
+  await show(grid, 'start');
+  await p.mouse.wheel(0, -170); await wait(500);
+  await say('Every invoice in one grid: what is at risk, what the agent is doing, how each client usually pays.', null, 4200);
+  const lateView = p.getByRole('button', { name: /^Late/ });
+  if (await lateView.count()) { await click(lateView); await wait(700); }
+  const boxes = p.locator('.ag-row:not(.ag-row-pinned) .ag-selection-checkbox input:visible');
+  const nBoxes = await boxes.count();
+  for (let i = 0; i < nBoxes; i++) { await moveTo(boxes.nth(i)); await boxes.nth(i).check({ force: true }); await wait(250); }
+  const approveSel = p.getByRole('button', { name: /^Approve selected/ });
+  if (await approveSel.count()) {
+    await say('She ticks the late ones the agent wants to chase —', null, 2200);
+    await click(approveSel);
+    await wait(500);
+    const panel = p.locator('[aria-label="Approve from the grid"]');
+    await hl(panel);
+    await say('checks exactly what will run, and approves them together.', 'Each one goes through the same checks as a single approval.', 3800);
+    await hl(panel, false);
+    await click(p.getByRole('button', { name: /^Confirm: approve/ }));
+    await cutBegin();
+    await p.waitForFunction(() => !/Running in PayPal/.test(document.body.innerText), null, { timeout: 120000 }).catch(() => {});
+    await wait(1500);
+    await cutEnd();
+    await hl(panel);
+    await say('✓ Sent in PayPal.', null, 2200);
+    await hl(panel, false);
+  }
+  const allView = p.getByRole('button', { name: /^All/ });
+  if (await allView.count()) { await click(allView); await wait(500); }
+
   // ---- Scene 5 — hand it over
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(700);
   await navTo('Autopilot');
@@ -286,22 +324,6 @@ const INIT = `(() => {
     await say('PayPal tells the agent a new invoice went out. It looks at it on its own —', 'and leaves the terms she just chose alone: any offer on it waits for her click.', 6500);
     await hl(sect, false);
   }
-
-  // ---- Scene 5b — every invoice in one AG Grid
-  await clear();
-  await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(600);
-  await navTo('Where it sits');
-  const grid = p.locator('.ag-root').first();
-  await cutBegin();
-  await grid.waitFor({ timeout: 120000 });
-  await wait(1200);
-  await cutEnd();
-  await show(grid, 'center');
-  await say('Every invoice in one grid: what is at risk, what the agent is doing, what is out.', null, 3600);
-  const offersOut = p.getByRole('button', { name: /^Offers out/ });
-  if (await offersOut.count()) { await click(offersOut); await wait(600); await say('One click: the early-payment offers that are out.', null, 2600); }
-  const paidToday = p.getByRole('button', { name: /^Paid today/ });
-  if (await paidToday.count()) { await click(paidToday); await wait(600); await say('And what was paid today.', null, 2200); }
 
   // ---- Scene 6 — any seller can try it on their own invoice list
   await goto('/try');

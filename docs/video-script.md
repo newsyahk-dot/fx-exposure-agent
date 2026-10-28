@@ -45,18 +45,19 @@ placeholders. Captions are mandatory (burned in).
 "Chase everyone more than 10 days late, gently" → reminders, and what it left alone and why.
 (The refusal — "Tell my clients the yen will fall so they pay now" → it declines — is said in the caption and shown in the gallery, to stay under 3:00.)
 
+## 4b · Every invoice in one AG Grid — approve the late ones together
+
+**Where it sits**: the grid ranked by what is at risk, with "Agent today" and how each client usually pays → **Late**
+→ tick the rows with a reminder waiting → **Approve selected** → the confirmation lists each action → **Confirm** →
+"✓ Reminder sent" for each. "She ticks the late ones the agent wants to chase, checks exactly what will run, and
+approves them together — each through the same checks as a single approval."
+
 ## 5 · 1:45–2:20 — Hand it over
 
 Autopilot: discounts up to 1% → **Approve this standing policy** → **Run autopilot now** ("Autopilot ran: 3 done", and
 what it left for her). Next invoice: "Bill Sakura Games ¥480,000 …, net 45" → compare → **Approve: create and send**.
 About a minute later, **New since today's plan**: PayPal told the agent, it looked at the new invoice on its own, and it
 leaves the terms she just chose alone — any offer on it waits for her click.
-
-## 5b · Every invoice in one AG Grid
-
-**Where it sits**: the grid ranked by what is at risk, with "Agent today" and the "Offer" column → click **Offers out**,
-then **Paid today** (the paid invoice stays, greyed). "Every invoice in one grid: what is at risk, what the agent is
-doing, what is out."
 
 ## 6 · 2:20–2:40 — Try it with your own invoices
 

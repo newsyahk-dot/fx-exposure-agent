@@ -72,7 +72,9 @@ new due date, net of the discount. The headline line says how much would arrive 
 labelled a scenario, not a promise.
 
 **Where the risk sits (AG Grid).** Every open invoice in one grid, ranked by what it puts at risk, with what the
-agent is doing about each one and any early-payment offer that is out. One click narrows it to what needs attention —
+agent is doing about each one, any early-payment offer that is out, and how each client has paid before. Tick the
+invoices with a proposal waiting and approve them together — a confirmation lists exactly what will run, and each one
+goes through the same checks as a single approval. One click narrows it to what needs attention —
 Late, Agent acting, Offers out, Paid today — and the total row follows. When the client pays, PayPal's webhook updates
 the book and the changed cells flash; the paid invoice stays in the list, greyed, so the seller sees what just happened.
 Searchable, sortable, and downloadable as CSV.
@@ -101,7 +103,8 @@ by side; the seller decides.
 ### How I built it
 
 - **PayPal Invoicing API v2 (sandbox)** is the backbone: listing and reading invoices, creating and sending them,
-  sending reminders, editing a sent invoice (discount and new due date), recording payments, and cancelling. Every
+  sending reminders, sending a separate early-payment offer invoice (paying it settles the original), recording
+  payments, and cancelling. Every
   action the agent takes is written into the invoice's private memo, so the history lives in PayPal, not in my
   database (there isn't one).
 - **PayPal invoice templates** store the seller's standing policy and notes for the agent.
@@ -122,7 +125,9 @@ by side; the seller decides.
   Claude with the reason and is rewritten; the seller can see how many were.
 - **Next.js 16 on Vercel**: server actions re-check everything before calling PayPal; a shared cache keeps one agent
   plan per day and currency; Vercel Cron warms the plans, resets the demo book nightly and runs the autopilot.
-- **AG Grid Community** for the invoice grid: an external filter for the quick views, a pinned total row that follows
+- **AG Grid Community** for the invoice grid: row selection (checkboxes only on rows with a proposal waiting) to approve
+  several actions at once through the same server action, a two-line client cell with the client's payment history,
+  an external filter for the quick views, a pinned total row that follows
   the filter, cell change flash on PayPal updates, row class rules, custom cell renderers (risk bars, PayPal links),
   quick-filter search and CSV export. **ECB reference rates via Frankfurter** for exchange rates.
 
@@ -190,7 +195,7 @@ paypal, paypal-invoicing-api, paypal-webhooks, claude, anthropic, next.js, react
 
 **Claude Haiku 5.5 (Anthropic API)**, used in four places:
 
-1. **The daily agent.** Claude runs as a tool-using agent (Anthropic SDK tool runner) over six tools that read the
+1. **The daily agent.** Claude runs as a tool-using agent (Anthropic SDK tool runner) over seven tools that read the
    seller's PayPal invoices, price discount terms and record proposals. It decides which actions to put in front of the
    seller and writes each client e-mail, each invoice note and each reason. Every number it may use comes from the
    tools; every sentence is checked by code before it is accepted, and rejected drafts are returned to it with the

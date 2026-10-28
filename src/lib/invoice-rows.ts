@@ -4,6 +4,7 @@
 import { toBusinessDays, type AgentInput, type AgentRun } from "./agent";
 import { daysBetween, OPEN_STATUSES } from "./exposure";
 import { oneSigma } from "./fx";
+import { clientHistory } from "./invoice-plan";
 import { proposalState } from "./plan-state";
 import type { Invoice, Rates } from "./types";
 
@@ -22,7 +23,21 @@ export type InvoiceRow = {
   offer: string; // the early-payment offer sent for it ("EUR 4,950.00 by 2026-11-01"), or ""
   offerState: "" | "open" | "paid" | "expired" | "closed";
   paidToday: boolean; // paid since the start of the book day: kept in the grid so the change is visible
+  usuallyPays: string; // this client's history: "on time", "~6 days late", or "" when there is none
+  // The agent's proposal for this invoice when it still waits for a click: approvable from the grid with the
+  // agent's own wording, through the same server action and checks as the card.
+  action?:
+    | { kind: "reminder"; label: string; subject: string; message: string }
+    | { kind: "early_pay_discount"; label: string; percent: number; withinDays: number; clientNote: string };
 };
+
+// "on time" / "~6 days late" from the client's fully paid invoices; "" when there are none.
+function usuallyPays(invoices: Invoice[], client: string | undefined): string {
+  if (!client) return "";
+  const h = clientHistory(invoices, client);
+  if (h.avgDaysLate == null) return "";
+  return h.avgDaysLate <= 1 ? "pays on time" : `pays ~${h.avgDaysLate} days late`;
+}
 
 export function invoiceRows(
   invoices: Invoice[],
@@ -42,11 +57,27 @@ export function invoiceRows(
     const vol = vols[inv.currency];
     const proposal = o.run?.proposals.find((p) => p.invoiceId === inv.id);
     let agent = home ? "No FX risk" : "—";
+    let action: InvoiceRow["action"];
     if (proposal) {
       const s = proposalState(proposal, o.input, invoices, o.run?.plannedAt).state;
+      if (s === "open")
+        action =
+          proposal.kind === "reminder"
+            ? { kind: "reminder", label: `Reminder to ${inv.recipientName ?? inv.number}`, subject: proposal.subject, message: proposal.message }
+            : {
+                kind: "early_pay_discount",
+                label: `${proposal.percent}% early-payment offer to ${inv.recipientName ?? inv.number}`,
+                percent: proposal.percent,
+                withinDays: proposal.withinDays,
+                clientNote: proposal.clientNote,
+              };
       const what = proposal.kind === "reminder" ? "Reminder" : `${proposal.percent}% offer`;
       agent = s === "open" ? `${what} proposed` : s === "done" ? `${what} sent` : s === "paid" ? "Paid" : `${what} (changed)`;
     } else if (o.run?.notProposed.some((n) => n.invoiceNumber === inv.number)) agent = "Left alone";
+    else if (o.run && !home) agent = "New — see Today"; // arrived after the day's plan; the agent's answer is on Today
+    // Done today but not (or no longer) in the plan — e.g. approved before the plan was made again.
+    const doneToday = (inv.agentLog ?? []).filter((e) => (e.kind === "reminder" || e.kind === "early_pay_discount") && e.at.slice(0, 10) >= o.asOf).at(-1);
+    if (doneToday && !action && !/sent$/.test(agent)) agent = doneToday.kind === "reminder" ? "Reminder sent" : "Offer sent";
     if (paidToday) agent = inv.offer?.state === "paid" ? "Paid today (offer)" : "Paid today";
     rows.push({
       id: inv.id,
@@ -63,6 +94,8 @@ export function invoiceRows(
       offer: inv.offer ? `${inv.currency} ${Math.round(inv.offer.amount).toLocaleString("en-US")} · ${shortDay(inv.offer.dueDate)}` : "",
       offerState: inv.offer?.state ?? "",
       paidToday,
+      usuallyPays: usuallyPays(invoices, inv.recipientName),
+      ...(action ? { action } : {}),
     });
   }
   return rows.sort((a, b) => b.atRisk - a.atRisk || a.daysToDue - b.daysToDue);

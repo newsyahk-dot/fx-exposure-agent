@@ -22,7 +22,7 @@ describe("invoice grid rows", () => {
   });
   it("home-currency invoices carry no FX risk; overdue ones have no swing to their due date", () => {
     const usd = rows.find((r) => r.currency === "USD")!;
-    expect([usd.atRisk, usd.swing, usd.agent]).toEqual([0, 0, "No FX risk"]);
+    expect([usd.atRisk, usd.swing]).toEqual([0, 0]);
     const late = rows.find((r) => r.currency !== "USD" && r.daysToDue < 0)!;
     expect(late.swing).toBeNull();
     expect(late.atRisk).toBeCloseTo(late.value * 0.03, 9);
@@ -41,5 +41,16 @@ describe("invoice grid rows", () => {
     const o = r.find((x) => x.id === "X2")!;
     expect(o.offerState).toBe("open");
     expect(o.offer).toMatch(/^EUR 990 · [A-Z][a-z]{2} \d{1,2}$/);
+  });
+  it("carries the agent's open proposal for approving from the grid, and the client's payment history", () => {
+    const withAction = rows.filter((r) => r.action);
+    expect(withAction.length).toBe(run.proposals.length);
+    for (const r of withAction) {
+      const p = run.proposals.find((x) => x.invoiceId === r.id)!;
+      expect(r.action!.kind).toBe(p.kind);
+      if (p.kind === "reminder" && r.action!.kind === "reminder") expect(r.action!.message).toBe(p.message);
+      if (p.kind === "early_pay_discount" && r.action!.kind === "early_pay_discount") expect(r.action!.percent).toBe(p.percent);
+    }
+    expect(rows.some((r) => /^pays (on time|~\d+ days late)$/.test(r.usuallyPays))).toBe(true);
   });
 });

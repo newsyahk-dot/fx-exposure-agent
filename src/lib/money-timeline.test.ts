@@ -3,10 +3,13 @@ import type { AgentInput, AgentRun } from "./agent";
 import { moneyTimeline } from "./money-timeline";
 
 const cand = (id: string, value: number, daysToDue: number | null) =>
-  ({ invoiceId: id, invoiceNumber: id, value, daysToDue, daysOverdue: daysToDue == null ? 10 : null }) as AgentInput["candidates"][number];
+  ({ invoiceId: id, invoiceNumber: id, currency: "EUR", value, daysToDue, daysOverdue: daysToDue == null ? 10 : null }) as AgentInput["candidates"][number];
 
 describe("when the money comes in", () => {
-  const input = { candidates: [cand("late", 1000, null), cand("soon", 500, 3), cand("far", 4000, 60)] } as AgentInput;
+  const input = {
+    base: "USD",
+    candidates: [cand("late", 1000, null), cand("soon", 500, 3), cand("far", 4000, 60), { ...cand("home", 900, null), currency: "USD" }],
+  } as AgentInput; // the USD invoice is home money: not part of "money from abroad"
   const run = {
     proposals: [
       { kind: "reminder", invoiceId: "late" },

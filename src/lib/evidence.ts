@@ -117,6 +117,7 @@ export function timelines(input: AgentInput, run: AgentRun): { asInvoiced: Posit
   const withProposals: Position[] = [];
   const byId = new Map(run.proposals.map((p) => [p.invoiceId, p]));
   for (const c of input.candidates) {
+    if (c.currency === input.base) continue; // the replay is about money from abroad
     const wait = c.daysToDue ?? ASSUME.overdueWaitDays;
     asInvoiced.push({ currency: c.currency, value: c.value, waitDays: wait });
     const p = byId.get(c.invoiceId);

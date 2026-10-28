@@ -33,6 +33,7 @@ export function moneyTimeline(input: AgentInput, run: AgentRun): MoneyTimeline {
   const soon = { days: SOON_DAYS, asInvoiced: 0, asProposed: 0 };
   let total = 0;
   for (const c of input.candidates) {
+    if (c.currency === input.base) continue; // money from abroad only
     const late = c.daysToDue == null || c.daysToDue < 0;
     bins[binOf(late ? null : c.daysToDue)].asInvoiced += c.value;
     if (!late && c.daysToDue! <= SOON_DAYS) soon.asInvoiced += c.value;

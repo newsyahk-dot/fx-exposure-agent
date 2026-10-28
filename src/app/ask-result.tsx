@@ -37,6 +37,20 @@ export async function AskResult({
         <p>
           <strong>{r.source === "agent" ? "Claude:" : "Rule-based answer:"}</strong> {r.source === "agent" ? r.summary : `The agent did not run (${r.reason}).`}
         </p>
+        {(() => {
+          // The answer is kept for hours; say what happened to its invoices since, so the text never reads as current.
+          const since = r.proposals
+            .map((p) => ({ p, s: proposalState(p, input, invoices, r.plannedAt).state }))
+            .filter((x) => x.s !== "open");
+          if (!since.length) return null;
+          const what = (s: string) => (s === "paid" ? "paid" : s === "done" ? "done" : s === "closed" ? "closed" : "changed");
+          return (
+            <p className={styles.muted}>
+              Since this answer{r.plannedAt ? ` (${r.plannedAt.slice(11, 16)} UTC)` : ""}:{" "}
+              {since.map((x) => `${x.p.invoiceNumber} ${what(x.s)}`).join(", ")} — see the cards below.
+            </p>
+          );
+        })()}
         {r.source === "agent" && (
           <p className={styles.muted}>
             {calls} tool calls · {r.proposals.length} proposal{r.proposals.length === 1 ? "" : "s"}
@@ -53,6 +67,8 @@ export async function AskResult({
               p={p}
               s={proposalState(p, input, invoices, r.plannedAt)}
               client={invoices.find((i) => i.id === p.invoiceId)?.recipientName}
+              due={invoices.find((i) => i.id === p.invoiceId)?.dueDate}
+              offer={invoices.find((i) => i.id === p.invoiceId)?.offer}
               paidToday={paidValue[p.invoiceId]}
               base={base}
               c={c}

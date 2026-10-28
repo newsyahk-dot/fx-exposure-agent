@@ -6,10 +6,20 @@
 // page refreshes every 10 s), and a CSV download for the seller's own records. Invoices paid today stay listed
 // (greyed) so the change is visible. Colours come from the page's CSS variables, so the grid follows light and dark mode.
 
-import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef, type GridApi, type ICellRendererParams } from "ag-grid-community";
+import {
+  AllCommunityModule,
+  ModuleRegistry,
+  themeQuartz,
+  type ColDef,
+  type GridApi,
+  type ICellRendererParams,
+  type RowSelectionOptions,
+} from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import type { InvoiceRow } from "@/lib/invoice-rows";
+import { approve } from "./actions";
 import styles from "./page.module.css";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -37,8 +47,56 @@ const VIEWS = {
 } as const;
 type View = keyof typeof VIEWS;
 
-export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; base: string; clientUrls: Record<string, string> }) {
+export function InvoiceGrid({
+  rows,
+  base,
+  clientUrls,
+  lockReason,
+}: {
+  rows: InvoiceRow[];
+  base: string;
+  clientUrls: Record<string, string>;
+  lockReason?: string; // approvals need the access code on the hosted demo
+}) {
   const api = useRef<GridApi<InvoiceRow> | null>(null);
+  const router = useRouter();
+  // Rows with a proposal still waiting can be ticked and approved together — after a confirmation that lists exactly
+  // what will be sent. Each one goes through the same server action (and checks) as the card's own button.
+  const [selected, setSelected] = useState<InvoiceRow[]>([]);
+  const [confirming, setConfirming] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [results, setResults] = useState<{ number: string; ok: boolean; message: string }[]>([]);
+  const rowSelection = useMemo<RowSelectionOptions<InvoiceRow>>(
+    () => ({ mode: "multiRow", isRowSelectable: (n) => !!n.data?.action, hideDisabledCheckboxes: true, enableClickSelection: false }),
+    [],
+  );
+  const approveSelected = async () => {
+    setRunning(true);
+    const out: typeof results = [];
+    for (const r of selected) {
+      const a = r.action;
+      if (!a) continue;
+      const f = new FormData();
+      f.set("kind", a.kind);
+      f.set("invoiceId", r.id);
+      f.set("base", base);
+      if (a.kind === "reminder") {
+        f.set("subject", a.subject);
+        f.set("message", a.message);
+      } else {
+        f.set("percent", String(a.percent));
+        f.set("withinDays", String(a.withinDays));
+        f.set("clientNote", a.clientNote);
+      }
+      const res = await approve(null, f).catch((e: unknown) => ({ ok: false, message: e instanceof Error ? e.message : String(e) }));
+      out.push({ number: r.number, ok: !!res?.ok, message: res?.message ?? "No answer" });
+      setResults([...out]);
+    }
+    setRunning(false);
+    setConfirming(false);
+    api.current?.deselectAll();
+    router.refresh();
+  };
   const [search, setSearch] = useState("");
   const [view, setView] = useState<View>("all");
   const viewRef = useRef<View>("all"); // read by the grid's filter callbacks
@@ -59,7 +117,7 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
         field: "number",
         headerName: "Invoice",
         pinned: "left",
-        minWidth: 152,
+        minWidth: 140,
         // The invoice number opens PayPal's client view (a separate column did not fit at desktop width).
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.data?.id && clientUrls[p.data.id] ? (
@@ -70,12 +128,25 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
             p.value
           ),
       },
-      { field: "client", headerName: "Client", minWidth: 100, tooltipField: "client" },
+      {
+        field: "client",
+        headerName: "Client",
+        minWidth: 116,
+        tooltipField: "client",
+        // Name, and underneath how this client has paid before (from their fully paid invoices).
+        cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
+          p.node.rowPinned ? null : (
+            <span className={styles.gridTwoLine}>
+              <span>{p.value}</span>
+              {p.data?.usuallyPays && <small>{p.data.usuallyPays}</small>}
+            </span>
+          ),
+      },
       { field: "currency", headerName: "Ccy", hide: true }, // in "Still owed"; kept for search
       {
         field: "amount",
         headerName: "Still owed",
-        minWidth: 128,
+        minWidth: 120,
         type: "rightAligned",
         enableCellChangeFlash: true,
         valueFormatter: (p) =>
@@ -84,14 +155,15 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
       {
         field: "daysToDue",
         headerName: "Due",
-        minWidth: 104,
-        valueFormatter: (p) => (p.value == null ? "" : p.value < 0 ? `${-p.value} days late` : p.value === 0 ? "today" : `in ${p.value} days`),
-        cellClassRules: { [styles.gridLate]: (p) => (p.value ?? 0) < 0 },
+        minWidth: 96,
+        valueFormatter: (p) =>
+          p.value == null ? "" : p.data?.paidToday ? "paid today" : p.value < 0 ? `${-p.value} days late` : p.value === 0 ? "today" : `in ${p.value} days`,
+        cellClassRules: { [styles.gridLate]: (p) => !p.data?.paidToday && (p.value ?? 0) < 0 },
       },
       {
         field: "atRisk",
         headerName: "At risk ±3%",
-        minWidth: 104,
+        minWidth: 100,
         sort: "desc",
         valueFormatter: (p) => (p.value ? `±${home(p.value)}` : "none"), // used by the CSV export
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
@@ -109,7 +181,7 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
       {
         field: "agent",
         headerName: "Agent today",
-        minWidth: 168,
+        minWidth: 164,
         tooltipField: "agent",
         enableCellChangeFlash: true,
         cellClassRules: { [styles.gridActive]: (p) => /proposed|sent|Paid/.test(p.value ?? "") },
@@ -118,7 +190,7 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
         field: "offer",
         headerName: "Offer",
         headerTooltip: "A separate PayPal invoice for the discounted amount; it lapses after its date and the original applies",
-        minWidth: 128,
+        minWidth: 116,
         hide: !hasOffers,
         tooltipField: "offer",
         enableCellChangeFlash: true,
@@ -127,7 +199,7 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
             ? ""
             : `${p.value}${p.data?.offerState === "paid" ? " · paid" : p.data?.offerState === "expired" ? " · lapsed" : p.data?.offerState === "closed" ? " · closed" : ""}`,
       },
-      { field: "value", headerName: `In ${base}`, headerTooltip: `What it is worth in ${base} at today's ECB rates`, minWidth: 88, type: "rightAligned", valueFormatter: (p) => home(p.value) },
+      { field: "value", headerName: `In ${base}`, headerTooltip: `What it is worth in ${base} at today's ECB rates`, minWidth: 84, type: "rightAligned", valueFormatter: (p) => home(p.value) },
       {
         field: "swing",
         headerName: "Swing",
@@ -179,7 +251,53 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
           Download CSV
         </button>
       </div>
-      <div style={{ height: Math.min(1000, 58 + 42 * (rows.length + 1)) }}>
+      {(selected.length > 0 || results.length > 0) && (
+        <div className={styles.gridApprove} role="region" aria-label="Approve from the grid">
+          {selected.length > 0 && !confirming && !running && (
+            <p>
+              <strong>{selected.length} selected</strong> — the agent&apos;s own wording, checked again on the server.{" "}
+              <button type="button" className={styles.approve} disabled={!!lockReason} onClick={() => setConfirming(true)}>
+                Approve selected ({selected.length})
+              </button>
+              {lockReason && <span className={styles.muted}> {lockReason}</span>}
+            </p>
+          )}
+          {(confirming || running) && (
+            <>
+              <p>
+                <strong>This will run in PayPal:</strong>
+              </p>
+              <ul>
+                {selected.map((r) => (
+                  <li key={r.id}>
+                    {r.number} — {r.action?.label}
+                  </li>
+                ))}
+              </ul>
+              <p>
+                <button type="button" className={styles.approve} disabled={running} onClick={approveSelected}>
+                  {running ? `Running in PayPal… ${results.length}/${selected.length}` : `Confirm: approve ${selected.length}`}
+                </button>{" "}
+                {!running && (
+                  <button type="button" className={styles.secondaryButton} onClick={() => setConfirming(false)}>
+                    Cancel
+                  </button>
+                )}
+              </p>
+            </>
+          )}
+          {results.length > 0 && !running && (
+            <ul>
+              {results.map((x) => (
+                <li key={x.number} className={x.ok ? styles.ok : styles.error}>
+                  {x.ok ? "✓" : "✗"} {x.number}: {x.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      <div>
         <AgGridReact<InvoiceRow>
           theme={theme}
           rowData={rows}
@@ -188,6 +306,15 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
           quickFilterText={search}
           pinnedBottomRowData={totals as InvoiceRow[]}
           getRowId={(p) => p.data.id ?? p.data.number}
+          rowHeight={52}
+          domLayout="autoHeight"
+          rowSelection={rowSelection}
+          selectionColumnDef={{ pinned: "left", width: 44, minWidth: 44, maxWidth: 44, headerTooltip: "Select proposals to approve together" }}
+          onSelectionChanged={(e) => {
+            const rows = e.api.getSelectedRows();
+            setSelected(rows);
+            if (rows.length) setResults([]); // a new selection starts over; clearing it after a run keeps the results
+          }}
           onGridReady={(e) => (api.current = e.api)}
           onFilterChanged={refreshTotals}
           isExternalFilterPresent={() => viewRef.current !== "all"}
@@ -205,7 +332,7 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
 function total(all: InvoiceRow[]): TotalRow {
   const rows = all.filter((r) => !r.paidToday);
   return {
-    number: `${rows.length} invoice${rows.length === 1 ? "" : "s"}`,
+    number: `${rows.length} open invoice${rows.length === 1 ? "" : "s"}`,
     value: rows.reduce((s, r) => s + r.value, 0),
     atRisk: rows.reduce((s, r) => s + r.atRisk, 0),
   };
