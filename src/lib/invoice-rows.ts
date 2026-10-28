@@ -4,7 +4,7 @@
 import { toBusinessDays, type AgentInput, type AgentRun } from "./agent";
 import { daysBetween, OPEN_STATUSES } from "./exposure";
 import { oneSigma } from "./fx";
-import { clientHistory } from "./invoice-plan";
+import { clientHistory, sameClient } from "./invoice-plan";
 import { proposalState } from "./plan-state";
 import type { Invoice, Rates } from "./types";
 
@@ -24,6 +24,8 @@ export type InvoiceRow = {
   offerState: "" | "open" | "paid" | "expired" | "closed";
   paidToday: boolean; // paid since the start of the book day: kept in the grid so the change is visible
   usuallyPays: string; // this client's history: "on time", "~6 days late", or "" when there is none
+  detailOf?: string; // grid only: an expanded detail row under the invoice with this id
+  history: { number: string; amount: number; currency: string; dueDate: string; paidOn: string; daysLate: number }[]; // their paid invoices, newest first
   // The agent's proposal for this invoice when it still waits for a click: approvable from the grid with the
   // agent's own wording, through the same server action and checks as the card.
   action?:
@@ -95,6 +97,7 @@ export function invoiceRows(
       offerState: inv.offer?.state ?? "",
       paidToday,
       usuallyPays: usuallyPays(invoices, inv.recipientName),
+      history: paidHistory(invoices, inv.recipientName),
       ...(action ? { action } : {}),
     });
   }
@@ -102,3 +105,23 @@ export function invoiceRows(
 }
 
 const shortDay = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
+// The client's fully paid invoices, newest first (at most 6): when each was due and when it was paid.
+function paidHistory(invoices: Invoice[], client: string | undefined): InvoiceRow["history"] {
+  if (!client) return [];
+  return invoices
+    .filter((i) => sameClient(i.recipientName, client) && !(i.amountDue > 0) && i.payments?.length)
+    .map((i) => {
+      const paidOn = i.payments!.map((p) => p.date).sort().at(-1)!;
+      return {
+        number: i.number,
+        amount: i.total ?? i.payments!.reduce((s, p) => s + p.amount, 0),
+        currency: i.currency,
+        dueDate: i.dueDate,
+        paidOn,
+        daysLate: Math.max(0, daysBetween(i.dueDate, paidOn)),
+      };
+    })
+    .sort((a, b) => b.paidOn.localeCompare(a.paidOn))
+    .slice(0, 6);
+}

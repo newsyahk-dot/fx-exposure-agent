@@ -52,5 +52,14 @@ describe("invoice grid rows", () => {
       if (p.kind === "early_pay_discount" && r.action!.kind === "early_pay_discount") expect(r.action!.percent).toBe(p.percent);
     }
     expect(rows.some((r) => /^pays (on time|~\d+ days late)$/.test(r.usuallyPays))).toBe(true);
+    const withHistory = rows.filter((r) => r.history.length);
+    expect(withHistory.length).toBeGreaterThan(0);
+    for (const r of withHistory) {
+      expect(r.history.length).toBeLessThanOrEqual(6);
+      const days = r.history.map((h) => h.paidOn);
+      expect(days).toEqual([...days].sort().reverse());
+      for (const h of r.history) expect(h.daysLate).toBeGreaterThanOrEqual(0);
+    }
+    expect(rows.filter((r) => r.usuallyPays).every((r) => r.history.length > 0)).toBe(true);
   });
 });

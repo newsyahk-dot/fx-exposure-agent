@@ -17,7 +17,7 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { createContext, useContext, useMemo, useRef, useState } from "react";
 import type { InvoiceRow } from "@/lib/invoice-rows";
 import { approve } from "./actions";
 import styles from "./page.module.css";
@@ -67,13 +67,14 @@ export function InvoiceGrid({
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<{ number: string; ok: boolean; message: string }[]>([]);
   const rowSelection = useMemo<RowSelectionOptions<InvoiceRow>>(
-    () => ({ mode: "multiRow", isRowSelectable: (n) => !!n.data?.action, hideDisabledCheckboxes: true, enableClickSelection: false }),
+    () => ({ mode: "multiRow", isRowSelectable: (n) => !!n.data?.action && !n.data.detailOf, hideDisabledCheckboxes: true, enableClickSelection: false }),
     [],
   );
-  const approveSelected = async () => {
+  const approveSelected = () => runApprovals(selected);
+  const runApprovals = async (list: InvoiceRow[]) => {
     setRunning(true);
     const out: typeof results = [];
-    for (const r of selected) {
+    for (const r of list) {
       const a = r.action;
       if (!a) continue;
       const f = new FormData();
@@ -98,8 +99,30 @@ export function InvoiceGrid({
     router.refresh();
   };
   const [search, setSearch] = useState("");
+  // Detail rows (AG Grid full-width rows, Community): open an invoice to see how this client has paid before and the
+  // agent's draft for it, and approve just that one.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setExpanded((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const displayRows = useMemo(
+    () => rows.flatMap((r) => (expanded.has(r.id) ? [r, { ...r, id: `${r.id}#detail`, detailOf: r.id }] : [r])),
+    [rows, expanded],
+  );
   const [view, setView] = useState<View>("all");
   const viewRef = useRef<View>("all"); // read by the grid's filter callbacks
+  // Stable callbacks: AG Grid refilters when these change identity, and the refilter re-rendered the page in a loop.
+  const filter = useMemo(
+    () => ({
+      present: () => viewRef.current !== "all",
+      pass: (n: { data?: InvoiceRow }) => !!n.data && VIEWS[viewRef.current].pass(n.data), // a detail row carries its invoice's fields
+    }),
+    [],
+  );
   const pickView = (v: View) => {
     viewRef.current = v;
     setView(v);
@@ -117,13 +140,24 @@ export function InvoiceGrid({
         field: "number",
         headerName: "Invoice",
         pinned: "left",
-        minWidth: 140,
+        minWidth: 172,
         // The invoice number opens PayPal's client view (a separate column did not fit at desktop width).
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.data?.id && clientUrls[p.data.id] ? (
-            <a href={clientUrls[p.data.id]} target="_blank" rel="noopener noreferrer" className={styles.link} title="Open in PayPal as the client">
-              {p.value} ↗
-            </a>
+            <span className={styles.gridInvoice}>
+              <button
+                type="button"
+                className={styles.gridToggle}
+                aria-expanded={expanded.has(p.data.id)}
+                aria-label={`${expanded.has(p.data.id) ? "Close" : "Open"} details for ${p.value}`}
+                onClick={() => toggle(p.data!.id)}
+              >
+                {expanded.has(p.data.id) ? "▾" : "▸"}
+              </button>
+              <a href={clientUrls[p.data.id]} target="_blank" rel="noopener noreferrer" className={styles.link} title="Open in PayPal as the client">
+                {p.value} ↗
+              </a>
+            </span>
           ) : (
             p.value
           ),
@@ -211,7 +245,7 @@ export function InvoiceGrid({
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [base, maxRisk, clientUrls, hasOffers],
+    [base, maxRisk, clientUrls, hasOffers, expanded],
   );
 
   // Totals follow the filter: what is at risk among the invoices currently shown. The filtered list is tied to the
@@ -220,7 +254,7 @@ export function InvoiceGrid({
   const totals = [total(shown?.from === rows ? shown.list : rows)];
   const refreshTotals = () => {
     const list: InvoiceRow[] = [];
-    api.current?.forEachNodeAfterFilter((n) => n.data && list.push(n.data));
+    api.current?.forEachNodeAfterFilter((n) => n.data && !n.data.detailOf && list.push(n.data));
     setShown({ from: rows, list });
   };
 
@@ -246,7 +280,14 @@ export function InvoiceGrid({
         <button
           type="button"
           className={styles.secondaryButton}
-          onClick={() => api.current?.exportDataAsCsv({ fileName: `open-invoices-${base}.csv`, skipPinnedBottom: false, allColumns: true })}
+          onClick={() =>
+            api.current?.exportDataAsCsv({
+              fileName: `open-invoices-${base}.csv`,
+              skipPinnedBottom: false,
+              allColumns: true,
+              shouldRowBeSkipped: (p) => !!p.node.data?.detailOf,
+            })
+          }
         >
           Download CSV
         </button>
@@ -298,9 +339,10 @@ export function InvoiceGrid({
         </div>
       )}
       <div>
+        <DetailCtx.Provider value={{ lockReason, busy: running, approveOne: (r) => runApprovals([r]), close: toggle }}>
         <AgGridReact<InvoiceRow>
           theme={theme}
-          rowData={rows}
+          rowData={displayRows}
           columnDefs={columns}
           defaultColDef={{ sortable: true, resizable: true, filter: false }}
           quickFilterText={search}
@@ -317,23 +359,138 @@ export function InvoiceGrid({
           }}
           onGridReady={(e) => (api.current = e.api)}
           onFilterChanged={refreshTotals}
-          isExternalFilterPresent={() => viewRef.current !== "all"}
-          doesExternalFilterPass={(n) => !!n.data && VIEWS[viewRef.current].pass(n.data)}
+          isExternalFilterPresent={filter.present}
+          doesExternalFilterPass={filter.pass}
+          isFullWidthRow={isDetail}
+          fullWidthCellRenderer={DetailCell}
+          getRowHeight={rowHeight}
+          postSortRows={detailsUnderParents}
           rowClassRules={{ [styles.gridPaid]: (p) => !!p.data?.paidToday }}
           tooltipShowDelay={300}
           includeHiddenColumnsInQuickFilter
           autoSizeStrategy={{ type: "fitGridWidth" }}
         />
+        </DetailCtx.Provider>
       </div>
     </div>
   );
 }
 
 function total(all: InvoiceRow[]): TotalRow {
-  const rows = all.filter((r) => !r.paidToday);
+  const rows = all.filter((r) => !r.paidToday && !r.detailOf);
   return {
     number: `${rows.length} open invoice${rows.length === 1 ? "" : "s"}`,
     value: rows.reduce((s, r) => s + r.value, 0),
     atRisk: rows.reduce((s, r) => s + r.atRisk, 0),
   };
+}
+
+// Grid callbacks live outside the component: AG Grid redraws full-width rows when these props change identity, and a
+// redraw inside a render made the grid loop once a row was opened. The detail renderer reads live state from context.
+type DetailState = { lockReason?: string; busy: boolean; approveOne: (r: InvoiceRow) => void; close: (id: string) => void };
+const DetailCtx = createContext<DetailState>({ busy: false, approveOne: () => {}, close: () => {} });
+const isDetail = (p: { rowNode: { data?: InvoiceRow } }) => !!p.rowNode.data?.detailOf;
+const rowHeight = (p: { data?: InvoiceRow }) => (p.data?.detailOf ? detailHeight(p.data) : 52);
+// Keep each detail row right under its invoice whatever the sort.
+const detailsUnderParents = (params: { nodes: { data?: InvoiceRow }[] }) => {
+  const nodes = params.nodes;
+  for (const d of nodes.filter((n) => n.data?.detailOf)) {
+    nodes.splice(nodes.indexOf(d), 1);
+    nodes.splice(nodes.findIndex((n) => n.data?.id === d.data!.detailOf) + 1, 0, d);
+  }
+};
+function DetailCell(p: ICellRendererParams<InvoiceRow>) {
+  const ctx = useContext(DetailCtx);
+  const d = p.data;
+  if (!d?.detailOf) return null;
+  const r = { ...d, id: d.detailOf, detailOf: undefined };
+  return <DetailRow r={r} lockReason={ctx.lockReason} busy={ctx.busy} onApprove={() => ctx.approveOne(r)} onClose={() => ctx.close(r.id)} />;
+}
+
+// Text wraps at roughly 70 characters in each half of the detail row (one column, ~40 characters, on a phone); the
+// estimate errs on the tall side, and the row scrolls inside if it is still short.
+const detailHeight = (r: InvoiceRow | undefined) => {
+  const narrow = typeof window !== "undefined" && window.innerWidth < 720;
+  const per = narrow ? 40 : 70;
+  const lines = (t: string | undefined) => (t ? Math.ceil(t.length / per) : 0); // line breaks collapse when shown
+  const a = r?.action;
+  const draft = !a ? 1 : a.kind === "reminder" ? 1 + lines(a.subject) + lines(a.message) : 1 + lines(a.label) + 2 + lines(a.clientNote);
+  const hist = Math.max(1, (r?.history.length ?? 0) * (narrow ? 2 : 1));
+  return Math.max(narrow ? 190 : 150, 70 + 22 * (narrow ? hist + draft + 1 : Math.max(hist, draft)) + (a ? 56 : 0));
+};
+
+const fmt = (ccy: string, v: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: ccy, currencyDisplay: "code" }).format(v);
+
+// The opened invoice: how this client has paid before, and what the agent proposes for it (approve just this one).
+function DetailRow({
+  r,
+  lockReason,
+  busy,
+  onApprove,
+  onClose,
+}: {
+  r: InvoiceRow;
+  lockReason?: string;
+  busy: boolean;
+  onApprove: () => void;
+  onClose: () => void;
+}) {
+  const a = r.action;
+  return (
+    <div className={styles.gridDetail}>
+      <div>
+        <p>
+          <strong>How {r.client || "this client"} has paid</strong>
+        </p>
+        {r.history.length ? (
+          <ul>
+            {r.history.map((h) => (
+              <li key={h.number}>
+                {h.number} · {fmt(h.currency, h.amount)} · due {h.dueDate}, paid {h.paidOn}{" "}
+                <span className={h.daysLate > 0 ? styles.gridLateText : styles.muted}>{h.daysLate > 0 ? `(${h.daysLate} days late)` : "(on time)"}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className={styles.muted}>No paid invoices from this client yet.</p>
+        )}
+      </div>
+      <div>
+        <p>
+          <strong>{a ? "What the agent proposes" : "Agent today"}</strong>
+        </p>
+        {a ? (
+          <>
+            <p>{a.label}</p>
+            {a.kind === "reminder" ? (
+              <p className={styles.gridDraft}>
+                <em>{a.subject}</em>
+                <br />
+                {a.message}
+              </p>
+            ) : (
+              <p className={styles.gridDraft}>
+                {a.percent}% off if paid within {a.withinDays} days — a separate early-payment invoice; the original stays as it is.
+                <br />
+                <em>{a.clientNote}</em>
+              </p>
+            )}
+            <p>
+              <button type="button" className={styles.approve} disabled={busy || !!lockReason} onClick={onApprove}>
+                {a.kind === "reminder" ? "Approve: send this reminder" : "Approve: send this offer"}
+              </button>{" "}
+              {lockReason && <span className={styles.muted}>{lockReason}</span>}
+            </p>
+          </>
+        ) : (
+          <p>{r.agent}</p>
+        )}
+        <p>
+          <button type="button" className={styles.secondaryButton} onClick={onClose}>
+            Close
+          </button>
+        </p>
+      </div>
+    </div>
+  );
 }

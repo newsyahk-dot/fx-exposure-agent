@@ -801,8 +801,8 @@ function ExposureTable({ view, skipped, baseOpen }: { view: BookView; skipped: {
       <p className={styles.muted}>
         {e.baseTotal > 0 && (
           <>
-            Not in this table: {c(e.baseTotal)} owed in {base} across {baseOpen} open invoice{baseOpen === 1 ? "" : "s"} — no
-            exchange-rate risk.{" "}
+            Not in the table above: {c(e.baseTotal)} owed in {base} across {baseOpen} open invoice{baseOpen === 1 ? "" : "s"} — no
+            exchange-rate risk (the grid below lists them too, because late ones are chased like any other).{" "}
           </>
         )}
         {skipped.length > 0 && (

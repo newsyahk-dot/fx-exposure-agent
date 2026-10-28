@@ -96,7 +96,8 @@ const INIT = `(() => {
   await cutBegin();
   await goto('/?base=USD&step=today');
   const hero = p.locator('section[aria-label="Waiting to be paid"]');
-  const firstCard = p.locator('li[data-state]').first();
+  // A reminder on money from abroad (late home-currency invoices are chased too, but they are not this story).
+  const firstCard = p.locator('li[data-state]:has-text("Chase a late payment")').filter({ hasNotText: /· USD / }).first();
   await firstCard.waitFor({ timeout: 180000 });
   await wait(1500);
   await cutEnd();
@@ -230,7 +231,9 @@ const INIT = `(() => {
     await click(p.getByRole('button', { name: /^Confirm: approve/ }));
     await cutBegin();
     await p.waitForFunction(() => !/Running in PayPal/.test(document.body.innerText), null, { timeout: 120000 }).catch(() => {});
-    await wait(1500);
+    // Wait until the grid itself shows the reminders as sent (the page refreshes after the approvals).
+    await p.waitForFunction(() => !/Reminder proposed/.test(document.querySelector('.ag-root')?.textContent ?? ''), null, { timeout: 30000 }).catch(() => {});
+    await wait(800);
     await cutEnd();
     await hl(panel);
     await say('✓ Sent in PayPal.', null, 2200);
@@ -241,7 +244,9 @@ const INIT = `(() => {
 
   // ---- Scene 5 — hand it over
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(700);
-  await navTo('Autopilot');
+  await clear();
+  await wait(1500); // let the grid's refresh after the approvals settle
+  await goto('/?base=USD&step=autopilot');
   const disc = p.locator('input[name="discounts"]');
   await disc.waitFor({ timeout: 60000 });
   await wait(800);
@@ -287,7 +292,7 @@ const INIT = `(() => {
   await cutEnd();
   const compared = p.getByText('Compared by Claude').first();
   await show(compared, 'start');
-  await say('Code prices four ways to bill it from this client\'s payment history.', null, 2800);
+  await say('Code prices four ways to bill it, with this client\'s payment history when there is one.', null, 3000);
   await show(create);
   await say('She picks one and approves it.', null, 1800);
   await click(create);
@@ -355,7 +360,7 @@ const INIT = `(() => {
   const evalMd = fs.readFileSync(require('path').join(__dirname, '..', 'agent-eval.md'), 'utf8');
   let runs = 0, props = 0, probs = 0;
   for (const m of evalMd.matchAll(/^\| [^|]+ \| (\d+) \| \d+ \| (\d+) \([^|]*\| [^|]*\| \*\*(\d+)\*\*/gm)) { runs += +m[1]; props += +m[2]; probs += +m[3]; }
-  await say(`Tested: ${runs} agent runs · ${props} proposals · ${probs} violations of our own checks.`, 'Every number from code. Every action approved — by her click, or her policy.', 5200);
+  await say(`Tested on ${runs} agent runs · ${props} proposals: every final output re-checked afterwards — ${probs} problems.`, 'Every number from code. Every action approved — by her click, or her policy.', 5200);
   await say('', null, 300);
   // Leave the app first: its 10-second refresh would otherwise replace the end card with an error page.
   await p.goto('about:blank');

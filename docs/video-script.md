@@ -36,7 +36,7 @@ placeholders. Captions are mandatory (burned in).
 
 | Screen | Narration | Number |
 |---|---|---|
-| Card **"Ask to be paid [7] weeks sooner, for 1% off"** · "about [6.4]% a year". | "For an invoice due in two months, it can ask to be paid weeks sooner for a small discount — a price for getting paid sooner, shown as a yearly rate. Code allows only offers at least 3 weeks sooner and at most 12% a year. She decides." | [6.4]% a year |
+| Card **"Ask to be paid [54] days sooner, for 1% off"** · "about [6.4]% a year". | "For an invoice due in two months, it can ask to be paid weeks sooner for a small discount — a price for getting paid sooner, shown as a yearly rate. Code allows only offers at least 3 weeks sooner and at most 12% a year. She decides." | [6.4]% a year |
 | **Approve: offer 1% off if paid by [Nov 1]** → "✓ Offer sent" · "Offer [FXA-2005-r33-EP]: [EUR 4,950.00] if paid by [Nov 1]. [FXA-2005-r33] is unchanged". | "The client gets a separate early-payment invoice for the lower amount. Her own invoice stays exactly as it is — if the client does not pay early, the offer simply lapses." | — |
 | Badge **"✓ Written by Claude, checked by code · 1 draft rejected … rewritten"**; **How the agent planned this** → `paypal.get_invoice` steps. | "Claude reads her invoices straight from PayPal through PayPal's MCP server. Code decides every number and checks every sentence; a draft that breaks a rule is rewritten before she sees it." | — |
 
