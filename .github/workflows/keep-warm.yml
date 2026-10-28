@@ -1,0 +1,25 @@
+# Keeps the hosted demo fast: opens the Today page for every home currency every 30 minutes, so the agent's daily
+# plan is already computed when a judge arrives (a cold currency waits about a minute for its plan). Public pages
+# only — no secrets. A cached page costs nothing; a cold one computes its plan once (about $0.01).
+name: keep-warm
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Open every currency
+        run: |
+          set -u
+          slow=0
+          for path in "/" "/?base=USD&step=today" "/?base=EUR&step=today" "/?base=GBP&step=today" "/?base=JPY&step=today" "/?base=KRW&step=today" "/try"; do
+            t=$(curl -s -o /dev/null -w "%{http_code} %{time_total}" --max-time 290 "https://fx-exposure-agent.vercel.app$path" || echo "000 290")
+            echo "$path $t"
+            code=${t%% *}; secs=${t##* }
+            if [ "$code" != "200" ]; then echo "::error::$path returned $code"; exit 1; fi
+            if [ "${secs%.*}" -ge 10 ]; then slow=$((slow+1)); fi
+          done
+          echo "cold pages warmed this run: $slow"
