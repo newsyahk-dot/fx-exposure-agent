@@ -96,7 +96,8 @@ const INIT = `(() => {
   await cutBegin();
   await goto('/?base=USD&step=today');
   const hero = p.locator('section[aria-label="Waiting to be paid"]');
-  const firstCard = p.locator('li[data-state]').first();
+  // A reminder on money from abroad (late home-currency invoices are chased too, but they are not this story).
+  const firstCard = p.locator('li[data-state]:has-text("Chase a late payment")').filter({ hasNotText: /· USD / }).first();
   await firstCard.waitFor({ timeout: 180000 });
   await wait(1500);
   await cutEnd();
@@ -241,7 +242,9 @@ const INIT = `(() => {
 
   // ---- Scene 5 — hand it over
   await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(700);
-  await navTo('Autopilot');
+  await clear();
+  await wait(1500); // let the grid's refresh after the approvals settle
+  await goto('/?base=USD&step=autopilot');
   const disc = p.locator('input[name="discounts"]');
   await disc.waitFor({ timeout: 60000 });
   await wait(800);
