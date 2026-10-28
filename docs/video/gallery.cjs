@@ -133,6 +133,28 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
     await shot('6-autopilot', 'PayPal tells the agent, and it looks on its own', 'A new invoice went out. The agent looked at it at once; the terms she just set stay hers — any offer waits for her click.');
   }
 
+  // 2b — an approved offer: a separate early-payment invoice, her own invoice unchanged
+  await goto('/?base=USD&step=today');
+  const offerCard = p.locator('li[data-state]:has-text("sooner, for")').first();
+  await offerCard.waitFor({ timeout: 180000 });
+  const ok = offerCard.getByRole('button', { name: /^Approve: offer/ });
+  if (await ok.count()) {
+    await ok.click();
+    await offerCard.getByText(/Offer sent in PayPal/).waitFor({ timeout: 90000 }).catch(() => {});
+    await wait(800);
+    await topAt(offerCard, 120);
+    await hl(offerCard.locator('p', { hasText: /is unchanged/ }).first());
+    await shot('2b-offer', 'An early-payment offer that is really conditional', 'The client gets a separate PayPal invoice for the lower amount, due sooner. Her invoice never changes; unpaid, the offer lapses.');
+  }
+
+  // 9 — every invoice in one AG Grid
+  await goto('/?base=USD&step=exposure');
+  const grid = p.locator('.ag-root').first();
+  await grid.waitFor({ timeout: 120000 });
+  await wait(1500);
+  await topAt(p.getByRole('group', { name: 'Quick views' }), 70);
+  await shot('9-grid', 'Every invoice in one AG Grid', 'Ranked by what it puts at risk, with what the agent is doing and the offers out. Quick views, live updates from PayPal, CSV.');
+
   // Compose: headline bar + screenshot, 1500×1000.
   const comp = await b.newPage({ viewport: { width: W, height: HEAD + SHOT_H } });
   for (const s of shots) {

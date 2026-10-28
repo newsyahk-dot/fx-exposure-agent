@@ -90,7 +90,7 @@ const INIT = `(() => {
       <div style="font-size:22px;margin-top:20px;opacity:.6">IPSE, late payment research, 2022</div>
       <div style="font-size:30px;margin-top:44px;opacity:.92">When the client is abroad, the exchange rate keeps moving while she waits.</div>
     </div></body></html>`);
-  await wait(6500);
+  await wait(4800);
 
   // ---- Scene 1 — paid, once
   await cutBegin();
@@ -157,7 +157,21 @@ const INIT = `(() => {
   const pitch = offer.locator('p').nth(2);
   await hl(offer);
   const annual = ((await offer.innerText()).match(/about ([\d.]+)% a year/) || [, ''])[1];
-  await say('For an invoice due in two months, it can ask to be paid weeks sooner for a small discount.', `A price for getting paid sooner${annual ? ` — about ${annual}% a year here` : ''}. Code allows only offers at least 3 weeks sooner and at most 12% a year. She decides.`, 7000);
+  await say('For an invoice due in two months, it can ask to be paid weeks sooner for a small discount.', `A price for getting paid sooner${annual ? ` — about ${annual}% a year here` : ''}. Code allows only offers at least 3 weeks sooner and at most 12% a year. She decides.`, 6500);
+  const approveOffer = offer.getByRole('button', { name: /^Approve: offer/ });
+  await show(approveOffer);
+  await click(approveOffer);
+  await cutBegin();
+  await offer.getByText(/Offer sent in PayPal/).waitFor({ timeout: 90000 }).catch(() => log('offer sent not seen'));
+  await wait(800);
+  await cutEnd();
+  const sentNote = offer.locator('p', { hasText: /is unchanged/ }).first();
+  if (await sentNote.count()) {
+    await show(sentNote);
+    await hl(sentNote);
+    await say('The client gets a separate early-payment invoice for the lower amount.', 'Her own invoice stays exactly as it is — if the client does not pay early, the offer simply lapses.', 5600);
+    await hl(sentNote, false);
+  }
   await hl(offer, false);
   const badgeCheck = offer.getByText(/Written by Claude, checked by code/);
   await hl(badgeCheck);
@@ -225,7 +239,7 @@ const INIT = `(() => {
   const textBox = p.locator('textarea[name="text"]');
   await textBox.waitFor({ timeout: 60000 });
   await wait(600);
-  await say('Next, she describes a new invoice in one sentence.', null, 2200);
+  await say('Next, she describes a new invoice in one sentence.', null, 1800);
   await click(p.getByRole('button', { name: /^Bill Sakura Games ¥480,000/ }));
   await wait(600);
   await click(p.getByRole('button', { name: 'Read my request and compare' }));
@@ -236,7 +250,7 @@ const INIT = `(() => {
   await cutEnd();
   const compared = p.getByText('Compared by Claude').first();
   await show(compared, 'start');
-  await say('Code prices four ways to bill it from this client\'s payment history.', null, 3400);
+  await say('Code prices four ways to bill it from this client\'s payment history.', null, 2800);
   await show(create);
   await say('She picks one and approves it.', null, 1800);
   await click(create);
@@ -273,6 +287,22 @@ const INIT = `(() => {
     await say('PayPal tells the agent a new invoice went out. It looks at it on its own —', 'and leaves the terms she just chose alone: any offer on it waits for her click.', 6500);
     await hl(sect, false);
   }
+
+  // ---- Scene 5b — every invoice in one AG Grid
+  await clear();
+  await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await wait(600);
+  await navTo('Where it sits');
+  const grid = p.locator('.ag-root').first();
+  await cutBegin();
+  await grid.waitFor({ timeout: 120000 });
+  await wait(1200);
+  await cutEnd();
+  await show(grid, 'center');
+  await say('Every invoice in one grid: what is at risk, what the agent is doing, what is out.', null, 3600);
+  const offersOut = p.getByRole('button', { name: /^Offers out/ });
+  if (await offersOut.count()) { await click(offersOut); await wait(600); await say('One click: the early-payment offers that are out.', null, 2600); }
+  const paidToday = p.getByRole('button', { name: /^Paid today/ });
+  if (await paidToday.count()) { await click(paidToday); await wait(600); await say('And what was paid today.', null, 2200); }
 
   // ---- Scene 6 — any seller can try it on their own invoice list
   await goto('/try');

@@ -37,6 +37,7 @@ placeholders. Captions are mandatory (burned in).
 | Screen | Narration | Number |
 |---|---|---|
 | Card **"Ask to be paid [7] weeks sooner, for 1% off"** · "about [6.4]% a year". | "For an invoice due in two months, it can ask to be paid weeks sooner for a small discount — a price for getting paid sooner, shown as a yearly rate. Code allows only offers at least 3 weeks sooner and at most 12% a year. She decides." | [6.4]% a year |
+| **Approve: offer 1% off if paid by [Nov 1]** → "✓ Offer sent" · "Offer [FXA-2005-r33-EP]: [EUR 4,950.00] if paid by [Nov 1]. [FXA-2005-r33] is unchanged". | "The client gets a separate early-payment invoice for the lower amount. Her own invoice stays exactly as it is — if the client does not pay early, the offer simply lapses." | — |
 | Badge **"✓ Written by Claude, checked by code · 1 draft rejected … rewritten"**; **How the agent planned this** → `paypal.get_invoice` steps. | "Claude reads her invoices straight from PayPal through PayPal's MCP server. Code decides every number and checks every sentence; a draft that breaks a rule is rewritten before she sees it." | — |
 
 ## 4 · 1:25–1:45 — Ask in plain words
@@ -50,6 +51,12 @@ Autopilot: discounts up to 1% → **Approve this standing policy** → **Run aut
 what it left for her). Next invoice: "Bill Sakura Games ¥480,000 …, net 45" → compare → **Approve: create and send**.
 About a minute later, **New since today's plan**: PayPal told the agent, it looked at the new invoice on its own, and it
 leaves the terms she just chose alone — any offer on it waits for her click.
+
+## 5b · Every invoice in one AG Grid
+
+**Where it sits**: the grid ranked by what is at risk, with "Agent today" and the "Offer" column → click **Offers out**,
+then **Paid today** (the paid invoice stays, greyed). "Every invoice in one grid: what is at risk, what the agent is
+doing, what is out."
 
 ## 6 · 2:20–2:40 — Try it with your own invoices
 
