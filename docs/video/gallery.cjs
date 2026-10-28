@@ -168,7 +168,7 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
   // 9b — tick the invoices with a proposal waiting and approve them together (shown at the confirmation, not run)
   await p.getByRole('button', { name: /^All/ }).click().catch(() => {});
   const boxes = p.locator('.ag-row:not(.ag-row-pinned) .ag-selection-checkbox input:visible');
-  for (let i = 0; i < Math.min(4, await boxes.count()); i++) await boxes.nth(i).check({ force: true });
+  for (let i = 0; i < Math.min(4, await boxes.count()); i++) await boxes.nth(i).click({ force: true }).catch(() => {});
   const sel = p.getByRole('button', { name: /^Approve selected/ });
   if (await sel.count()) {
     await sel.click();
