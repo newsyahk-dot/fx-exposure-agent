@@ -71,8 +71,11 @@ agent proposes — late invoices count as not yet in, a reminded invoice is assu
 new due date, net of the discount. The headline line says how much would arrive within two weeks either way. It is
 labelled a scenario, not a promise.
 
-**Where the risk sits.** Every open invoice in one grid, ranked by what it puts at risk, with what the agent is doing
-about each one — searchable, sortable, and downloadable as CSV.
+**Where the risk sits (AG Grid).** Every open invoice in one grid, ranked by what it puts at risk, with what the
+agent is doing about each one and any early-payment offer that is out. One click narrows it to what needs attention —
+Late, Agent acting, Offers out, Paid today — and the total row follows. When the client pays, PayPal's webhook updates
+the book and the changed cells flash; the paid invoice stays in the list, greyed, so the seller sees what just happened.
+Searchable, sortable, and downloadable as CSV.
 
 **Evidence, not forecasts.** Two years of ECB rates show how far each currency moved for money that waited 7 to 90
 days, and replay the seller's open book: paid the way the agent proposes, it would have moved in a narrower range
@@ -119,7 +122,9 @@ by side; the seller decides.
   Claude with the reason and is rewritten; the seller can see how many were.
 - **Next.js 16 on Vercel**: server actions re-check everything before calling PayPal; a shared cache keeps one agent
   plan per day and currency; Vercel Cron warms the plans, resets the demo book nightly and runs the autopilot.
-- **AG Grid Community** for the invoice grid; **ECB reference rates via Frankfurter** for exchange rates.
+- **AG Grid Community** for the invoice grid: an external filter for the quick views, a pinned total row that follows
+  the filter, cell change flash on PayPal updates, row class rules, custom cell renderers (risk bars, PayPal links),
+  quick-filter search and CSV export. **ECB reference rates via Frankfurter** for exchange rates.
 
 ### Challenges I ran into
 
