@@ -61,6 +61,11 @@ async function runWithinPolicy(run: AgentRun, inputs: BookInputs, view: BookView
       left.push({ invoiceNumber: p.invoiceNumber, why: inv && /PAID/.test(inv.status) ? "already paid" : "no longer open" });
       continue;
     }
+    // Already done since the plan (an approval, an earlier run) or no longer eligible: nothing to run, not a refusal.
+    if (!cand.eligible.includes(p.kind)) {
+      left.push({ invoiceNumber: p.invoiceNumber, why: "already done since the plan, or no longer eligible" });
+      continue;
+    }
     const r = await executeAction(
       pp,
       cand,
