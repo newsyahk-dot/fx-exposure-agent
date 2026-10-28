@@ -1,8 +1,10 @@
 "use client";
 
-// Every open invoice in one AG Grid (Community): ranked by what it puts at risk, with today's agent status,
-// sortable by any column, searchable, a pinned total row, and a CSV download for the seller's
-// own records. Colours come from the page's CSS variables, so the grid follows light and dark mode.
+// Every open invoice in one AG Grid (Community): ranked by what it puts at risk, with today's agent status and any
+// early-payment offer, sortable by any column, searchable, quick views (late / agent acting / offers out) as an
+// external filter, a pinned total row that follows the filter, cells that flash when PayPal reports a change (the
+// page refreshes every 10 s), and a CSV download for the seller's own records. Invoices paid today stay listed
+// (greyed) so the change is visible. Colours come from the page's CSS variables, so the grid follows light and dark mode.
 
 import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef, type GridApi, type ICellRendererParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
@@ -25,10 +27,29 @@ const theme = themeQuartz.withParams({
 
 type TotalRow = Partial<InvoiceRow> & { number: string };
 
+// Quick views, applied as an AG Grid external filter.
+const VIEWS = {
+  all: { label: "All", pass: () => true },
+  late: { label: "Late", pass: (r: InvoiceRow) => !r.paidToday && r.daysToDue < 0 },
+  acting: { label: "Agent acting", pass: (r: InvoiceRow) => /proposed|sent/.test(r.agent) },
+  offers: { label: "Offers out", pass: (r: InvoiceRow) => r.offerState === "open" },
+  paid: { label: "Paid today", pass: (r: InvoiceRow) => r.paidToday },
+} as const;
+type View = keyof typeof VIEWS;
+
 export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; base: string; clientUrls: Record<string, string> }) {
   const api = useRef<GridApi<InvoiceRow> | null>(null);
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<View>("all");
+  const viewRef = useRef<View>("all"); // read by the grid's filter callbacks
+  const pickView = (v: View) => {
+    viewRef.current = v;
+    setView(v);
+    api.current?.onFilterChanged();
+  };
+  const counts = Object.fromEntries((Object.keys(VIEWS) as View[]).map((v) => [v, rows.filter(VIEWS[v].pass).length])) as Record<View, number>;
   const maxRisk = Math.max(1, ...rows.map((r) => r.atRisk));
+  const hasOffers = rows.some((r) => r.offer);
   const fmtHome = useMemo(() => new Intl.NumberFormat("en-US", { style: "currency", currency: base, maximumFractionDigits: 0 }), [base]);
   const home = (v: number | null | undefined) => (v == null ? "" : fmtHome.format(v));
 
@@ -38,7 +59,7 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
         field: "number",
         headerName: "Invoice",
         pinned: "left",
-        minWidth: 140,
+        minWidth: 152,
         // The invoice number opens PayPal's client view (a separate column did not fit at desktop width).
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.data?.id && clientUrls[p.data.id] ? (
@@ -49,27 +70,28 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
             p.value
           ),
       },
-      { field: "client", headerName: "Client", minWidth: 128 },
+      { field: "client", headerName: "Client", minWidth: 100, tooltipField: "client" },
       { field: "currency", headerName: "Ccy", hide: true }, // in "Still owed"; kept for search
       {
         field: "amount",
         headerName: "Still owed",
-        minWidth: 130,
+        minWidth: 128,
         type: "rightAligned",
+        enableCellChangeFlash: true,
         valueFormatter: (p) =>
           p.data?.currency ? new Intl.NumberFormat("en-US", { style: "currency", currency: p.data.currency, currencyDisplay: "code" }).format(p.value) : "",
       },
       {
         field: "daysToDue",
         headerName: "Due",
-        minWidth: 128,
+        minWidth: 104,
         valueFormatter: (p) => (p.value == null ? "" : p.value < 0 ? `${-p.value} days late` : p.value === 0 ? "today" : `in ${p.value} days`),
         cellClassRules: { [styles.gridLate]: (p) => (p.value ?? 0) < 0 },
       },
       {
         field: "atRisk",
         headerName: "At risk ±3%",
-        minWidth: 132,
+        minWidth: 104,
         sort: "desc",
         valueFormatter: (p) => (p.value ? `±${home(p.value)}` : "none"), // used by the CSV export
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
@@ -84,19 +106,40 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
             <span className={styles.muted}>none</span>
           ),
       },
-      { field: "agent", headerName: "Agent today", minWidth: 176, cellClassRules: { [styles.gridActive]: (p) => /proposed|sent|Paid/.test(p.value ?? "") } },
-      { field: "value", headerName: `In ${base}`, headerTooltip: `What it is worth in ${base} at today's ECB rates`, minWidth: 96, type: "rightAligned", valueFormatter: (p) => home(p.value) },
+      {
+        field: "agent",
+        headerName: "Agent today",
+        minWidth: 168,
+        tooltipField: "agent",
+        enableCellChangeFlash: true,
+        cellClassRules: { [styles.gridActive]: (p) => /proposed|sent|Paid/.test(p.value ?? "") },
+      },
+      {
+        field: "offer",
+        headerName: "Offer",
+        headerTooltip: "A separate PayPal invoice for the discounted amount; it lapses after its date and the original applies",
+        minWidth: 128,
+        hide: !hasOffers,
+        tooltipField: "offer",
+        enableCellChangeFlash: true,
+        valueFormatter: (p) =>
+          p.node?.rowPinned || !p.value
+            ? ""
+            : `${p.value}${p.data?.offerState === "paid" ? " · paid" : p.data?.offerState === "expired" ? " · lapsed" : p.data?.offerState === "closed" ? " · closed" : ""}`,
+      },
+      { field: "value", headerName: `In ${base}`, headerTooltip: `What it is worth in ${base} at today's ECB rates`, minWidth: 88, type: "rightAligned", valueFormatter: (p) => home(p.value) },
       {
         field: "swing",
         headerName: "Swing",
         headerTooltip: "One standard deviation of the value until the due date — a size of uncertainty, not a forecast",
-        minWidth: 112,
+        minWidth: 92,
+        hide: true, // no room on screen; included in the CSV download
         type: "rightAligned",
         valueFormatter: (p) => (p.node?.rowPinned ? "" : p.value == null ? "overdue" : p.value === 0 ? "none" : `±${home(p.value)}`),
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [base, maxRisk, clientUrls],
+    [base, maxRisk, clientUrls, hasOffers],
   );
 
   // Totals follow the filter: what is at risk among the invoices currently shown. The filtered list is tied to the
@@ -112,6 +155,15 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
   return (
     <div className={styles.gridWrap}>
       <div className={styles.gridTools}>
+        <div className={styles.examples} role="group" aria-label="Quick views">
+          {(Object.keys(VIEWS) as View[]).map((v) =>
+            v !== "all" && counts[v] === 0 ? null : (
+              <button key={v} type="button" className={styles.chip} aria-pressed={view === v} onClick={() => pickView(v)}>
+                {VIEWS[v].label} · {counts[v]}
+              </button>
+            ),
+          )}
+        </div>
         <input
           type="search"
           placeholder="Search invoices, clients, currencies…"
@@ -122,7 +174,7 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
         <button
           type="button"
           className={styles.secondaryButton}
-          onClick={() => api.current?.exportDataAsCsv({ fileName: `open-invoices-${base}.csv`, skipPinnedBottom: false })}
+          onClick={() => api.current?.exportDataAsCsv({ fileName: `open-invoices-${base}.csv`, skipPinnedBottom: false, allColumns: true })}
         >
           Download CSV
         </button>
@@ -138,6 +190,9 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
           getRowId={(p) => p.data.id ?? p.data.number}
           onGridReady={(e) => (api.current = e.api)}
           onFilterChanged={refreshTotals}
+          isExternalFilterPresent={() => viewRef.current !== "all"}
+          doesExternalFilterPass={(n) => !!n.data && VIEWS[viewRef.current].pass(n.data)}
+          rowClassRules={{ [styles.gridPaid]: (p) => !!p.data?.paidToday }}
           tooltipShowDelay={300}
           includeHiddenColumnsInQuickFilter
           autoSizeStrategy={{ type: "fitGridWidth" }}
@@ -147,7 +202,8 @@ export function InvoiceGrid({ rows, base, clientUrls }: { rows: InvoiceRow[]; ba
   );
 }
 
-function total(rows: InvoiceRow[]): TotalRow {
+function total(all: InvoiceRow[]): TotalRow {
+  const rows = all.filter((r) => !r.paidToday);
   return {
     number: `${rows.length} invoice${rows.length === 1 ? "" : "s"}`,
     value: rows.reduce((s, r) => s + r.value, 0),

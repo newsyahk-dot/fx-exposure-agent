@@ -59,6 +59,16 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   trade-credit formula percent / (100 − percent) × 365 / days sooner) in `priceDiscount` and the propose tool; cards show
   cost, days sooner and the yearly rate; the swing stays as information. The default autopilot policy is reminders only.
   Change the rule in code, prompt, eval and this line together.
+- **Conditional offer = a second invoice** (2026-10-28, `src/lib/offer-invoice.ts`, `offer-settle.ts`): PayPal's
+  conditional-rules endpoint still answers HTTP 500 (re-tested 2026-10-28), and editing the sent invoice made the discount
+  unconditional (a blind review called it the agent undercutting the seller). Now approving an offer sends a separate
+  invoice `<original>-EP` (memo `fxa-offer: <originalId> <pct>`) for the discounted amount, due on the earlier date; the
+  original never changes (only its memo logs the action). The book (`attachOffers`) hides offer invoices and attaches
+  them to their original: paid → original shown as paid with the offer's payment; past its date → lapsed, original
+  applies. PayPal-side: the `INVOICING.INVOICE.PAID` webhook for an offer records the original as paid
+  (`settleOriginal`); the autopilot cron settles/cancels (`reconcileOffers`); "Simulate client payment" pays an open
+  offer instead of the original; the demo reset closes offers too. Verified in the sandbox with
+  `scripts/check-actions.mts` (EUR and JPY: offer SENT, original unchanged, paying the offer → original MARKED_AS_PAID).
 - **New invoices** (`src/lib/invoice-plan.ts`): Claude only reads the seller's sentence into fields and writes the
   comparison (same checks, never says which option to pick). Code computes every option from the client's payment
   history and ECB rates; the create action re-validates and recomputes before calling PayPal. No KRW invoices (PayPal).

@@ -10,6 +10,7 @@
 import demo from "../data/demo-snapshot.json";
 import type { AgentRun } from "./agent";
 import { ecbBefore, fetchEcbQuotes, type EcbQuotes } from "./fx";
+import { attachOffers, isOfferNumber, originalNumber } from "./offer-invoice";
 import { PayPalClient, toInvoice, type PPInvoice } from "./paypal";
 import { DEFAULT_POLICY, parsePolicy, POLICY_TEMPLATE, type Policy } from "./policy";
 import { addDays, parseSeedNumber } from "./seed-data";
@@ -79,7 +80,7 @@ export async function loadLiveInputs(day?: string): Promise<BookInputs> {
     if (!("invoice" in r)) skipped.push(r.skipped);
     else invoices.push(r.invoice);
   }
-  return { source: "live", asOf, fetchedAt: now.toISOString(), ecb, invoices, skipped, archived, policy, startedAt };
+  return { source: "live", asOf, fetchedAt: now.toISOString(), ecb, invoices: attachOffers(invoices, asOf), skipped, archived, policy, startedAt };
 }
 
 // Demo housekeeping. The sandbox account is reset by seeding a new generation of demo invoices
@@ -101,12 +102,18 @@ function retired(raw: PPInvoice[]): (x: PPInvoice) => boolean {
   const newest = Math.max(0, ...raw.map((x) => parseSeedNumber(x.detail.invoice_number)?.gen ?? 0));
   // Invoices the new-invoice assistant made before the latest demo reset belong to an older story too.
   const resetAt = bookStartedAt(raw);
-  return (x) => {
+  const isRetired = (x: PPInvoice): boolean => {
     const n = x.detail.invoice_number ?? "";
+    // An early-payment offer goes with its original (src/lib/offer-invoice.ts).
+    if (isOfferNumber(n)) {
+      const orig = raw.find((y) => y.detail.invoice_number === originalNumber(n));
+      return !orig || isRetired(orig) || /^fxa-agent:\s+archived\b/m.test(x.detail.memo ?? "");
+    }
     const seed = parseSeedNumber(n);
     const oldAssistant = /^FXA-N\d{6}-/.test(n) && !!resetAt && (x.detail.metadata?.create_time ?? "") < resetAt;
     return (seed !== null && seed.gen < newest) || oldAssistant || n.startsWith("CHK-") || n.startsWith("PROBE-") || /^fxa-agent:\s+archived\b/m.test(x.detail.memo ?? "");
   };
+  return isRetired;
 }
 
 // A missing or unreadable template means the default policy, which is off.

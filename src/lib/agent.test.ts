@@ -61,7 +61,7 @@ describe("what code lets the agent do", () => {
   it("never offers a second discount, nor one on an invoice due soon", () => {
     const far = SEED_BOOK.find((i) => i.number === "FXA-1004")!;
     const taken = { ...far, agentLog: [{ kind: "early_pay_discount" as const, at: "2026-10-20T00:00:00Z" }] };
-    expect(inputFor("KRW", [taken]).candidates[0].notEligible[0]).toMatch(/already applied/);
+    expect(inputFor("KRW", [taken]).candidates[0].notEligible[0]).toMatch(/already sent/);
     const soon = SEED_BOOK.find((i) => i.number === "FXA-2003")!;
     expect(inputFor("KRW", [soon]).candidates[0].notEligible[0]).toMatch(/too soon/);
   });

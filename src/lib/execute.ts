@@ -4,6 +4,8 @@
 
 import { DISCOUNT_PCTS, priceDiscount, WINDOW_DAYS, type Candidate } from "./agent";
 import { checkClientText } from "./checks";
+import { money } from "./format";
+import { offerAmount } from "./offer-invoice";
 import { PayPalClient, PayPalError } from "./paypal";
 
 export type ActionRequest =
@@ -41,11 +43,35 @@ export async function executeAction(
     if (!(DISCOUNT_PCTS as readonly number[]).includes(percent) || !Number.isInteger(withinDays) || withinDays < WINDOW_DAYS.min || withinDays > WINDOW_DAYS.max)
       return { ok: false, message: "Those discount terms are outside the allowed range." };
     const p = priceDiscount(cand, o.base, o.asOf, percent, withinDays);
-    const why = checkClientText(req.clientNote, `${cand.facts} ${p.facts}`, { maxLen: 300, allowOffer: true, unconditional: true });
-    if (why) return { ok: false, message: `Not applied — the client note failed a check: ${why}.` };
-    await pp.offerEarlyPaymentByUpdate(cand.invoiceId, percent, p.newDueDate, req.clientNote, o.now, o.auto);
-    return { ok: true, message: `${percent}% discount applied to ${cand.invoiceNumber}; now due ${p.newDueDate}. The client has been e-mailed.` };
+    const why = checkClientText(req.clientNote, `${cand.facts} ${p.facts}`, { maxLen: 300, allowOffer: true });
+    if (why) return { ok: false, message: `Not sent — the client note failed a check: ${why}.` };
+    // A separate offer invoice; the seller's invoice stays as it is (src/lib/offer-invoice.ts).
+    const amount = offerAmount(cand.amount, percent, cand.currency);
+    const offer = await pp.sendEarlyPaymentOffer(cand.invoiceId, {
+      percent,
+      amount,
+      dueDate: p.newDueDate,
+      note: offerNote(req.clientNote, cand, amount, p.newDueDate),
+      at: o.now,
+      auto: o.auto,
+    });
+    return {
+      ok: true,
+      message: `Offer sent to the client: ${money(cand.currency, amount)} if paid by ${p.newDueDate} (invoice ${offer.detail?.invoice_number ?? "sent"}). ${cand.invoiceNumber} stays as it is.`,
+    };
   } catch (e) {
     return { ok: false, message: `PayPal refused: ${errorText(e)}` };
   }
+}
+
+// The client-facing note on the offer invoice: the agent's checked sentence, then the terms in code's own words.
+export function offerNote(clientNote: string, cand: Candidate, amount: number, dueDate: string): string {
+  return [
+    clientNote.trim(),
+    `Optional early-payment offer for invoice ${cand.invoiceNumber} (${money(cand.currency, cand.amount)}, due ${cand.dueDate}). ` +
+      `Pay this invoice (${money(cand.currency, amount)}) by ${dueDate} and invoice ${cand.invoiceNumber} is settled in full. ` +
+      `After ${dueDate} this offer lapses; please pay invoice ${cand.invoiceNumber} as usual.`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
