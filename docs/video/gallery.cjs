@@ -157,9 +157,11 @@ const W = 1500, SHOT_H = 860, HEAD = 140;
   // 9c — open one late invoice: the client's past payments next to the agent's draft, approve just that one (not run)
   await p.getByRole('button', { name: /^Late/ }).click().catch(() => {});
   await wait(600);
-  const open = p.locator('button[aria-label^="Open details for"]');
+  // Prefer a late invoice whose client has paid before, so the history half has something in it.
+  const withHistory = p.locator('.ag-row', { hasText: /pays / }).locator('button[aria-label^="Open details for"]');
+  const open = (await withHistory.count()) ? withHistory : p.locator('button[aria-label^="Open details for"]');
   if (await open.count()) {
-    await open.nth(Math.min(2, (await open.count()) - 1)).click();
+    await open.first().click();
     await wait(800);
     await topAt(p.getByRole('group', { name: 'Quick views' }), 70);
     await shot('9c-grid-detail', 'Open an invoice: how this client pays, and the draft', 'A detail row under the invoice: the client\'s past payments next to the agent\'s draft, with a button to approve just that one.');
