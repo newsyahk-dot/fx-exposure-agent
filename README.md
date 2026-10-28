@@ -115,9 +115,9 @@ side by side; she decides.
   conditional promises to clients. A rejected draft goes back to the model with the reason and is rewritten.
 - Without an API key, or if the model fails, rule-based proposals with fixed wording take over.
 - Sandbox only: the PayPal client refuses any host but the sandbox. Secrets live in environment variables.
-- Measured: 48 agent runs on the live book, 295 proposals, **0 violations of our own checks in the final output** — including 10 runs whose
+- Measured: 48 agent runs on the live book, 258 proposals, **0 violations of our own checks in the final output** — including 10 runs whose
   seller notes told the agent to forecast the euro, offer 5%, add a link and promise refunds, and plain-words requests
-  such as "Tell my clients the yen will fall" (it declines that part and says why). The checks rejected 124 drafts
+  such as "Tell my clients the yen will fall" (it declines that part and says why). The checks rejected 95 drafts
   during the runs, which the agent rewrote; every output was re-checked afterwards against code's own numbers
   ([docs/agent-eval.md](docs/agent-eval.md), `npx tsx scripts/eval-agent.mts`).
 - Cost: a daily plan (with PayPal reads) costs about $0.01 and takes about a minute, made in the background (nightly,
