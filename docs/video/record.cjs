@@ -110,7 +110,7 @@ const INIT = `(() => {
   await hl(hero, false);
   await show(firstCard, 'start');
   await p.mouse.wheel(0, -120); await wait(500);
-  await say('Every morning an AI agent goes through her invoices and proposes the day\'s work.', 'Here: chase a late payment, with the e-mail it wrote for this client.');
+  await say('Every morning an AI agent goes through her invoices and proposes the day\'s work.', null);
   const approve = firstCard.getByRole('button', { name: /Approve: send reminder/ });
   await show(approve);
   await say('One click, and the reminder goes out through PayPal.', null, 1800);
@@ -131,15 +131,14 @@ const INIT = `(() => {
   const badge = hero.locator('[role=status]');
   await badge.waitFor({ timeout: 15000 }).catch(() => log('badge not seen'));
   await hl(badge);
-  await say(`Paid: ${collected || 'the payment'} collected.`, 'What she is still waiting for goes down at once.', 4200);
+  await say(`Paid: ${collected || 'the payment'} collected.`, 'What she is still waiting for goes down at once.', 3400);
   await hl(badge, false);
 
   // ---- Scene 2 — why it matters
   const shockChip = hero.getByText(/if rates move/);
   const shock = ((await shockChip.innerText()).match(/±\$[\d,]+/) || ['±$900'])[0];
   await hl(shockChip);
-  await say('While she waits, the exchange rate keeps moving.', 'Until foreign money arrives, the rate decides what she actually earns.');
-  await say(`A 3% move either way is about ${shock} on what she's still owed.`, 'Up or down, equally likely — the size of the risk, never a forecast.');
+  await say(`Until foreign money arrives, the rate decides what she earns: a 3% move is about ${shock}.`, 'Up or down, equally likely — the size of the risk, never a forecast.');
   await hl(shockChip, false);
   await say('Banks hedge this for big companies.', 'This app never predicts rates — it helps a one-person business get paid sooner.', 3600);
   const timeline = p.locator('figure:has-text("When the money comes in")').first();
@@ -175,7 +174,7 @@ const INIT = `(() => {
   await hl(offer, false);
   const badgeCheck = offer.getByText(/Written by Claude, checked by code/);
   await hl(badgeCheck);
-  await say('Claude writes every proposal. Code checks it before she sees it:', 'only numbers from the facts, no forecasts, no advice, no links — a draft that fails is sent back and rewritten.');
+  await wait(400);
   await hl(badgeCheck, false);
   const planned = p.locator('details:has(> summary:text("How the agent planned this"))');
   await show(planned.locator('summary').first());
@@ -185,7 +184,7 @@ const INIT = `(() => {
   if (await toolLog.count()) { await show(toolLog); await click(toolLog); await wait(500); }
   const firstRead = planned.locator('li:has(code:text-matches("^paypal\\\\."))').first();
   if (await firstRead.count()) { await show(firstRead); await hl(firstRead); }
-  await say('Claude reads her invoices straight from PayPal, through PayPal\'s own MCP server (read-only tools).', 'Code decides every number; every change still goes through her approval.');
+  await say('Claude reads her invoices from PayPal\'s own MCP server (read-only). Code decides every number and checks every sentence;', 'a draft that fails is sent back and rewritten before she sees it.', 6500);
   if (await firstRead.count()) await hl(firstRead, false);
 
   // ---- Scene 4 — ask in plain words
@@ -321,7 +320,7 @@ const INIT = `(() => {
   await show(ownHero, 'start');
   await say('What is waiting, what is late, and the exchange-rate risk — by currency.', null, 3800);
   const ownTimeline = ownHero.locator('figure').first();
-  if (await ownTimeline.count()) { await show(ownTimeline); await hl(ownTimeline); await say('And what the agent would do today.', null, 3200); await hl(ownTimeline, false); }
+  if (await ownTimeline.count()) { await show(ownTimeline); await hl(ownTimeline); await wait(1600); await hl(ownTimeline, false); }
   await cutBegin();
   await goto('/?base=USD&step=today');
   await p.locator('li[data-state]').first().waitFor({ timeout: 180000 }).catch(() => {});
