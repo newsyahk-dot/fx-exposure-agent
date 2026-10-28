@@ -8,8 +8,8 @@ const ecb = syntheticEcb();
 describe("what the wait already did", () => {
   it("values each recent foreign payment at the invoice-day and pay-day rates", () => {
     const t = timingEffect(SEED_BOOK, ecb, "KRW", DAY, 90);
-    // Paid in the last 90 days: FXA-1005, 1006 (part), 2004, 2006, 3004, 4003 (18 days late).
-    expect(t.rows.map((r) => r.invoiceNumber).sort()).toEqual(["FXA-1005", "FXA-1006", "FXA-2004", "FXA-2006", "FXA-3004", "FXA-4003"]);
+    // Paid in the last 90 days: FXA-1005, 1006 (part), 2004, 2006, 2007 (11 days late), 3004, 3006 (6 days late), 4003 (18 days late).
+    expect(t.rows.map((r) => r.invoiceNumber).sort()).toEqual(["FXA-1005", "FXA-1006", "FXA-2004", "FXA-2006", "FXA-2007", "FXA-3004", "FXA-3006", "FXA-4003"]);
     const r = t.rows.find((x) => x.invoiceNumber === "FXA-2006")!;
     const a = rateOn(ecb, "KRW", "EUR", r.invoiceDate)!.rate;
     const b = rateOn(ecb, "KRW", "EUR", r.paidDate)!.rate;

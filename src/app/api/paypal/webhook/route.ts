@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   if (!(await verifyWebhook(pp, req.headers, event, id))) return new Response("unverified", { status: 401 });
   if (isInvoiceEvent(event.event_type)) revalidateTag(BOOK_TAG, { expire: 0 });
   // A newly sent invoice: let the agent look at it. Demo invoices re-created by a reset are skipped (the reset plans
-  // every currency itself), so a reset does not start 22 agent runs.
+  // every currency itself), so a reset does not start 24 agent runs.
   const number = event.resource?.invoice?.detail?.invoice_number ?? event.resource?.detail?.invoice_number;
   // The client paid an early-payment offer: record its original as settled, so PayPal does not ask for it again.
   const invoiceId = event.resource?.invoice?.id ?? event.resource?.id;

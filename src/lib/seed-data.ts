@@ -1,5 +1,5 @@
 // Demo book for the PayPal sandbox seller account: a US-based freelance designer paid through PayPal by clients
-// in the US, the euro area, the UK and Japan — 22 invoices in USD, EUR, GBP and JPY.
+// in the US, the euro area, the UK and Japan — 24 invoices in USD, EUR, GBP and JPY.
 //
 // Dates are offsets in days from the seeding day, so the shape of the book (what is overdue, what falls
 // in which week) is the same whenever it is re-seeded. `scripts/seed-sandbox.ts` turns this into
@@ -40,6 +40,7 @@ export const SEED_INVOICES: SeedInvoice[] = [
   { number: "FXA-2004", currency: "EUR", amount: 3200, item: "Packaging design", client: "Studio Verde", issueOffset: -69, dueOffset: -39, outcome: { kind: "paid", paidOffset: -41 }, why: "paid on time" },
   { number: "FXA-2005", currency: "EUR", amount: 5000, item: "Annual design support", client: "Kleinfeld GmbH", issueOffset: -8, dueOffset: 59, outcome: { kind: "open" }, why: "large, far out -> early-pay candidate" },
   { number: "FXA-2006", currency: "EUR", amount: 1200, item: "Newsletter templates", client: "Studio Verde", issueOffset: -33, dueOffset: -3, outcome: { kind: "paid", paidOffset: -1 }, why: "paid a little late" },
+  { number: "FXA-2007", currency: "EUR", amount: 1400, item: "Brochure layout", client: "Atelier Moreau", issueOffset: -90, dueOffset: -60, outcome: { kind: "paid", paidOffset: -49 }, why: "paid 11 days late -> payment history" },
   // GBP — UK clients
   { number: "FXA-4001", currency: "GBP", amount: 2100, item: "Editorial illustrations", client: "Hollis & Grey", issueOffset: -45, dueOffset: -15, outcome: { kind: "open" }, why: "overdue -> reminder" },
   { number: "FXA-4002", currency: "GBP", amount: 3800, item: "Book cover series", client: "Marlow Press", issueOffset: -10, dueOffset: 46, outcome: { kind: "open" }, why: "large, far out -> early-pay candidate" },
@@ -51,6 +52,7 @@ export const SEED_INVOICES: SeedInvoice[] = [
   { number: "FXA-3003", currency: "JPY", amount: 150000, item: "Banner ads (5)", client: "Sakura Games", issueOffset: -7, dueOffset: 7, outcome: { kind: "open" }, why: "due in week 2" },
   { number: "FXA-3004", currency: "JPY", amount: 220000, item: "Storyboard", client: "Mori Design Office", issueOffset: -54, dueOffset: -24, outcome: { kind: "paid", paidOffset: -26 }, why: "paid on time" },
   { number: "FXA-3005", currency: "JPY", amount: 760000, item: "Game UI assets", client: "Sakura Games", issueOffset: -9, dueOffset: 58, outcome: { kind: "open" }, why: "large, far out -> early-pay candidate" },
+  { number: "FXA-3006", currency: "JPY", amount: 260000, item: "Mascot sketches", client: "Sakura Games", issueOffset: -80, dueOffset: -50, outcome: { kind: "paid", paidOffset: -44 }, why: "paid 6 days late -> payment history" },
 ];
 
 // PayPal never frees an invoice number, even after cancelling, so each demo reset seeds a new
