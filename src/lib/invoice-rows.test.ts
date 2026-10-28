@@ -42,4 +42,15 @@ describe("invoice grid rows", () => {
     expect(o.offerState).toBe("open");
     expect(o.offer).toMatch(/^EUR 990 · [A-Z][a-z]{2} \d{1,2}$/);
   });
+  it("carries the agent's open proposal for approving from the grid, and the client's payment history", () => {
+    const withAction = rows.filter((r) => r.action);
+    expect(withAction.length).toBe(run.proposals.length);
+    for (const r of withAction) {
+      const p = run.proposals.find((x) => x.invoiceId === r.id)!;
+      expect(r.action!.kind).toBe(p.kind);
+      if (p.kind === "reminder" && r.action!.kind === "reminder") expect(r.action!.message).toBe(p.message);
+      if (p.kind === "early_pay_discount" && r.action!.kind === "early_pay_discount") expect(r.action!.percent).toBe(p.percent);
+    }
+    expect(rows.some((r) => /^pays (on time|~\d+ days late)$/.test(r.usuallyPays))).toBe(true);
+  });
 });

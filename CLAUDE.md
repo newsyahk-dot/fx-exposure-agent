@@ -120,6 +120,11 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   the demo as of today (`quotesFor`, every ECB currency), and `try-actions.ts` adds Claude's plan only with the access
   code (`readPayPal: false`). Nothing is stored or logged; nothing in PayPal is touched. The offer rule's constants live
   in `src/lib/offer-rule.ts` (no imports, safe for client components).
+- **Invoice grid** (`src/app/invoice-grid.tsx`, AG Grid Community, 2026-10-28): quick views (external filter), offer
+  column, cell flash, paid-today rows kept and greyed, client payment history under the name, and row selection on rows
+  with an open proposal → "Approve selected" → a confirmation listing each action → each runs through the same `approve`
+  server action as the card (access code, re-checks). Late home-currency invoices are now candidates for reminders
+  (offers stay for money from abroad); the timeline and Evidence still count money from abroad only.
 - **Money-in timeline** (2026-10-27, `src/lib/money-timeline.ts` + `src/app/money-timeline.tsx`, Today and /try): money
   from clients abroad by the week it is due, as invoiced vs if clients pay as proposed (reminder → paid within
   `ASSUME.afterReminderDays`, offer → by its new due date net of the discount). Always labelled a scenario; late

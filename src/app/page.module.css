@@ -1501,3 +1501,30 @@
   color: #fff;
   border-color: var(--accent);
 }
+
+/* Invoice grid: client name with their payment history underneath */
+.gridTwoLine {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  justify-content: center;
+  height: 100%;
+}
+.gridTwoLine small {
+  color: var(--text-secondary, #6b7280);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gridApprove {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 8px 0 10px;
+  background: var(--surface-2);
+}
+.gridApprove ul {
+  margin: 6px 0;
+  padding-left: 18px;
+}
