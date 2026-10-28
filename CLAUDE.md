@@ -91,6 +91,10 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   `/?base=<B>&step=today` for all five currencies once. Avoid deploying during judging unless needed.
   `vercel.json` `ignoreCommand` skips the build when a commit changes only `docs/` or `*.md` (exit 0 = skip), so
   documentation edits do not redeploy and empty the cache. If the previous commit is missing the build runs (safe side).
+  **Keep-warm** (2026-10-28): `.github/workflows/keep-warm.yml` opens every currency's Today page every 30 minutes (public
+  pages, no secrets), so a cold plan is computed before a judge arrives. Added after plans were found cold in the morning
+  and the 00:07 UTC reset had not run (the book was still yesterday's generation) — check that `CRON_SECRET` is set in
+  Vercel, or every cron call gets 401 and does nothing.
 - **Book day** (2026-10-27): the demo book's day is the day of its last reset (`bookDay` in `src/lib/book.ts`, held up to
   36 h), and its rates are the last ECB fixing *before* that day (`ecbBefore`). So the plan key changes only when the demo
   is reset, not at 00:00 UTC or when the ECB publishes at ~15:00 UTC — Vercel Cron only promises "within the hour", and
