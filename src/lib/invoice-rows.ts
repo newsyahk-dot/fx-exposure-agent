@@ -2,12 +2,12 @@
 // still waits, and what the agent is doing about it today. Plain data, computed on the server.
 
 import { toBusinessDays, type AgentInput, type AgentRun } from "./agent";
-import { daysBetween, OPEN_STATUSES } from "./exposure";
+import { bucketOf, daysBetween, OPEN_STATUSES } from "./exposure";
 import { oneSigma } from "./fx";
 import { clientHistory, sameClient } from "./invoice-plan";
 import { offerNoteTemplate, percentsWithinRule } from "./offer-rule";
 import { proposalState } from "./plan-state";
-import type { Invoice, Rates } from "./types";
+import type { Bucket, Invoice, Rates } from "./types";
 
 export type InvoiceRow = {
   id: string;
@@ -17,6 +17,7 @@ export type InvoiceRow = {
   amount: number;
   dueDate: string;
   daysToDue: number; // negative = overdue
+  bucket: Bucket | null; // the exposure grid's due-date bucket (src/lib/exposure.ts bucketOf)
   value: number; // in the home currency
   atRisk: number; // ±SHOCK_PCT% of value; 0 for home-currency invoices
   swing: number | null; // typical swing (1σ) until the due date; null when overdue or unknown
@@ -103,6 +104,7 @@ export function invoiceRows(
       amount: inv.amountDue,
       dueDate: inv.dueDate,
       daysToDue: d,
+      bucket: bucketOf(inv.dueDate, o.asOf),
       value,
       atRisk: home ? 0 : (value * o.shockPct) / 100,
       swing: home ? 0 : d > 0 && vol != null ? oneSigma(value, vol, toBusinessDays(d)) : null,

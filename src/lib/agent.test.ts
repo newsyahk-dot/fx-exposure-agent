@@ -89,6 +89,26 @@ describe("what code lets the agent do", () => {
   });
 });
 
+describe("what the agent knows to write a reminder for this client", () => {
+  it("names the billed work, how the client has paid before, and who signs", () => {
+    const rates = ratesFor(ecb, "USD", ["USD", "EUR", "JPY", "GBP", "KRW"]);
+    const vols = volsFor(ecb, "USD", ["USD", "EUR", "JPY", "GBP", "KRW"], addDays(DAY, -120), DAY);
+    const input = buildAgentInput(SEED_BOOK, rates, vols, computeExposure(SEED_BOOK, rates, DAY, { base: "USD" }), "USD", DAY, NOW, "Maya");
+    const hollis = input.candidates.find((c) => c.invoiceNumber === "FXA-4001")!;
+    expect(hollis.facts).toContain("Billed work: Editorial illustrations.");
+    expect(hollis.facts).toContain("This client paid its one earlier invoice 18 days after the due date.");
+    expect(hollis.facts).toContain("The seller signs as Maya.");
+    const t = reminderTemplate(hollis);
+    expect(t.message).toContain("(Editorial illustrations)");
+    expect(t.message.endsWith("Best regards, Maya")).toBe(true);
+    expect(checkClientText(t.message, hollis.facts, { maxLen: 900, allowOffer: false })).toBeNull();
+    // No seller name, no signature; a client with no paid invoices gets no history line.
+    const anon = inputFor("USD").candidates.find((c) => c.invoiceNumber === "FXA-1001")!;
+    expect(anon.facts).not.toContain("signs as");
+    expect(anon.facts).not.toContain("earlier invoice");
+  });
+});
+
 describe("fixed wording passes the same checks as the agent, in every home currency", () => {
   for (const base of BASES) {
     it(base, () => {

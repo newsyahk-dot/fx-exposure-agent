@@ -83,7 +83,7 @@ export function AutopilotPanel({ policy, base, readOnly }: { policy: Policy; bas
         <button type="submit" className={styles.secondaryButton} disabled={readOnly || !on || running}>
           {running ? "Autopilot running…" : "Run autopilot now"}
         </button>
-        <span className={styles.muted}>Also runs on its own every weekday at 00:17 UTC.</span>
+        <span className={styles.muted}>Also runs on its own every weekday at 00:17 UTC (the evening before, in the US).</span>
       </form>
       {run && <RunResult r={run} />}
     </div>

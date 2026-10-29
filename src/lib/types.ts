@@ -19,6 +19,7 @@ export type Invoice = {
   agentLog?: AgentLogEntry[]; // actions the agent already took on this invoice (from the memo)
   offerFor?: { originalId: string; percent: number }; // this is an early-payment offer for another invoice
   offer?: OfferInfo; // the early-payment offer sent for this invoice, if any (src/lib/offer-invoice.ts)
+  items?: string[]; // what was billed (line item names), when known
 };
 
 // Home-currency units per 1 unit of each currency, e.g. with KRW home: { USD: 1324.63, JPY: 8.43 }.

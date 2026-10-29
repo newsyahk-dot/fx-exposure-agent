@@ -255,6 +255,7 @@ export type PPInvoice = {
   amount?: PPMoney;
   due_amount?: PPMoney;
   payments?: { paid_amount?: PPMoney; transactions?: { payment_date?: string; amount?: PPMoney }[] };
+  items?: { name?: string }[]; // only in a single-invoice GET, not in the list
 };
 
 // Turns a PayPal invoice into the engine's shape. Returns null with a reason when it can't.
@@ -286,6 +287,7 @@ export function toInvoice(pp: PPInvoice): { invoice: Invoice } | { skipped: { id
         .map((t) => ({ date: t.payment_date!, amount: Number(t.amount!.value) })),
       createdAt: pp.detail.metadata?.create_time,
       agentLog: parseAgentLog(pp.detail.memo),
+      ...(pp.items?.length ? { items: pp.items.map((i) => (i.name ?? "").trim()).filter(Boolean) } : {}),
       ...(parseOfferMemo(pp.detail.memo) ? { offerFor: parseOfferMemo(pp.detail.memo)! } : {}),
     },
   };

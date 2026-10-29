@@ -1639,3 +1639,34 @@
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.12);
   font-size: 13px;
 }
+.staleNotice {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+/* Exposure grid (AG Grid) heat shading, same scale as the old table. */
+.heatCell { cursor: pointer; }
+.heat1 { background: var(--seq-1); color: var(--seq-ink); }
+.heat2 { background: var(--seq-2); color: var(--seq-ink); }
+.heat3 { background: var(--seq-3); color: var(--seq-ink); }
+.heat4 { background: var(--seq-4); color: var(--seq-ink); }
+.heat5 { background: var(--seq-5); color: var(--seq-ink); }
+.focusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* AG Grid's auto-height layout keeps a minimum body height; with few rows it left an empty band above the total row. */
+.gridWrap :global(.ag-grid-scrolling-rows.ag-layout-auto-height),
+.exposureGrid :global(.ag-grid-scrolling-rows.ag-layout-auto-height) {
+  min-height: 0 !important; /* AG Grid sets 150px from its own injected styles */
+}
+.exposureGrid :global(.ag-cell) {
+  display: flex;
+  align-items: center;
+}
+.exposureGrid :global(.ag-cell.ag-right-aligned-cell) {
+  justify-content: flex-end;
+}

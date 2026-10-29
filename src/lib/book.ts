@@ -14,7 +14,8 @@ import { attachOffers, isOfferNumber, originalNumber } from "./offer-invoice";
 import { PayPalClient, toInvoice, type PPInvoice } from "./paypal";
 import { DEFAULT_POLICY, parsePolicy, POLICY_TEMPLATE, type Policy } from "./policy";
 import { addDays, parseSeedNumber } from "./seed-data";
-import type { Invoice } from "./types";
+import type { Invoice } from "./types";import { itemNames } from "./invoice-items";
+
 
 export type BookInputs = {
   source: "live" | "demo";
@@ -79,6 +80,20 @@ export async function loadLiveInputs(day?: string): Promise<BookInputs> {
     const r = toInvoice(detailed.get(x.id) ?? x);
     if (!("invoice" in r)) skipped.push(r.skipped);
     else invoices.push(r.invoice);
+  }
+  // Line items for open invoices, so the agent can name the billed work in a reminder (cached per invoice).
+  const open = invoices.filter((i) => !i.items && i.amountDue > 0 && !i.offerFor);
+  for (let i = 0; i < open.length; i += 6) {
+    await Promise.all(
+      open.slice(i, i + 6).map(async (inv) => {
+        try {
+          const items = await itemNames(inv.id);
+          if (items.length) inv.items = items;
+        } catch {
+          // outside Next (scripts) the cache is not available; the book works without items
+        }
+      }),
+    );
   }
   return { source: "live", asOf, fetchedAt: now.toISOString(), ecb, invoices: attachOffers(invoices, asOf), skipped, archived, policy, startedAt };
 }

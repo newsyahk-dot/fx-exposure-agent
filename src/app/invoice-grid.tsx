@@ -10,7 +10,6 @@
 import {
   AllCommunityModule,
   ModuleRegistry,
-  themeQuartz,
   type ColDef,
   type GridApi,
   type ICellRendererParams,
@@ -18,24 +17,16 @@ import {
 } from "ag-grid-community";
 import { AgGridReact, type CustomCellEditorProps } from "ag-grid-react";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { applyEdit, type DraftEdit, type InvoiceRow } from "@/lib/invoice-rows";
+import { annualCostPct } from "@/lib/offer-rule";
+import { FOCUS_EVENT, gridTheme, type FocusDetail } from "./grid-theme";
 import { approve } from "./actions";
 import styles from "./page.module.css";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const theme = themeQuartz.withParams({
-  backgroundColor: "var(--surface-1)",
-  foregroundColor: "var(--text-primary)",
-  headerBackgroundColor: "var(--surface-2)",
-  borderColor: "var(--border)",
-  accentColor: "var(--accent)",
-  fontFamily: "inherit",
-  fontSize: 14,
-  headerFontWeight: 600,
-  cellHorizontalPadding: 10, // nine columns at desktop width: the default padding truncated "18 days late"
-});
+const theme = gridTheme;
 
 type TotalRow = Partial<InvoiceRow> & { number: string };
 
@@ -141,11 +132,29 @@ export function InvoiceGrid({
   );
   const [view, setView] = useState<View>("all");
   const viewRef = useRef<View>("all"); // read by the grid's filter callbacks
+  // A currency (and due-date bucket) picked in the exposure grid above — the two grids are linked by an event.
+  const [focus, setFocus] = useState<FocusDetail>(null);
+  const focusRef = useRef<FocusDetail>(null);
+  const pickFocus = (f: FocusDetail) => {
+    focusRef.current = f;
+    setFocus(f);
+    api.current?.onFilterChanged();
+  };
+  useEffect(() => {
+    const on = (e: Event) => pickFocus((e as CustomEvent<FocusDetail>).detail);
+    window.addEventListener(FOCUS_EVENT, on);
+    return () => window.removeEventListener(FOCUS_EVENT, on);
+  }, []);
   // Stable callbacks: AG Grid refilters when these change identity, and the refilter re-rendered the page in a loop.
   const filter = useMemo(
     () => ({
-      present: () => viewRef.current !== "all",
-      pass: (n: { data?: InvoiceRow }) => !!n.data && VIEWS[viewRef.current].pass(n.data), // a detail row carries its invoice's fields
+      present: () => viewRef.current !== "all" || !!focusRef.current,
+      pass: (n: { data?: InvoiceRow }) => {
+        const r = n.data; // a detail row carries its invoice's fields
+        const f = focusRef.current;
+        if (!r || !VIEWS[viewRef.current].pass(r)) return false;
+        return !f || (r.currency === f.currency && (f.bucket == null || r.bucket === f.bucket) && !r.paidToday);
+      },
     }),
     [],
   );
@@ -166,7 +175,7 @@ export function InvoiceGrid({
         field: "number",
         headerName: "Invoice",
         pinned: narrow ? undefined : "left", // on a phone two pinned columns would fill the screen
-        minWidth: 164,
+        minWidth: narrow ? 132 : 164,
         // The invoice number opens PayPal's client view (a separate column did not fit at desktop width).
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.data?.id && clientUrls[p.data.id] ? (
@@ -225,7 +234,8 @@ export function InvoiceGrid({
       },
       {
         field: "atRisk",
-        headerName: "At risk ±3%",
+        headerName: "At risk",
+        headerTooltip: "What a 3% move either way would change, in the home currency — the size of the risk, not a forecast",
         minWidth: 88,
         initialSort: "desc", // initial only: a column rebuild (opening a row) must not bring this sort back
         valueFormatter: (p) => (p.value ? `±${home(p.value)}` : "none"), // used by the CSV export
@@ -269,7 +279,8 @@ export function InvoiceGrid({
         cellEditorSelector: (p) =>
           p.data?.action?.kind === "early_pay_discount"
             ? { component: PercentEditor, popup: true }
-            : { component: "agLargeTextCellEditor", popup: true, params: { maxLength: 900, rows: 10, cols: 64 } },
+            : { component: "agLargeTextCellEditor", popup: true },
+        cellEditorParams: { maxLength: 900, rows: 10, cols: 64, fmtHome: home },
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) => {
           const a = p.data?.action;
           if (!a || p.node.rowPinned) return null;
@@ -336,6 +347,13 @@ export function InvoiceGrid({
             ),
           )}
         </div>
+        {focus && (
+          <span className={styles.focusChip}>
+            <button type="button" className={styles.chip} aria-pressed onClick={() => pickFocus(null)} title="Show every invoice again">
+              {focus.label} ✕
+            </button>
+          </span>
+        )}
         <input
           type="search"
           placeholder="Search invoices, clients, currencies…"
@@ -352,6 +370,28 @@ export function InvoiceGrid({
               skipPinnedBottom: false,
               allColumns: true,
               shouldRowBeSkipped: (p) => !!p.node.data?.detailOf,
+              // Numbers as numbers (the currency is its own column), so the file adds up in a spreadsheet.
+              processCellCallback: (p) => {
+                const d = p.node?.data;
+                switch (p.column.getColId()) {
+                  case "amount":
+                    return d?.paidToday ? d.paidAmount : (p.value ?? "");
+                  case "daysToDue":
+                    return d?.paidToday ? "paid today" : (p.value ?? "");
+                  case "atRisk":
+                  case "value":
+                    return typeof p.value === "number" ? Math.round(p.value * 100) / 100 : (p.value ?? "");
+                  case "swing":
+                    return typeof p.value === "number" ? Math.round(p.value * 100) / 100 : p.value === null ? "overdue" : "";
+                  case "draft": {
+                    const a = d?.action;
+                    if (!a) return "";
+                    return a.kind === "reminder" ? a.message.replace(/\s+/g, " ").trim() : `${a.percent}% off if paid by ${a.newDueDate}`;
+                  }
+                  default:
+                    return p.formatValue ? p.formatValue(p.value) : (p.value ?? "");
+                }
+              },
             })
           }
         >
@@ -424,6 +464,15 @@ export function InvoiceGrid({
           rowSelection={rowSelection}
           selectionColumnDef={{ pinned: narrow ? undefined : "left", width: 44, minWidth: 44, maxWidth: 44, headerTooltip: "Select proposals to approve together" }}
           stopEditingWhenCellsLoseFocus
+          onCellEditingStarted={(e) => {
+            // AG Grid's large-text editor opens with the whole e-mail selected: typing would replace it. Put the cursor
+            // at the end instead.
+            if (e.column.getColId() !== "draft") return;
+            requestAnimationFrame(() => {
+              const ta = document.querySelector<HTMLTextAreaElement>(".ag-large-text textarea, .ag-popup-editor textarea");
+              if (ta) ta.setSelectionRange(ta.value.length, ta.value.length);
+            });
+          }}
           onSelectionChanged={(e) => {
             const rows = e.api.getSelectedRows();
             setSelected(rows);
@@ -528,8 +577,9 @@ const detailHeight = (r: InvoiceRow | undefined) => {
 };
 
 // Popup cell editor for an offer's discount: one button per percent the app's offer rule allows for this invoice.
-function PercentEditor(p: CustomCellEditorProps<InvoiceRow, number>) {
+function PercentEditor(p: CustomCellEditorProps<InvoiceRow, number> & { fmtHome?: (v: number) => string }) {
   const a = p.data?.action;
+  const sooner = p.data ? p.data.daysToDue - (a?.kind === "early_pay_discount" ? a.withinDays : 0) : 0;
   const [picked, setPicked] = useState(false);
   useLayoutEffect(() => {
     if (picked) p.stopEditing();
@@ -537,7 +587,9 @@ function PercentEditor(p: CustomCellEditorProps<InvoiceRow, number>) {
   if (a?.kind !== "early_pay_discount") return null;
   return (
     <div className={styles.percentEditor} role="group" aria-label={`Discount for ${p.data.number}`}>
-      <span className={styles.muted}>Discount if paid by {a.newDueDate}:</span>
+      <span className={styles.muted}>
+        Paid by {a.newDueDate}, {sooner} days sooner. Pick the discount (within the app&apos;s rule):
+      </span>
       {a.percents.map((x) => (
         <button
           key={x}
@@ -549,7 +601,7 @@ function PercentEditor(p: CustomCellEditorProps<InvoiceRow, number>) {
             setPicked(true);
           }}
         >
-          {x}% off
+          {x}% off · costs {p.fmtHome ? p.fmtHome((p.data.value * x) / 100) : `${x}%`} · about {annualCostPct(x, sooner)}% a year
         </button>
       ))}
       <button type="button" className={styles.linkButton} onClick={() => p.stopEditing(true)}>

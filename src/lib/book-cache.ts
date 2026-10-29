@@ -23,3 +23,24 @@ async function cachedLiveInputs(): Promise<BookInputs> {
 export async function loadInputs(): Promise<BookInputs> {
   return demoMode() ? demoInputs() : cachedLiveInputs();
 }
+
+// For the page: right after a write the book is reloaded from PayPal, and one failed call used to replace the whole
+// screen with an error (seen in a review just after "Simulate client payment"). Retry once; if PayPal still fails,
+// show the last book this instance served, marked stale, and let the page refresh itself.
+let lastGood: BookInputs | null = null;
+export async function loadInputsForPage(): Promise<{ inputs: BookInputs; stale: boolean }> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const inputs = await loadInputs();
+      lastGood = inputs;
+      return { inputs, stale: false };
+    } catch (e) {
+      if (attempt === 0) {
+        await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+      if (lastGood) return { inputs: lastGood, stale: true };
+      throw e;
+    }
+  }
+}

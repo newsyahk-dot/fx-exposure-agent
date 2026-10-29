@@ -96,7 +96,9 @@ side by side; she decides.
 - **Code decides every number and every permission.** Which invoices are eligible, every amount, every cost. Nothing
   runs in PayPal without an approval click — on that action, or on a standing policy that covers it — and the server
   re-checks everything before it calls PayPal.
-- **AG Grid (Community):** the seller's working list — every open invoice in one grid, ranked by what it puts at risk,
+- **AG Grid + AG Charts (Community):** the exposure heatmap on "Where it sits" is an AG Grid too (currency × due-date
+  bucket, shaded by value); clicking a cell narrows the invoice grid below to that currency and bucket. The money-in
+  timeline on Today is an AG Charts grouped bar chart. The invoice grid is the seller's working list — every open invoice in one grid, ranked by what it puts at risk,
   with what the agent proposed or did for it today, any early-payment offer that is out, and how each client has paid
   before ("pays ~18 days late", from their paid invoices). She can tick the rows with a proposal waiting (row selection
   with checkboxes only where there is something to approve) and approve them together: a confirmation lists exactly
