@@ -5,14 +5,24 @@
 import { cacheLife } from "next/cache";
 import { PayPalClient } from "./paypal";
 
+// Outside Next (scripts such as the eval) there is no cache to set; the read still works.
+const life = (forGood: boolean) => {
+  try {
+    if (forGood) cacheLife("max");
+    else cacheLife("minutes");
+  } catch {
+    // not inside a Next.js cache scope
+  }
+};
+
 export async function itemNames(id: string): Promise<string[]> {
   "use cache: remote";
   try {
     const d = await new PayPalClient().getInvoice(id);
-    cacheLife("max");
+    life(true);
     return (d.items ?? []).map((i) => (i.name ?? "").trim()).filter(Boolean);
   } catch {
-    cacheLife("minutes");
+    life(false);
     return [];
   }
 }
