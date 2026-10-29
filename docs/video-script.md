@@ -90,5 +90,6 @@ Dropped from the video (still in the app): the Where-it-sits grid and the Eviden
    marks). PayPal is named as the platform used, not as an endorsement.
 9. English narration **and burned-in English captions** — many judges watch muted. One caption line per sentence.
 10. Upload to YouTube as **Public**; put the link in the Devpost form.
-11. Before beat 3, make sure the first card shows a badge with "draft rejected … and rewritten". If today's plan has
-    none on screen, use any card that does, or Re-plan once (access code) and pick one that does.
+11. Beat 3 shows a rejected-and-rewritten draft in "How the agent planned this" (the step log); on a card it is inside
+    "Numbers and the agent's reason" (2026-10-29: moved off the badge, a review read it as the AI failing). If today's
+    plan has none, Re-plan once (access code).

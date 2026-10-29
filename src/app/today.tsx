@@ -108,6 +108,12 @@ export async function TodayPlan({
           Done today: {ranCount} of {cards.length}. This demo book is shared, so other visitors may act on it too.
         </p>
       )}
+      {lockReason && cards.length > 0 && (
+        <p className={styles.muted}>
+          {/access code/.test(lockReason) ? "Approving needs the access code (top of the page). " : `${lockReason}. `}A reminder goes out as an
+          e-mail through PayPal; an offer goes out as a separate early-payment invoice, and your invoice stays as it is.
+        </p>
+      )}
       {cards.length === 0 ? (
         <p className={styles.muted}>Nothing to do today: no overdue invoices to chase and no large distant ones worth an offer.</p>
       ) : (
@@ -248,9 +254,11 @@ export function ProposalCard({
             </span>
           </p>
           {s.state === "open" && (
-            <p className={styles.muted}>
-              Your invoice stays as it is. The client also gets an early-payment invoice for the lower amount; if it is not paid
-              by that date it lapses and the original applies.
+            <p
+              className={styles.muted}
+              title="The client also gets an early-payment invoice for the lower amount; if it is not paid by that date it lapses and the original applies."
+            >
+              Sent as a separate invoice — yours stays as it is.
             </p>
           )}
         </>
@@ -259,12 +267,6 @@ export function ProposalCard({
         {agent ? (
           <>
             ✓ Written by Claude, checked by code
-            {rejected.length > 0 && (
-              <>
-                {" "}
-                · {rejected.length} draft{rejected.length === 1 ? "" : "s"} rejected ({[...new Set(rejected)].join("; ")}) and rewritten
-              </>
-            )}
           </>
         ) : (
           "Standard wording"
@@ -303,9 +305,15 @@ export function ProposalCard({
           </div>
         </dl>
         <p>{p.rationale}</p>
+        {rejected.length > 0 && (
+          <p className={styles.muted}>
+            The checks sent back {rejected.length === 1 ? "an earlier draft" : `${rejected.length} earlier drafts`} (
+            {[...new Set(rejected)].join("; ")}); Claude rewrote {rejected.length === 1 ? "it" : "them"} before you saw this.
+          </p>
+        )}
       </details>
 
-      {s.state === "open" && <ApproveForm p={p} base={base} disabledReason={lockReason} openDraft={featured} />}
+      {s.state === "open" && <ApproveForm p={p} base={base} disabledReason={lockReason} />}
       {s.state === "done" && (
         <div className={styles.cardDone}>
           <p className={styles.ok}>
