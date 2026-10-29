@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 !.env.example
+
+# Stray screenshots from local test scripts (keep images under public/ or docs/)
+/*.png
