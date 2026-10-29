@@ -7,7 +7,8 @@ import { newInvoicesRequest } from "@/lib/autopilot";
 import { notInPlan } from "@/lib/plan-state";
 import { writesAllowed } from "@/lib/access";
 import { RATE_SOURCE, type BookInputs } from "@/lib/book";
-import { loadInputs } from "@/lib/book-cache";
+import { loadInputsForPage } from "@/lib/book-cache";
+import { StaleNotice } from "./stale-notice";
 import { ASSUME, bandsByWait, LOOKBACK_DAYS, replayBook, timelines } from "@/lib/evidence";
 import { OPEN_STATUSES } from "@/lib/exposure";
 import { BASES, type EcbQuotes } from "@/lib/fx";
@@ -33,12 +34,13 @@ import { AskResult } from "./ask-result";
 import { ReplanButton } from "./replan-button";
 import { NavLink } from "./nav-link";
 import { PreloadGrid } from "./preload-grid";
+import { ExposureGrid, type ExposureRow } from "./exposure-grid";
 import { invoiceRows } from "@/lib/invoice-rows";
 import styles from "./page.module.css";
 
 const BUCKET_LABEL: Record<Bucket, string> = {
   overdue: "Overdue",
-  w1: "Due in 0–6 days",
+  w1: "0–6 days",
   w2: "7–13 days",
   w3: "14–20 days",
   w4: "21–27 days",
@@ -93,14 +95,11 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
   const base = pickBase(sp.base);
   let inputs: BookInputs;
+  let stale = false;
   try {
-    inputs = await loadInputs();
-  } catch (e) {
-    return (
-      <p className={styles.error} role="alert">
-        Could not load invoices: {e instanceof Error ? e.message : String(e)}
-      </p>
-    );
+    ({ inputs, stale } = await loadInputsForPage());
+  } catch {
+    return <StaleNotice failed />;
   }
   const view = viewFor(inputs, base, new Date());
   const { exposure: e, rates } = view;
@@ -136,6 +135,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <>
+      {stale && <StaleNotice />}
       <div className={styles.contextRow}>
         <p className={styles.persona}>
           <span className={styles.avatar} aria-hidden="true">
@@ -356,7 +356,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
             </p>
             <ol className={styles.flow} aria-label="How the autopilot decides">
               <li>
-                <strong>Every weekday morning</strong>
+                <strong>Every weekday, 00:17 UTC</strong>
                 <span>the agent makes the day&apos;s plan</span>
               </li>
               <li>
@@ -740,67 +740,39 @@ function DoneList({ done, closed, bare = false }: { done: { kind: string; at: st
 function ExposureTable({ view, skipped, baseOpen }: { view: BookView; skipped: { id: string; reason: string }[]; baseOpen: number }) {
   const { exposure: e, rates, base } = view;
   const c = (n: number) => compact(base, n);
-  const cellValue = e.rows.flatMap((r) => BUCKETS.map((b) => r.buckets[b] * rates[r.currency]));
-  const maxCell = Math.max(1, ...cellValue);
-  const level = (v: number) => (v > 0 ? Math.min(5, Math.ceil((v / maxCell) * 5)) : 0);
   return (
     <section aria-labelledby="exposure-h">
       <h2 id="exposure-h">Where the exposure sits</h2>
       <p className={styles.muted}>Unpaid amounts by currency and by when they fall due. Darker cells hold more money in {base} terms.</p>
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th scope="col">Currency</th>
-              {BUCKETS.map((b) => (
-                <th key={b} scope="col" className={styles.num}>
-                  {BUCKET_LABEL[b]}
-                </th>
-              ))}
-              <th scope="col" className={styles.num}>
-                In {base}
-              </th>
-              <th scope="col" className={styles.num}>
-                ±{SHOCK_PCT}%
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {e.rows.map((r) => (
-              <tr key={r.currency}>
-                <th scope="row">{r.currency}</th>
-                {BUCKETS.map((b) => {
-                  const v = r.buckets[b] * rates[r.currency];
-                  return (
-                    <td
-                      key={b}
-                      className={`${styles.num} ${styles.heat}`}
-                      data-level={level(v)}
-                      title={v ? `${money(r.currency, r.buckets[b])} ≈ ${full(base, v)}` : undefined}
-                    >
-                      {cell(r.currency, r.buckets[b])}
-                    </td>
-                  );
-                })}
-                <td className={styles.num}>{c(r.value)}</td>
-                <td className={styles.num}>±{c(r.shock)}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <th scope="row">Total</th>
-              {BUCKETS.map((b) => (
-                <td key={b} className={styles.num}>
-                  {c(e.rows.reduce((s, r) => s + r.buckets[b] * rates[r.currency], 0))}
-                </td>
-              ))}
-              <td className={styles.num}>{c(e.totalValue)}</td>
-              <td className={styles.num}>±{c(e.totalShock)}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      <ExposureGrid
+        base={base}
+        buckets={BUCKETS}
+        labels={BUCKET_LABEL}
+        rows={e.rows.map((r) => ({
+          currency: r.currency,
+          cells: Object.fromEntries(
+            BUCKETS.map((b) => {
+              const v = r.buckets[b] * rates[r.currency];
+              return [b, { text: cell(r.currency, r.buckets[b]), value: v, title: v ? `${money(r.currency, r.buckets[b])} ≈ ${full(base, v)}` : undefined }];
+            }),
+          ) as ExposureRow["cells"],
+          value: c(r.value),
+          shock: `±${c(r.shock)}`,
+        }))}
+        total={{
+          currency: "Total",
+          total: true,
+          cells: Object.fromEntries(
+            BUCKETS.map((b) => {
+              const v = e.rows.reduce((s, r) => s + r.buckets[b] * rates[r.currency], 0);
+              return [b, { text: c(v), value: v }];
+            }),
+          ) as ExposureRow["cells"],
+          value: c(e.totalValue),
+          shock: `±${c(e.totalShock)}`,
+        }}
+      />
+      <p className={styles.muted}>Click a cell to see those invoices in the grid below; click a currency to see all of its invoices.</p>
       <p className={styles.muted}>
         {e.baseTotal > 0 && (
           <>

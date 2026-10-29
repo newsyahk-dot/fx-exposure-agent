@@ -35,7 +35,9 @@ export function viewFor(inputs: BookInputs, base: Base, now: Date): BookView {
   const vols = volsFor(inputs.ecb, base, ccys, addDays(inputs.asOf, -VOL_LOOKBACK_DAYS), inputs.asOf);
   const exposure = computeExposure(inputs.invoices, rates, inputs.asOf, { base, shockPct: SHOCK_PCT });
   const timing = timingEffect(inputs.invoices, inputs.ecb, base, inputs.asOf, TIMING_DAYS);
-  const built = buildAgentInput(inputs.invoices, rates, vols, exposure, base, inputs.asOf, now);
+  // The hosted demo book is Maya's; a real seller can set their own name.
+  const seller = process.env.FXA_SELLER_NAME || (inputs.startedAt || inputs.source === "demo" ? "Maya" : undefined);
+  const built = buildAgentInput(inputs.invoices, rates, vols, exposure, base, inputs.asOf, now, seller);
   const agentInput = inputs.policy?.notes ? { ...built, notes: inputs.policy.notes } : built;
   return { base, rates, vols, exposure, timing, agentInput };
 }

@@ -73,7 +73,9 @@ export function clientHistory(invoices: Invoice[], client: string): ClientHistor
 export function historyFact(h: ClientHistory): string {
   if (!h.known) return `No past invoices to ${h.client}; waits below assume payment on the due date.`;
   if (h.avgDaysLate == null) return `${h.client} has ${h.open} open invoices and no fully paid ones yet; waits below assume payment on the due date.`;
-  return `${h.client} paid ${h.paid} past invoice${h.paid === 1 ? "" : "s"} on average ${h.avgDaysLate} days after the due date; waits below add those ${h.avgDaysLate} days.`;
+  return h.paid === 1
+    ? `${h.client} paid its one past invoice ${h.avgDaysLate} days after the due date (a single payment, so a rough guide); waits below add those ${h.avgDaysLate} days.`
+    : `${h.client} paid ${h.paid} past invoices on average ${h.avgDaysLate} days after the due date; waits below add those ${h.avgDaysLate} days.`;
 }
 
 // --- The options -------------------------------------------------------------------------------------

@@ -19,6 +19,7 @@ export const SEED_BOOK: Invoice[] = SEED_INVOICES.map((s) => {
     dueDate: addDays(DAY, s.dueOffset),
     invoiceDate: addDays(DAY, s.issueOffset),
     recipientName: s.client,
+    items: [s.item],
     payments: s.outcome.kind === "open" ? undefined : [{ date: addDays(DAY, s.outcome.paidOffset), amount: paid }],
   };
 });

@@ -4,7 +4,7 @@
 // as a file), pick a home currency, and see what is waiting, what is late, where the exchange-rate risk sits and what
 // the agent would do today. Read-only: these invoices are not in PayPal, so nothing can be sent from here.
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import type { AgentProposal } from "@/lib/agent";
 import { annualCostPct } from "@/lib/offer-rule";
 import { BASES } from "@/lib/fx";
@@ -19,15 +19,17 @@ const PLACEHOLDER = "Invoice number,Client,Currency,Amount due,Due date\nINV-104
 export function OwnInvoicesForm() {
   const [state, action, pending] = useActionState<OwnState, FormData>(analyzeOwnAction, null);
   const text = useRef<HTMLTextAreaElement>(null);
+  // Controlled, so the pasted list stays in the box after "Show what's waiting" (React resets uncontrolled fields).
+  const [csv, setCsv] = useState("");
   return (
     <>
       <form action={action} className={styles.assistantForm}>
         <label className={styles.field}>
           Your invoice list — CSV or tab-separated, with a header row (an export from PayPal or any invoicing tool works)
-          <textarea ref={text} name="text" rows={8} placeholder={PLACEHOLDER} spellCheck={false} />
+          <textarea ref={text} name="text" rows={8} placeholder={PLACEHOLDER} spellCheck={false} value={csv} onChange={(e) => setCsv(e.target.value)} />
         </label>
         <div className={styles.examples}>
-          <button type="button" className={styles.chip} onClick={() => text.current && (text.current.value = sampleCsv(new Date().toISOString().slice(0, 10)))}>
+          <button type="button" className={styles.chip} onClick={() => setCsv(sampleCsv(new Date().toISOString().slice(0, 10)))}>
             Load a sample
           </button>
           <label className={styles.chip}>
@@ -38,7 +40,7 @@ export function OwnInvoicesForm() {
               hidden
               onChange={async (e) => {
                 const f = e.target.files?.[0];
-                if (f && text.current) text.current.value = await f.text();
+                if (f) setCsv(await f.text());
               }}
             />
           </label>

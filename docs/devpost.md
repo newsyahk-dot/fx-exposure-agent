@@ -128,13 +128,16 @@ by side; the seller decides.
   Claude with the reason and is rewritten; the seller can see how many were.
 - **Next.js 16 on Vercel**: server actions re-check everything before calling PayPal; a shared cache keeps one agent
   plan per day and currency; Vercel Cron warms the plans, resets the demo book nightly and runs the autopilot.
-- **AG Grid Community** for the invoice grid: row selection (checkboxes only on rows with a proposal waiting) to approve
+- **AG Grid Community**, two linked grids on "Where it sits": the exposure heatmap (currency × due-date bucket, heat
+  shading by value) — click a cell and the invoice grid below narrows to that currency and bucket — and the invoice grid:
+  row selection (checkboxes only on rows with a proposal waiting) to approve
   several actions at once through the same server action, full-width detail rows (client's paid invoices + the agent's
   draft + approve one) kept under their invoice through sorting and filtering, cell editing of the agent's draft (the
   built-in large-text editor for the e-mail, a custom React editor for the discount, both re-checked on the server), a two-line client cell with the client's payment history,
   an external filter for the quick views, a pinned total row that follows
   the filter, cell change flash on PayPal updates, row class rules, custom cell renderers (risk bars, PayPal links),
-  quick-filter search and CSV export. **ECB reference rates via Frankfurter** for exchange rates.
+  quick-filter search and a CSV export with plain numbers. **AG Charts Community** for the money-in timeline (grouped
+  bars by week, themed from the page's colours). **ECB reference rates via Frankfurter** for exchange rates.
 
 ### Challenges I ran into
 
@@ -213,7 +216,8 @@ paypal, paypal-invoicing-api, paypal-webhooks, claude, anthropic, next.js, react
 
 Without an API key, or if a call fails, rule-based proposals with fixed wording take over, so the app keeps working.
 
-Also used: **AG Grid Community** (the invoice grid), **Vercel** (hosting, cron, shared cache).
+Also used: **AG Grid Community** (the exposure heatmap and the invoice grid, linked), **AG Charts Community** (the
+money-in timeline), **Vercel** (hosting, cron, shared cache).
 
 ---
 

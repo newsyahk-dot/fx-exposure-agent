@@ -57,6 +57,8 @@ export type Candidate = {
   eligible: ActionKind[];
   notEligible: string[]; // reasons, for the model and the screen
   vol: number | null;
+  work?: string; // what was billed (line items), when known
+  seller?: string; // the name the seller signs with, when known
   facts: string; // the only numbers text about this invoice may use
 };
 
@@ -99,6 +101,7 @@ export function buildAgentInput(
   base: string,
   asOf: string,
   now: Date,
+  seller?: string, // the name to sign client e-mails with (the hosted demo: "Maya")
 ): AgentInput {
   const c = (n: number) => compact(base, n);
   const candidates: Candidate[] = [];
@@ -126,6 +129,7 @@ export function buildAgentInput(
     else if (d < MIN_DAYS_FOR_OFFER) notEligible.push(`due in ${d} days, too soon for an early-payment offer`);
     else eligible.push("early_pay_discount");
 
+    const work = inv.items?.length ? inv.items.join("; ") : undefined;
     const facts = [
       `Invoice ${inv.number}${inv.recipientName ? ` for ${inv.recipientName}` : ""}: ${money(inv.currency, inv.amountDue)} still owed, worth about ${c(value)}.`,
       `Invoice date ${inv.invoiceDate}, due date ${inv.dueDate}.`,
@@ -134,6 +138,9 @@ export function buildAgentInput(
         ? `It is in ${base}, the home currency, so exchange rates do not change it.`
         : `A ${SHOCK_PCT}% stress-test move either way changes its value by about ${c((value * SHOCK_PCT) / 100)}.`,
       lastReminderAt ? `A reminder was already sent on ${lastReminderAt.slice(0, 10)}.` : "",
+      work ? `Billed work: ${work}.` : "",
+      paysFact(invoices, inv.recipientName),
+      seller ? `The seller signs as ${seller}.` : "",
     ]
       .filter(Boolean)
       .join(" ");
@@ -152,6 +159,8 @@ export function buildAgentInput(
       eligible,
       notEligible,
       vol: vols[inv.currency] ?? null,
+      ...(work ? { work } : {}),
+      ...(seller ? { seller } : {}),
       facts,
     });
   }
@@ -169,6 +178,19 @@ export function buildAgentInput(
     `${candidates.length} open foreign-currency invoices; ${candidates.filter((x) => x.eligible.length).length} eligible for an action.`,
   ].join(" ");
   return { base, asOf, candidates, exposureFacts, exposure: exposureRows };
+}
+
+// How this client has paid before, from their fully paid invoices — for the agent's tone, not for the client.
+function paysFact(invoices: Invoice[], client: string | undefined): string {
+  if (!client) return "";
+  const norm = (x: string | undefined) => (x ?? "").trim().toLowerCase();
+  const paid = invoices.filter((i) => norm(i.recipientName) === norm(client) && !(i.amountDue > 0) && i.payments?.length);
+  if (!paid.length) return "";
+  const late = paid.map((i) => Math.max(0, daysBetween(i.dueDate, i.payments!.map((p) => p.date).sort().at(-1)!)));
+  const avg = Math.round(late.reduce((a, b) => a + b, 0) / late.length);
+  const n = paid.length === 1 ? "its one earlier invoice" : `${paid.length} earlier invoices`;
+  if (avg <= 1) return `This client paid ${n} on time.`;
+  return paid.length === 1 ? `This client paid ${n} ${avg} days after the due date.` : `This client paid ${n} on average ${avg} days after the due date.`;
 }
 
 // --- Discount pricing (code, not the model) --------------------------------------------------------
@@ -280,9 +302,11 @@ export type AgentRun = {
 // Fixed wording, used by the rules fallback and as the reference the checks are tested against.
 export function reminderTemplate(cand: Candidate) {
   const hello = cand.client ? `Hello ${cand.client},` : "Hello,";
+  const work = cand.work ? ` (${cand.work})` : "";
+  const sign = cand.seller ? ` Best regards, ${cand.seller}` : "";
   return {
     subject: `Reminder: invoice ${cand.invoiceNumber} is past due`,
-    message: `${hello} this is a friendly reminder that invoice ${cand.invoiceNumber} for ${money(cand.currency, cand.amount)} was due on ${cand.dueDate}, ${cand.daysOverdue} days ago. You can pay it directly from this e-mail. Thank you!`,
+    message: `${hello} this is a friendly reminder that invoice ${cand.invoiceNumber}${work} for ${money(cand.currency, cand.amount)} was due on ${cand.dueDate}, ${cand.daysOverdue} days ago. You can pay it directly from this e-mail. Thank you!${sign}`,
   };
 }
 
@@ -374,7 +398,7 @@ const SYSTEM = `You are the FX exposure agent inside an app for a solo seller wh
 How to work:
 1. Call get_exposure and list_open_invoices.
 2. Go through every invoice marked eligible and either propose the action or skip it with a one-sentence reason. Only eligible invoices can be proposed.
-3. Reminder (overdue invoices): write a short, polite e-mail to that client — a subject and a message. Greet the client by name when the invoice has one. Mention the invoice number, the amount and how late it is. Do not mention exchange rates, discounts, fees or penalties. Match the tone to how late it is: gentle when a few days late, firmer but still courteous after several weeks; if a reminder was already sent, acknowledge it.
+3. Reminder (overdue invoices): write a short, polite e-mail to that client — a subject and a message. Greet the client by name when the invoice has one. Mention the invoice number, the amount and how late it is, and the billed work by its name when the facts give it (so the client knows what it is for). Do not mention exchange rates, discounts, fees or penalties. Match the tone to how late it is and to how this client has paid before (the facts say; never mention their payment history to them): a light nudge for a client who usually pays on time, a clear and courteous request for a payment date for one who usually pays late, firmer after several weeks; if a reminder was already sent, acknowledge it. Write each e-mail for its own client — vary the opening and wording; do not reuse one template across clients. Sign off with the seller's name when the facts give one.
 4. Early-payment offer (invoices due far ahead): a discount is a price the seller pays to get the money sooner — not an exchange-rate hedge. Call price_discount to compare 1%, 1.5% or 2% with a 5–10 day window. Code allows only terms within the app's rule (at least ${OFFER_MIN_DAYS_SOONER} days sooner, at most ${OFFER_MAX_ANNUAL_PCT}% as a yearly rate); among those, propose the cheapest as a yearly rate, or skip the invoice if none is within the rule. In the text, state the cost, how many days sooner, and the yearly rate — the seller decides. Write a one-sentence client note offering the discount if the client pays by the new date. It goes on a separate early-payment invoice; the seller's own invoice and its due date stay as they are, and code adds the exact terms below the note.
 5. Each rationale is one or two sentences for the seller about that invoice only: what the action asks for and what it costs, using numbers from the tool results. Do not compare it with other invoices.
 

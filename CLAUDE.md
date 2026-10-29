@@ -142,6 +142,19 @@ actions that shorten that exposure (payment reminders, early-payment discount te
 - **Money-in timeline** (2026-10-27, `src/lib/money-timeline.ts` + `src/app/money-timeline.tsx`, Today and /try): money
   from clients abroad by the week it is due, as invoiced vs if clients pay as proposed (reminder → paid within
   `ASSUME.afterReminderDays`, offer → by its new due date net of the discount). Always labelled a scenario; late
-  invoices count as not yet in. Plain SVG, no client code.
+  invoices count as not yet in. The chart is AG Charts Community 14.2 (`src/app/timeline-chart.tsx`, pinned to match
+  AG Grid 36.2's chart types; colours read from the page's CSS variables; canvas fills cannot take `color-mix()`, so
+  the grey bar uses `fillOpacity`). The exposure table on "Where it sits" is an AG Grid (`src/app/exposure-grid.tsx`);
+  a cell click dispatches `FOCUS_EVENT` (`src/app/grid-theme.ts`) and the invoice grid narrows to that currency and
+  bucket (`InvoiceRow.bucket` = `bucketOf`). AG Grid's auto-height layout forces a 150 px body; `.ag-grid-scrolling-rows`
+  needs `min-height: 0 !important` or few rows leave an empty band.
+- **Reminders read like the seller wrote them** (2026-10-29): the book reads each open invoice's line items once
+  (`src/lib/invoice-items.ts`, cached for good — PayPal's list leaves items out), and each candidate's facts carry
+  "Billed work: …", how the client paid before (`paysFact`, for tone only — never told to the client) and "The seller
+  signs as Maya" (`FXA_SELLER_NAME`, default Maya for the demo book). The prompt asks for the billed work by name, a
+  tone set by the client's history, varied wording, and the seller's signature; the rules fallback does the same.
+- **Page after a write** (2026-10-29): `loadInputsForPage` retries a failed PayPal read once and then shows the last
+  good book with `StaleNotice` (refreshes every 4 s) — one failed read after "Simulate client payment" used to replace
+  the whole page with an error.
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.

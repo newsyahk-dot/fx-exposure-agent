@@ -47,8 +47,11 @@ export async function TodayPlan({
   const r = await run;
   const c = (n: number) => compact(base, n);
   const cards = r.proposals.map((p) => ({ p, s: proposalState(p, input, invoices, r.plannedAt) }));
-  // A fixed order (reminders first, then by value): a card stays where it is while it goes open → sent → paid.
-  cards.sort((a, b) => (a.p.kind === b.p.kind ? b.p.value - a.p.value : a.p.kind === "reminder" ? -1 : 1));
+  // A fixed order (money from abroad first, then reminders before offers, then by value): a card stays where it is
+  // while it goes open → sent → paid. Home-currency reminders come last — the screen leads with money from abroad.
+  const rank = (p: AgentProposal) => (p.currency === base ? 2 : 0) + (p.kind === "reminder" ? 0 : 1);
+  cards.sort((a, b) => rank(a.p) - rank(b.p) || b.p.value - a.p.value);
+  const homeCards = cards.filter((x) => x.p.currency === base && x.s.state === "open").length;
   const states: Record<string, "sent" | "proposed"> = {};
   for (const { p, s } of cards) {
     if (s.state === "done") states[p.invoiceId] = "sent";
@@ -75,6 +78,12 @@ export async function TodayPlan({
   return (
     <>
       <TodayBar bar={bar} c={c} />
+      {homeCards > 0 && (
+        <p className={styles.muted}>
+          Also proposed: {homeCards} reminder{homeCards === 1 ? "" : "s"} for invoices in {base} — late too, but exchange rates do not
+          change {homeCards === 1 ? "it" : "them"}, so {homeCards === 1 ? "it is" : "they are"} not in the bar above.
+        </p>
+      )}
       <div className={styles.agentStatus}>
         <p>
           <strong>{r.source === "agent" ? "Claude's plan for today" : "Today's plan (rule-based)"}:</strong>{" "}
@@ -242,7 +251,15 @@ export function ProposalCard({
       </p>
       {p.kind === "reminder" ? (
         <p className={styles.cardPitch}>
-          Overdue {p.daysOverdue} days · <strong>{c(p.value)} waiting</strong>
+          {s.state === "paid" ? (
+            <>
+              Was {p.daysOverdue} days overdue · <strong>paid{paidToday ? ` — ${c(paidToday)} in` : ""}</strong>
+            </>
+          ) : (
+            <>
+              Overdue {p.daysOverdue} days · <strong>{c(p.value)} waiting</strong>
+            </>
+          )}
         </p>
       ) : (
         <>
