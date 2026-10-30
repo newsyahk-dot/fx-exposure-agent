@@ -158,6 +158,10 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   JS). Pages call `planSoon` (`src/lib/agent-cache.ts`): if Claude's plan is not ready in `PLAN_WAIT_MS` (8 s), the page
   shows the rule-based plan marked `pending` and the plan finishes in `after()`; refreshes swap it in (a cold EUR plan
   held the Today screen 58.6 s on 2026-10-30). `planFor` shares one in-flight run per key per instance.
+- **Design for scanning** (2026-10-30): Today leads with three tiles (overdue, ±3% stress test, collected today) under the
+  big number, then the plan status, then the cards, then the money-in chart in its own panel (it used to sit above the
+  cards). Cards carry a coloured left edge and icon by kind (amber reminder, blue offer; `src/app/icons.tsx`). Keep
+  explanatory sentences short; long ones go in tooltips or details.
 - **Page after a write** (2026-10-29): `loadInputsForPage` retries a failed PayPal read once and then shows the last
   good book with `StaleNotice` (refreshes every 4 s) — one failed read after "Simulate client payment" used to replace
   the whole page with an error.

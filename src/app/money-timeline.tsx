@@ -5,6 +5,7 @@ import { compact } from "@/lib/format";
 import { ASSUME } from "@/lib/evidence";
 import type { MoneyTimeline as Timeline } from "@/lib/money-timeline";
 import styles from "./page.module.css";
+import { Icon } from "./icons";
 import { TimelineChart } from "./lazy";
 
 // `paid`: money already collected today (home currency) — it has left the chart, so the caption says so.
@@ -15,7 +16,9 @@ export function MoneyTimeline({ t, base, paid = 0 }: { t: Timeline; base: string
   return (
     <figure className={styles.timeline}>
       <figcaption>
-        <strong>When the money comes in</strong>
+        <strong className={styles.panelTitle}>
+          <Icon name="chart" /> When the money comes in
+        </strong>
         {paid > 0 && (
           <span>
             {" "}
