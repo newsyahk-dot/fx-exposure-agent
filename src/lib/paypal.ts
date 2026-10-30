@@ -48,6 +48,8 @@ function describeBody(body: unknown): string {
   return [head, b.message, details].filter(Boolean).join(" — ");
 }
 
+const PAYPAL_TIMEOUT_MS = 20_000;
+
 export class PayPalClient {
   private token?: { value: string; expiresAt: number };
   readonly base: string;
@@ -70,6 +72,7 @@ export class PayPalClient {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: "grant_type=client_credentials",
+      signal: AbortSignal.timeout(PAYPAL_TIMEOUT_MS),
     });
     const body = await res.json().catch(() => null);
     if (!res.ok) throw new PayPalError(res.status, body);
@@ -86,6 +89,8 @@ export class PayPalClient {
         ...headers,
       },
       body: body === undefined ? undefined : JSON.stringify(body),
+      // A hung call used to hold the page (and the approve button's "Running…") until the host gave up.
+      signal: AbortSignal.timeout(PAYPAL_TIMEOUT_MS),
     });
     if (res.status === 204) return undefined as T;
     const text = await res.text();

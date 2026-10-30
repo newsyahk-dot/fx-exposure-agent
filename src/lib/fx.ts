@@ -71,8 +71,8 @@ export function volsFor(q: EcbQuotes, base: string, symbols: string[], from: str
 export async function fetchEcbQuotes(from: string, to: string): Promise<EcbQuotes> {
   const symbols = ECB_CURRENCIES.filter((b) => b !== "EUR").join(",");
   const [latest, hist] = await Promise.all([
-    fetch(`${API}/latest?base=EUR&symbols=${symbols}`),
-    fetch(`${API}/${from}..${to}?base=EUR&symbols=${symbols}`),
+    fetch(`${API}/latest?base=EUR&symbols=${symbols}`, { signal: AbortSignal.timeout(15_000) }),
+    fetch(`${API}/${from}..${to}?base=EUR&symbols=${symbols}`, { signal: AbortSignal.timeout(15_000) }),
   ]);
   if (!latest.ok) throw new Error(`Frankfurter latest: HTTP ${latest.status}`);
   if (!hist.ok) throw new Error(`Frankfurter history: HTTP ${hist.status}`);
