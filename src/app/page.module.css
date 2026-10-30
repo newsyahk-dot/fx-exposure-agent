@@ -88,7 +88,7 @@
   line-height: 1.35;
   font-weight: 500;
   letter-spacing: -0.01em;
-  max-width: 44ch;
+  max-width: 56ch;
 }
 
 .brand {
@@ -1914,4 +1914,24 @@
   .heroValue {
     font-size: 52px;
   }
+}
+
+/* The first line on Today: what is late, in money — the pain before the totals. */
+.heroAlert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  align-self: flex-start;
+  margin-bottom: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 16px;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--warning) 12%, var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--warning) 40%, var(--border));
+}
+
+.heroAlert > svg {
+  margin-top: 3px;
+  color: var(--warning);
 }

@@ -103,11 +103,15 @@ const INIT = `(() => {
   await cutEnd();
   const heroText = await hero.innerText();
   const total = (heroText.match(/\$[\d.,]+K/) || ['about $31K'])[0];
-  const overdue = ((await hero.locator('[data-tone="late"]').innerText().catch(() => '')).match(/\$[\d,]+/) || ['some'])[0];
-  log('hero', total, overdue);
-  await say('Maya is a freelance designer in the US.', 'Her clients in Europe, the UK and Japan pay her through PayPal invoices.');
+  // The first line on Today names the event: which clients abroad are late, and how much (src/app/page.tsx heroAlert).
+  const alert = hero.locator('p', { hasText: 'paying late' }).first();
+  const lateText = await alert.innerText().catch(() => '');
+  const overdue = (lateText.match(/\$[\d,]+/) || ['some money'])[0];
+  const lateWho = (lateText.match(/^\s*(\d+ clients? abroad (?:is|are) paying late)/) || [null, 'Clients abroad are paying late'])[1];
+  log('hero', total, overdue, lateWho);
+  await say('Monday morning. Maya, a freelance designer in the US, opens her PayPal invoices.', `${lateWho} — ${overdue} overdue.`);
   await hl(hero);
-  await say(`Right now ${total.replace('K', ',000').replace(/\$(\d+),000/, '$$$1,000')} is still owed to her —`, `and ${overdue} of it is already late.`);
+  await say(`In all, ${total.replace('K', ',000').replace(/\$(\d+),000/, '$$$1,000')} is still owed to her`, 'in euros, pounds and yen.');
   await hl(hero, false);
   await show(firstCard, 'start');
   await p.mouse.wheel(0, -120); await wait(500);

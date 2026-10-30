@@ -11,9 +11,9 @@ FX Exposure Agent
 
 ## Elevator pitch (max 200 characters)
 
-Get paid sooner from clients abroad, and see what exchange rates can do to the money you're still waiting for. An AI agent proposes PayPal reminders and offers; you approve.
+When a client abroad pays late, an AI agent writes the PayPal reminder or early-payment offer in your voice. You approve with one click, and it goes out through PayPal.
 
-*(173 characters)*
+*(168 characters)*
 
 ---
 
@@ -21,10 +21,11 @@ Get paid sooner from clients abroad, and see what exchange rates can do to the m
 
 ### Inspiration
 
-Freelancers and small sellers who bill abroad wait weeks to be paid. A designer in the US with clients in Europe,
-the UK and Japan sends invoices in euros, pounds and yen through PayPal — and from that moment until the money
-arrives, the exchange rate decides how much she actually earns. Late payers make the wait longer. Large companies have
-treasury teams for this. A one-person business finds out at the end, when the payment lands.
+Monday morning, a freelance designer in the US opens her PayPal invoices: a client in Paris is 18 days late on €1,800,
+and one in Tokyo is 8 days late on ¥310,000. Writing those reminders is the job she keeps putting off — and until the
+money arrives, the exchange rate decides how much she actually earns. Freelancers and small sellers who bill abroad
+wait weeks to be paid, and late payers make the wait longer. Large companies have treasury teams for this. A
+one-person business finds out at the end, when the payment lands.
 
 - **Many people work this way.** 64 million Americans freelanced in 2023, 38% of the U.S. workforce
   ([Upwork, Freelance Forward 2023](https://investors.upwork.com/news-releases/news-release-details/upwork-study-finds-64-million-americans-freelanced-2023-adding)).

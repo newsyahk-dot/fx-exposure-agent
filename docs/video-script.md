@@ -6,7 +6,8 @@ Judges score five things equally: technical implementation, design, potential im
 ("does the video show it working end to end; what problem, for whom, why it matters"). The first 30 seconds must run the
 whole loop once. Everything shown must work exactly as shown (Official Rules: "must function as depicted in the video").
 
-Seven beats, **one number per beat**. The story is getting paid sooner; exchange rates are why it matters, not the headline.
+Seven beats, **one number per beat**. Open on an event (the morning clients abroad are late), and make the first
+number money that is late — not a total, and never an exchange-rate gain (lessons from two lost contests, 2026-10-30). The story is getting paid sooner; exchange rates are why it matters, not the headline.
 Numbers on screen change with the day's ECB rates — `record.cjs` reads them from the screen while recording; [brackets] are
 placeholders. Captions are mandatory (burned in).
 
@@ -21,7 +22,7 @@ placeholders. Captions are mandatory (burned in).
 
 | Screen | Narration | Number |
 |---|---|---|
-| **Today**, USD. Hero: "[$31K] waiting to be paid", chip "[$6,799] overdue". | "Maya is a freelance designer in the US. Her clients in Europe, the UK and Japan pay her through PayPal invoices. Right now about [$31,000] is still owed to her — and some of it is already late." | $31K |
+| **Today**, USD. First line: "[2] clients abroad are paying late — [$3,965] is [8–18] days overdue", then "[$22K] waiting to be paid". | "Monday morning. Maya, a freelance designer in the US, opens her PayPal invoices. [Two] clients abroad are paying late — [$3,965] overdue. In all, [$22,000] is still owed to her in euros, pounds and yen." | $3,965 |
 | First card: **Chase a late payment** → **Approve: send reminder** → "✓ Reminder sent in PayPal". | "Every morning an AI agent goes through her invoices and proposes the day's work. One click, and the reminder goes out through PayPal." | — |
 | Client pays (in the automated take: "Simulate client payment", captioned as simulated; by hand: PayPal's invoice page with the sandbox buyer) → **"+[$2,807] collected"**. | "When the client pays, it shows up within seconds." | +$2,807 |
 
@@ -68,7 +69,7 @@ timeline and the plan. "Nothing is stored, and nothing in PayPal is touched."
 
 Caption with the numbers from `docs/agent-eval.md` ("[N] agent runs · [M] proposals · [0] violations of our own checks"),
 then the end card: name, live URL, "PayPal Invoicing API · webhooks · invoice templates · PayPal MCP server · Claude".
-"Get paid sooner from clients abroad."
+"When a client abroad pays late, the agent writes the reminder. You approve."
 
 Dropped from the video (still in the app): the Where-it-sits grid and the Evidence chart in detail.
 

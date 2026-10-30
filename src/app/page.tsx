@@ -63,7 +63,8 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
           <h1>FX Exposure Agent</h1>
         </div>
         <p className={styles.lede}>
-          Get paid sooner from clients abroad — and see what exchange rates can do to the money you&apos;re still waiting for.
+          When a client abroad pays late, an AI agent writes the PayPal reminder or early-payment offer in your voice. You
+          approve with one click — and see what exchange rates can do to the money still waiting.
         </p>
         <p>
           <Link href="/try" prefetch={false} className={`${styles.link} ${styles.tryLink}`}>
@@ -108,7 +109,11 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   const c = (n: number) => compact(base, n);
   const open = inputs.invoices.filter((i) => OPEN_STATUSES.has(i.status) && i.amountDue > 0);
   const overdue = e.rows.reduce((s, r) => s + r.buckets.overdue * rates[r.currency], 0);
-  const overdueCount = open.filter((i) => i.currency !== base && (rates[i.currency] ?? 0) > 0 && i.dueDate < inputs.asOf).length;
+  const lateAbroad = open.filter((i) => i.currency !== base && (rates[i.currency] ?? 0) > 0 && i.dueDate < inputs.asOf);
+  const overdueCount = lateAbroad.length;
+  const lateClients = new Set(lateAbroad.map((i) => i.recipientName ?? i.id)).size;
+  const lateDays = lateAbroad.map((i) => Math.round((Date.parse(inputs.asOf) - Date.parse(i.dueDate)) / 86_400_000));
+  const dueSoon = e.rows.reduce((s, r) => s + (r.buckets.w1 + r.buckets.w2) * rates[r.currency], 0);
   // The demo persona lives in the US; another home currency shows the same book as if that were home.
   const away = base === PERSONA_HOME ? "from clients abroad" : `in currencies other than ${base}`;
   const skipped = [...inputs.skipped, ...e.skipped];
@@ -183,18 +188,29 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
       <div className={styles.stepBody}>
       {step === "today" ? (
         <section className={styles.hero} aria-label="Waiting to be paid">
+          {overdueCount > 0 && (
+            <p className={styles.heroAlert}>
+              <Icon name="clock" size={18} />
+              <span>
+                <strong>
+                  {lateClients} client{lateClients === 1 ? "" : "s"} abroad {lateClients === 1 ? "is" : "are"} paying late
+                </strong>{" "}
+                — {c(overdue)} is {rangeDays(lateDays)} overdue.
+              </span>
+            </p>
+          )}
           <p className={styles.heroLabel}>
             Waiting to be paid {away}, in {listAnd(e.rows.map((r) => r.currency)) || "foreign currencies"}
           </p>
           <HeroValue value={e.totalValue} base={base} collected={day.paid} />
           <div className={styles.kpis}>
-            <div className={styles.kpi} data-tone="late">
+            <div className={styles.kpi} data-tone="soon">
               <span className={styles.kpiLabel}>
-                <Icon name="clock" /> Overdue
+                <Icon name="clock" /> Due in the next 2 weeks
               </span>
-              <strong>{c(overdue)}</strong>
+              <strong>{c(dueSoon)}</strong>
               <span className={styles.kpiNote}>
-                {overdueCount} invoice{overdueCount === 1 ? "" : "s"} past due
+                {overdueCount > 0 ? `plus ${c(overdue)} already late` : "nothing late yet"}
               </span>
             </div>
             <div className={styles.kpi} data-tone="risk" title="A stress test: up or down, equally likely — the size of the risk, not a forecast.">
@@ -811,4 +827,11 @@ function ExposureTable({ view, skipped, baseOpen }: { view: BookView; skipped: {
       </p>
     </section>
   );
+}
+
+// "8 days" / "8–18 days" for the late-invoice line on Today.
+function rangeDays(days: number[]): string {
+  const lo = Math.min(...days);
+  const hi = Math.max(...days);
+  return lo === hi ? `${lo} day${lo === 1 ? "" : "s"}` : `${lo}–${hi} days`;
 }
