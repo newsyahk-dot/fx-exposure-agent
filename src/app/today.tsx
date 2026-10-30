@@ -94,7 +94,7 @@ export async function TodayPlan({
         {ratio != null && ratio < 0.95 && (
           <p className={styles.muted}>
             Replayed over two years of rates, getting paid this way kept the range {widthPhrase(ratio)}.{" "}
-            <Link href={evidenceHref} className={styles.link}>
+            <Link href={evidenceHref} prefetch={false} className={styles.link}>
               Evidence →
             </Link>
           </p>

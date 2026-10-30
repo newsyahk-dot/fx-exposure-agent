@@ -15,8 +15,11 @@ function Pending() {
 }
 
 export function NavLink({ children, ...props }: ComponentProps<typeof Link>) {
+  // No prefetch: the Today screen refreshes every 10 s, a refresh clears the prefetch cache, and every link in view
+  // was fetched again each time (three server renders per tick instead of one). Each page is a fast server render,
+  // and the pending mark below shows the click at once.
   return (
-    <Link {...props}>
+    <Link prefetch={false} {...props}>
       {children}
       <Pending />
     </Link>
