@@ -121,7 +121,12 @@ export async function createPlannedInvoice(_prev: CreateState, form: FormData): 
 
   const base = pickBase(str(form, "base"));
   const now = new Date();
-  const inputs = await loadLiveInputs();
+  let inputs: Awaited<ReturnType<typeof loadLiveInputs>>;
+  try {
+    inputs = await loadLiveInputs();
+  } catch {
+    return { ok: false, message: "PayPal did not answer, so no invoice was created. Try again in a moment." };
+  }
   const view = viewFor(inputs, base, now);
   const h = clientHistory(inputs.invoices, req.client);
   const option = planOptions(req, h, { base, asOf: inputs.asOf, rates: view.rates, vols: view.vols, ecb: inputs.ecb }).find(

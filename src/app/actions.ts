@@ -34,7 +34,12 @@ export async function approve(_prev: ApproveState, form: FormData): Promise<Appr
   if (!(await writesAllowed())) return { ok: false, message: LOCKED_MESSAGE };
 
   const now = new Date();
-  const inputs = await loadLiveInputs();
+  let inputs: Awaited<ReturnType<typeof loadLiveInputs>>;
+  try {
+    inputs = await loadLiveInputs(); // the current invoices from PayPal, uncached: the action decides on them
+  } catch (e) {
+    return { ok: false, message: `PayPal did not answer, so nothing was sent. Try again in a moment. (${errorText(e)})` };
+  }
   const view = viewFor(inputs, pickBase(str(form, "base")), now);
   const cand = view.agentInput.candidates.find((c) => c.invoiceId === invoiceId);
   if (!cand) return { ok: false, message: "This invoice is no longer open. Reload the page." };
