@@ -6,8 +6,9 @@
 // day and src/lib/plan-state.ts reconciles each proposal with the current invoices. "Re-plan" (a server action)
 // expires PLAN_TAG when the seller wants new invoices considered; the warm cron computes plans ahead of visitors.
 
+import { after } from "next/server";
 import { cacheLife, cacheTag } from "next/cache";
-import { runAgent, type AgentRun } from "./agent";
+import { rulesRun, runAgent, type AgentInput, type AgentRun } from "./agent";
 import { loadLiveInputs, type BookInputs } from "./book";
 import { pickBase, viewFor } from "./view";
 
@@ -53,8 +54,49 @@ export function askFor(inputs: BookInputs, base: string, request: string, readPa
   return requestPlan(base, inputs.asOf, inputs.ecb.date, inputs.policy?.notes ?? "", inputs.startedAt ?? "", request, readPayPal);
 }
 
+const planKey = (inputs: BookInputs, base: string) =>
+  [base, inputs.asOf, inputs.ecb.date, inputs.policy?.notes ?? "", inputs.startedAt ?? ""].join("|");
+
+// Plans being computed on this instance. A missing plan takes about a minute; without this, every 10-second refresh
+// of a waiting page (and every other visitor on the same instance) started its own model run for the same key.
+const inflight = new Map<string, Promise<AgentRun>>();
+
 export function planFor(inputs: BookInputs, base: string): Promise<AgentRun> {
-  return dailyPlan(base, inputs.asOf, inputs.ecb.date, inputs.policy?.notes ?? "", inputs.startedAt ?? "");
+  const key = planKey(inputs, base);
+  const running = inflight.get(key);
+  if (running) return running;
+  const p = dailyPlan(base, inputs.asOf, inputs.ecb.date, inputs.policy?.notes ?? "", inputs.startedAt ?? "");
+  inflight.set(key, p);
+  p.finally(() => inflight.delete(key)).catch(() => {});
+  return p;
+}
+
+// What a page shows: Claude's plan if it is ready within `waitMs` (a cached plan is ready at once). If it is not —
+// the first visit after a deploy, a demo reset or a new seller note — the page shows the rule-based plan for the
+// same invoices at once, marked as a stand-in, and Claude keeps writing in the background; the page's 10-second
+// refresh swaps it in. Before this, that visit showed "planning…" for about a minute (measured 58.6 s, 2026-10-30).
+export const PLAN_WAIT_MS = 8_000;
+
+// The value if `p` settles successfully within `ms`, otherwise null (also when it fails).
+export async function within<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<null>((r) => (timer = setTimeout(() => r(null), ms)));
+  try {
+    return await Promise.race([p.catch(() => null), late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+export async function planSoon(inputs: BookInputs, base: string, input: AgentInput, waitMs = PLAN_WAIT_MS): Promise<AgentRun> {
+  const p = planFor(inputs, base);
+  const first = await within(p, waitMs);
+  if (first) return first;
+  try {
+    after(() => p.catch(() => {})); // keep this request alive until the plan is in the shared cache
+  } catch {
+    // outside a request (scripts): nothing to keep alive
+  }
+  return { ...rulesRun(input, "Claude is still writing today's plan"), pending: true };
 }
 
 // After a page is served: make sure every other home currency's plan is in the shared cache too, so switching
@@ -65,7 +107,7 @@ export async function warmOtherPlans(inputs: BookInputs, base: string, bases: re
   const todo = bases.filter((b) => b !== base);
   await Promise.allSettled(
     todo.map(async (b) => {
-      const key = [b, inputs.asOf, inputs.ecb.date, inputs.policy?.notes ?? "", inputs.startedAt ?? ""].join("|");
+      const key = planKey(inputs, b);
       if (warming.has(key)) return;
       warming.add(key);
       try {

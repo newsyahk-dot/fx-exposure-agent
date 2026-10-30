@@ -7,17 +7,19 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import styles from "./page.module.css";
 
-export function StaleNotice({ failed = false }: { failed?: boolean }) {
+// `message`/`everyMs`: the same self-refresh for a page showing the rule-based stand-in while Claude's plan is
+// still being written (src/lib/agent-cache.ts planSoon).
+export function StaleNotice({ failed = false, message, everyMs = 4000 }: { failed?: boolean; message?: string; everyMs?: number }) {
   const router = useRouter();
   useEffect(() => {
-    const t = setInterval(() => router.refresh(), 4000);
+    const t = setInterval(() => router.refresh(), everyMs);
     return () => clearInterval(t);
-  }, [router]);
+  }, [router, everyMs]);
   return (
     <p className={styles.staleNotice} role="status">
-      {failed
+      {message ?? (failed
         ? "PayPal did not answer just now. Trying again in a few seconds…"
-        : "PayPal is still updating after the last change; showing the invoices from a moment ago and refreshing…"}
+        : "PayPal is still updating after the last change; showing the invoices from a moment ago and refreshing…")}
     </p>
   );
 }

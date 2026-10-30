@@ -91,6 +91,12 @@ export async function TodayPlan({
           {r.notProposed.length > 0 && <>; {r.notProposed.length} left alone</>}.
           {r.plannedAt && <span className={styles.muted}> Made {r.plannedAt.slice(11, 16)} UTC.</span>}
         </p>
+        {r.pending && (
+          <p className={`${styles.muted} ${styles.slowNote}`}>
+            Claude is still writing today&apos;s plan (about a minute after a new day or a reset). Until it is ready you see
+            the rule-based plan for the same invoices; this page swaps it in by itself.
+          </p>
+        )}
         {ratio != null && ratio < 0.95 && (
           <p className={styles.muted}>
             Replayed over two years of rates, getting paid this way kept the range {widthPhrase(ratio)}.{" "}
