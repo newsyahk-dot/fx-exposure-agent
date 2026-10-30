@@ -64,7 +64,7 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
           Get paid sooner from clients abroad — and see what exchange rates can do to the money you&apos;re still waiting for.
         </p>
         <p>
-          <Link href="/try" className={`${styles.link} ${styles.tryLink}`}>
+          <Link href="/try" prefetch={false} className={`${styles.link} ${styles.tryLink}`}>
             Try it with your own invoices →
           </Link>
         </p>
