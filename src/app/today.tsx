@@ -13,6 +13,7 @@ import type { Invoice } from "@/lib/types";
 import { todayBar, type BarKey } from "@/lib/today-bar";
 import { SHOCK_PCT } from "@/lib/view";
 import { ApproveForm } from "./approve-button";
+import { Icon } from "./icons";
 import { SimulatePayment } from "./client-pay";
 import { MoneyTimeline } from "./money-timeline";
 import { moneyTimeline } from "@/lib/money-timeline";
@@ -78,19 +79,24 @@ export async function TodayPlan({
   return (
     <>
       <TodayBar bar={bar} c={c} />
-      {homeCards > 0 && (
-        <p className={styles.muted}>
-          Also proposed: {homeCards} reminder{homeCards === 1 ? "" : "s"} for invoices in {base} — late too, but exchange rates do not
-          change {homeCards === 1 ? "it" : "them"}, so {homeCards === 1 ? "it is" : "they are"} not in the bar above.
-        </p>
-      )}
       <div className={styles.agentStatus}>
-        <p>
-          <strong>{r.source === "agent" ? "Claude's plan for today" : "Today's plan (rule-based)"}:</strong>{" "}
-          {lead ? lead : "nothing to do"}
-          {r.notProposed.length > 0 && <>; {r.notProposed.length} left alone</>}.
-          {r.plannedAt && <span className={styles.muted}> Made {r.plannedAt.slice(11, 16)} UTC.</span>}
+        <p className={styles.agentLead}>
+          <span className={styles.agentIcon}>
+            <Icon name="spark" size={18} />
+          </span>
+          <span>
+            <strong>{r.source === "agent" ? "Claude's plan for today" : "Today's plan (rule-based)"}:</strong>{" "}
+            {lead ? lead : "nothing to do"}
+            {r.notProposed.length > 0 && <>; {r.notProposed.length} left alone</>}.
+            {r.plannedAt && <span className={styles.muted}> Made {r.plannedAt.slice(11, 16)} UTC.</span>}
+          </span>
         </p>
+        {homeCards > 0 && (
+          <p className={styles.muted}>
+            Includes {homeCards} reminder{homeCards === 1 ? "" : "s"} for {base} invoices — late too, but with no exchange-rate risk, so not
+            in the bar above.
+          </p>
+        )}
         {r.pending && (
           <p className={`${styles.muted} ${styles.slowNote}`}>
             Claude is still writing today&apos;s plan (about a minute after a new day or a reset). Until it is ready you see
@@ -107,8 +113,6 @@ export async function TodayPlan({
         )}
       </div>
 
-      <MoneyTimeline t={moneyTimeline(input, r)} base={base} paid={Object.values(paidValue).reduce((a, b) => a + b, 0)} />
-
       {sharedDemo && cards.length > 0 && openCount === 0 && (
         <div className={styles.freshStart}>
           <p>
@@ -124,9 +128,12 @@ export async function TodayPlan({
         </p>
       )}
       {lockReason && cards.length > 0 && (
-        <p className={styles.muted}>
-          {/access code/.test(lockReason) ? "Approving needs the access code (top of the page). " : `${lockReason}. `}A reminder goes out as an
-          e-mail through PayPal; an offer goes out as a separate early-payment invoice, and your invoice stays as it is.
+        <p className={styles.lockNote}>
+          <Icon name="lock" size={14} />
+          <span>
+            {/access code/.test(lockReason) ? "Approving needs the access code (top of the page)." : `${lockReason}.`}{" "}
+            <span className={styles.muted}>Reminders go out as PayPal e-mails; an offer is a separate invoice — yours stays as it is.</span>
+          </span>
         </p>
       )}
       {cards.length === 0 ? (
@@ -155,6 +162,10 @@ export async function TodayPlan({
           })}
         </ul>
       )}
+
+      <section className={styles.panel} aria-label="When the money comes in">
+        <MoneyTimeline t={moneyTimeline(input, r)} base={base} paid={Object.values(paidValue).reduce((a, b) => a + b, 0)} />
+      </section>
 
       <details className={styles.leftAlone}>
         <summary>How the agent planned this</summary>
@@ -242,8 +253,9 @@ export function ProposalCard({
   const daysSooner = p.kind === "early_pay_discount" ? Math.max(0, p.daysToDue - p.withinDays) : 0;
   const annual = p.kind === "early_pay_discount" ? annualCostPct(p.percent, daysSooner) : 0;
   return (
-    <li className={styles.card} data-state={s.state}>
+    <li className={styles.card} data-state={s.state} data-kind={p.kind}>
       <p className={styles.cardKind}>
+        <Icon name={p.kind === "reminder" ? "mail" : "fast"} size={14} />
         {p.kind === "reminder"
           ? "Chase a late payment"
           : daysSooner >= 1

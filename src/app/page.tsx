@@ -34,6 +34,7 @@ import { AskResult } from "./ask-result";
 import { ReplanButton } from "./replan-button";
 import { NavLink } from "./nav-link";
 import { PreloadGrid } from "./preload-grid";
+import { Icon } from "./icons";
 import { ExposureGrid } from "./lazy";
 import type { ExposureRow } from "./exposure-grid";
 import { invoiceRows } from "@/lib/invoice-rows";
@@ -186,24 +187,34 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
             Waiting to be paid {away}, in {listAnd(e.rows.map((r) => r.currency)) || "foreign currencies"}
           </p>
           <HeroValue value={e.totalValue} base={base} collected={day.paid} />
-          <div className={styles.heroChips}>
-            {overdue > 0 && (
-              <span className={styles.statChip} data-tone="late">
-                <strong>{c(overdue)}</strong> overdue · {overdueCount} invoice{overdueCount === 1 ? "" : "s"}
+          <div className={styles.kpis}>
+            <div className={styles.kpi} data-tone="late">
+              <span className={styles.kpiLabel}>
+                <Icon name="clock" /> Overdue
               </span>
-            )}
-            <span className={styles.statChip} title="A stress test: up or down, equally likely — the size of the risk, not a forecast.">
-              <strong>±{c(e.totalShock)}</strong> if rates move {SHOCK_PCT}% either way
-            </span>
+              <strong>{c(overdue)}</strong>
+              <span className={styles.kpiNote}>
+                {overdueCount} invoice{overdueCount === 1 ? "" : "s"} past due
+              </span>
+            </div>
+            <div className={styles.kpi} data-tone="risk" title="A stress test: up or down, equally likely — the size of the risk, not a forecast.">
+              <span className={styles.kpiLabel}>
+                <Icon name="swing" /> If rates move {SHOCK_PCT}%
+              </span>
+              <strong>±{c(e.totalShock)}</strong>
+              <span className={styles.kpiNote}>either way · not a forecast</span>
+            </div>
+            <div className={styles.kpi} data-tone="good">
+              <span className={styles.kpiLabel}>
+                <Icon name="check" /> Collected today
+              </span>
+              <strong>{Math.round(day.paid) > 0 ? `+${c(day.paid)}` : c(0)}</strong>
+              <span className={styles.kpiNote}>
+                Start of today {c(e.totalValue + day.paid - day.added)}
+                {Math.round(day.added) > 0 && <> · +{c(day.added)} new</>}
+              </span>
+            </div>
           </div>
-          <p className={styles.muted}>Up or down, equally likely — the size of the risk, not a forecast.</p>
-          {Math.round(day.paid) > 0 || Math.round(day.added) > 0 ? (
-            <p className={styles.heroDelta}>
-              Start of today {c(e.totalValue + day.paid - day.added)} → now {c(e.totalValue)}
-              {Math.round(day.paid) > 0 && <strong> (+{c(day.paid)} collected today)</strong>}
-              {Math.round(day.added) > 0 && <span className={styles.muted}> (+{c(day.added)} new invoices today)</span>}
-            </p>
-          ) : null}
         </section>
       ) : (
         <aside className={styles.score} aria-label="Waiting to be paid">
