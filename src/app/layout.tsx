@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "FX Exposure Agent",
-  description: "Get paid sooner from clients abroad — and see what exchange rates can do to the money you're still waiting for. An AI agent proposes PayPal reminders and early-payment offers; you approve.",
+  description: "When a client abroad pays late, an AI agent writes the PayPal reminder or early-payment offer in your voice. You approve with one click — and see what exchange rates can do to the money still waiting.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

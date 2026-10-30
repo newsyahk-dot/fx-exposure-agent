@@ -1,6 +1,7 @@
 # FX Exposure Agent
 
-**Get paid sooner from clients abroad — and see what exchange rates can do to the money you're still waiting for.**
+**When a client abroad pays late, an AI agent writes the PayPal reminder or early-payment offer in your voice. You
+approve with one click — and see what exchange rates can do to the money still waiting.**
 
 Live demo: **https://fx-exposure-agent.vercel.app** (PayPal sandbox — no real money). Judges: the access code that
 lets you run the agent's actions is in the Devpost testing instructions; without it you can look around.
@@ -13,10 +14,11 @@ Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
 ## Who it's for
 
-A freelance designer in the US invoices clients in Europe, the UK and Japan through PayPal. Right now tens of thousands of dollars
-of her income is waiting in euros, pounds and yen, some of it already overdue. Every week it waits, a move in the
-exchange rate changes what she will actually be paid — and nothing tells her how much is at stake, or which invoice
-to deal with first.
+Monday morning, a freelance designer in the US opens her PayPal invoices. Atelier Moreau in Paris is 18 days late on
+€1,800; Sakura Games in Tokyo is 8 days late on ¥310,000. Writing a polite reminder to each client, in the right tone,
+is the job she keeps putting off — and every week the money waits, a move in the exchange rate changes what she will
+actually be paid. Tens of thousands of dollars of her income are waiting in euros, pounds and yen, and nothing tells
+her how much is at stake, or which invoice to deal with first.
 
 ### Why it matters
 
