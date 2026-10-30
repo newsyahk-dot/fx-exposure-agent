@@ -2,7 +2,7 @@ import Link from "next/link";
 import { after, connection } from "next/server";
 import { Suspense } from "react";
 import { REQUEST_MAX, rulesRun, type AgentInput, type AgentRun } from "@/lib/agent";
-import { askFor, planFor, warmOtherPlans } from "@/lib/agent-cache";
+import { askFor, planSoon, warmOtherPlans } from "@/lib/agent-cache";
 import { newInvoicesRequest } from "@/lib/autopilot";
 import { notInPlan } from "@/lib/plan-state";
 import { writesAllowed } from "@/lib/access";
@@ -28,13 +28,14 @@ import { UnlockForm } from "./unlock-form";
 import { WaitChart } from "./wait-chart";
 import { HeroValue } from "./hero-value";
 import { Logo } from "./logo";
-import { InvoiceGrid } from "./invoice-grid";
+import { InvoiceGrid } from "./lazy";
 import { AskAgent } from "./ask-agent";
 import { AskResult } from "./ask-result";
 import { ReplanButton } from "./replan-button";
 import { NavLink } from "./nav-link";
 import { PreloadGrid } from "./preload-grid";
-import { ExposureGrid, type ExposureRow } from "./exposure-grid";
+import { ExposureGrid } from "./lazy";
+import type { ExposureRow } from "./exposure-grid";
 import { invoiceRows } from "@/lib/invoice-rows";
 import styles from "./page.module.css";
 
@@ -120,7 +121,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
 
   // The day's plan (one per home currency); the demo shows the saved one.
   const plan = (): Promise<AgentRun> =>
-    demo ? Promise.resolve(inputs.agentRuns?.[base] ?? rulesRun(view.agentInput, "demo snapshot")) : planFor(inputs, base);
+    demo ? Promise.resolve(inputs.agentRuns?.[base] ?? rulesRun(view.agentInput, "demo snapshot")) : planSoon(inputs, base, view.agentInput);
 
   // Keep the other home currencies' plans ready, so a currency switch never waits a minute for the agent.
   if (!demo) after(() => warmOtherPlans(inputs, base, BASES));
@@ -570,12 +571,23 @@ async function GridSection({
   const r = await run.catch(() => null);
   const rows = invoiceRows(invoices, view.rates, view.vols, { base: view.base, asOf, shockPct: SHOCK_PCT, input: view.agentInput, run: r });
   return (
-    <InvoiceGrid rows={rows} base={view.base} lockReason={lockReason} clientUrls={Object.fromEntries(rows.map((x) => [x.id, clientViewUrl(x.id)]))} />
+    <>
+      {r?.pending && <StaleNotice message={PENDING_NOTE} everyMs={10_000} />}
+      <InvoiceGrid rows={rows} base={view.base} lockReason={lockReason} clientUrls={Object.fromEntries(rows.map((x) => [x.id, clientViewUrl(x.id)]))} />
+    </>
   );
 }
 
+const PENDING_NOTE = "Claude is still writing today's plan; showing the rule-based plan meanwhile. This page updates by itself.";
+
 async function ReplayFor({ run, ecb, input }: { run: Promise<AgentRun>; ecb: EcbQuotes; input: AgentInput }) {
-  return <Replay r={await run} ecb={ecb} input={input} />;
+  const r = await run;
+  return (
+    <>
+      {r.pending && <StaleNotice message={PENDING_NOTE} everyMs={10_000} />}
+      <Replay r={r} ecb={ecb} input={input} />
+    </>
+  );
 }
 
 function Timing({ view }: { view: BookView }) {

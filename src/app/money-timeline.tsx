@@ -5,7 +5,7 @@ import { compact } from "@/lib/format";
 import { ASSUME } from "@/lib/evidence";
 import type { MoneyTimeline as Timeline } from "@/lib/money-timeline";
 import styles from "./page.module.css";
-import { TimelineChart } from "./timeline-chart";
+import { TimelineChart } from "./lazy";
 
 // `paid`: money already collected today (home currency) — it has left the chart, so the caption says so.
 export function MoneyTimeline({ t, base, paid = 0 }: { t: Timeline; base: string; paid?: number }) {

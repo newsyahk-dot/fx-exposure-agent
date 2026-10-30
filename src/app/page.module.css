@@ -1670,3 +1670,12 @@
 .exposureGrid :global(.ag-cell.ag-right-aligned-cell) {
   justify-content: flex-end;
 }
+
+/* Placeholder while a lazily loaded table or chart downloads (src/app/lazy.tsx). */
+.lazyBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed color-mix(in srgb, var(--foreground) 18%, transparent);
+  border-radius: 8px;
+}

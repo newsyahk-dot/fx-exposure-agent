@@ -153,6 +153,11 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   "Billed work: …", how the client paid before (`paysFact`, for tone only — never told to the client) and "The seller
   signs as Maya" (`FXA_SELLER_NAME`, default Maya for the demo book). The prompt asks for the billed work by name, a
   tone set by the client's history, varied wording, and the seller's signature; the rules fallback does the same.
+- **Page load weight and cold plans** (2026-10-30): AG Grid and AG Charts (~420 KB compressed each) load through
+  `src/app/lazy.tsx` (`next/dynamic`, `ssr: false`), so a page downloads only what it shows (/try 3.3 MB → 0.5 MB of
+  JS). Pages call `planSoon` (`src/lib/agent-cache.ts`): if Claude's plan is not ready in `PLAN_WAIT_MS` (8 s), the page
+  shows the rule-based plan marked `pending` and the plan finishes in `after()`; refreshes swap it in (a cold EUR plan
+  held the Today screen 58.6 s on 2026-10-30). `planFor` shares one in-flight run per key per instance.
 - **Page after a write** (2026-10-29): `loadInputsForPage` retries a failed PayPal read once and then shows the last
   good book with `StaleNotice` (refreshes every 4 s) — one failed read after "Simulate client payment" used to replace
   the whole page with an error.
