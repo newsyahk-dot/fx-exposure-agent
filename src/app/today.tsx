@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import { annualCostPct, type AgentInput, type AgentProposal, type AgentRun } from "@/lib/agent";
-import { timelines, replayBook } from "@/lib/evidence";
 import type { EcbQuotes } from "@/lib/fx";
 import { compact, money } from "@/lib/format";
 import type { OfferInfo } from "@/lib/offer-invoice";
@@ -70,11 +69,6 @@ export async function TodayPlan({
   const calls = r.steps.filter((s) => s.tool !== "summary").length;
   const paypalReads = r.steps.filter((s) => s.tool.startsWith("paypal.") && s.ok).length;
 
-  // What the proposals would have done to the range of the whole book, over two years of ECB rates.
-  const { asInvoiced, withProposals } = timelines(input, r);
-  const a = replayBook(ecb, base, asInvoiced, input.asOf);
-  const b = replayBook(ecb, base, withProposals, input.asOf);
-  const ratio = a.n > 0 && b.n > 0 && a.p95 - a.p5 > 0 ? (b.p95 - b.p5) / (a.p95 - a.p5) : null;
 
   return (
     <>
@@ -103,14 +97,14 @@ export async function TodayPlan({
             the rule-based plan for the same invoices; this page swaps it in by itself.
           </p>
         )}
-        {ratio != null && ratio < 0.95 && (
-          <p className={styles.muted}>
-            Replayed over two years of rates, getting paid this way kept the range {widthPhrase(ratio)}.{" "}
-            <Link href={evidenceHref} prefetch={false} className={styles.link}>
-              Evidence →
-            </Link>
-          </p>
-        )}
+        {/* The replayed-range comparison lives on Evidence only: next to the proposals it read as selling them
+            (blind review, 2026-11-09). */}
+        <p className={styles.muted}>
+          What exchange rates did to money that waited before, over two years of ECB rates:{" "}
+          <Link href={evidenceHref} prefetch={false} className={styles.link}>
+            Evidence →
+          </Link>
+        </p>
       </div>
 
       {sharedDemo && cards.length > 0 && openCount === 0 && (

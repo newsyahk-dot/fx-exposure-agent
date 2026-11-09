@@ -175,7 +175,7 @@ export function InvoiceGrid({
         field: "number",
         headerName: "Invoice",
         pinned: narrow ? undefined : "left", // on a phone two pinned columns would fill the screen
-        minWidth: narrow ? 132 : 164,
+        minWidth: narrow ? 150 : 164,
         // The invoice number opens PayPal's client view (a separate column did not fit at desktop width).
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.data?.id && clientUrls[p.data.id] ? (
@@ -217,6 +217,7 @@ export function InvoiceGrid({
         field: "amount",
         headerName: "Still owed",
         minWidth: 128,
+        hide: narrow, // a phone keeps the ranking column (At risk) on screen instead; the amount is in the detail row
         type: "rightAligned",
         enableCellChangeFlash: true,
         valueFormatter: (p) =>
@@ -268,7 +269,9 @@ export function InvoiceGrid({
         headerTooltip: "Edit the agent's e-mail or discount before approving — checked again on the server",
         minWidth: 84,
         sortable: false,
-        editable: (p) => !!p.data?.action && !p.data.detailOf && !p.node.rowPinned,
+        // An offer with only one percent within the rule has nothing to pick: no editor, no ✎.
+        editable: (p) =>
+          !!p.data?.action && !p.data.detailOf && !p.node.rowPinned && (p.data.action.kind === "reminder" || p.data.action.percents.length > 1),
         valueGetter: (p) => (p.data?.action ? (p.data.action.kind === "reminder" ? p.data.action.message : p.data.action.percent) : null),
         valueSetter: (p) => {
           const a = p.data?.action;
@@ -284,6 +287,8 @@ export function InvoiceGrid({
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) => {
           const a = p.data?.action;
           if (!a || p.node.rowPinned) return null;
+          if (a.kind === "early_pay_discount" && a.percents.length < 2)
+            return <span title="The only discount within the app's offer rule for these dates">{a.percent}%</span>;
           return (
             <button
               type="button"
@@ -328,7 +333,7 @@ export function InvoiceGrid({
   // Totals follow the filter: what is at risk among the invoices currently shown. The filtered list is tied to the
   // rows it was taken from, so new rows from the server start from the full total again.
   const [shown, setShown] = useState<{ from: InvoiceRow[]; list: InvoiceRow[] } | null>(null);
-  const totals = [total(shown?.from === rows ? shown.list : rows)];
+  const totals = [total(shown?.from === rows ? shown.list : rows, base)];
   const refreshTotals = () => {
     const list: InvoiceRow[] = [];
     api.current?.forEachNodeAfterFilter((n) => n.data && !n.data.detailOf && list.push(n.data));
@@ -448,8 +453,8 @@ export function InvoiceGrid({
           )}
         </div>
       )}
-      {narrow && <p className={styles.muted}>Scroll the grid sideways for the risk, the agent and the draft →</p>}
-      <div>
+      {narrow && <p className={styles.muted}>Scroll the grid sideways for the agent and the draft →; ▸ shows the amount and details.</p>}
+      <div role="region" aria-label="Every open invoice, ranked by what it puts at risk">
         <DetailCtx.Provider value={{ lockReason, busy: running, approveOne: (r) => runApprovals([r]), close: toggle, undo: (id) => edit(id, null) }}>
         <AgGridReact<InvoiceRow>
           theme={theme}
@@ -497,10 +502,13 @@ export function InvoiceGrid({
   );
 }
 
-function total(all: InvoiceRow[]): TotalRow {
+// The pinned total row. It counts home-currency invoices too (they can be late), so it says how many: otherwise its
+// value reads as contradicting the "from clients abroad" total on Today (blind review, 2026-11-09).
+function total(all: InvoiceRow[], base: string): TotalRow {
   const rows = all.filter((r) => !r.paidToday && !r.detailOf);
+  const home = rows.filter((r) => r.currency === base).length;
   return {
-    number: `${rows.length} open invoice${rows.length === 1 ? "" : "s"}`,
+    number: `${rows.length} open invoice${rows.length === 1 ? "" : "s"}${home ? ` (${home} in ${base})` : ""}`,
     value: rows.reduce((s, r) => s + r.value, 0),
     atRisk: rows.reduce((s, r) => s + r.atRisk, 0),
   };
@@ -633,6 +641,9 @@ function DetailRow({
   return (
     <div className={styles.gridDetail}>
       <div>
+        <p>
+          {r.number} · {r.client || "client"} · <strong>{fmt(r.currency, r.amount)}</strong> still owed
+        </p>
         <p>
           <strong>How {r.client || "this client"} has paid</strong>
         </p>

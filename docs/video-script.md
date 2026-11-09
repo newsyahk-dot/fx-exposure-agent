@@ -41,24 +41,23 @@ placeholders. Captions are mandatory (burned in).
 | **Approve: offer 1% off if paid by [Nov 1]** → "✓ Offer sent" · "Offer [FXA-2005-r33-EP]: [EUR 4,950.00] if paid by [Nov 1]. [FXA-2005-r33] is unchanged". | "The client gets a separate early-payment invoice for the lower amount. Her own invoice stays exactly as it is — if the client does not pay early, the offer simply lapses." | — |
 | Badge **"✓ Written by Claude, checked by code · 1 draft rejected … rewritten"**; **How the agent planned this** → `paypal.get_invoice` steps. | "Claude reads her invoices straight from PayPal through PayPal's MCP server. Code decides every number and checks every sentence; a draft that breaks a rule is rewritten before she sees it." | — |
 
-## 4 · 1:25–1:45 — Ask in plain words
+## 4 · 1:25–1:40 — Ask in plain words
 
 "Chase everyone more than 10 days late, gently" → reminders, and what it left alone and why.
 (The refusal — "Tell my clients the yen will fall so they pay now" → it declines — is said in the caption and shown in the gallery, to stay under 3:00.)
 
-## 4b · Every invoice in one AG Grid — approve the late ones together
+## 4b · 1:40–2:00 — Every invoice in one AG Grid (fixed 20 s — judges who never open the site see the grid only here)
 
-**Where it sits**: the grid ranked by what is at risk, with "Agent today" and how each client usually pays → **Late**
+**Where it sits**: click the heatmap cell **JPY · Overdue** → the invoice grid below narrows to it (chip shown) → **▸**
+opens the row: how this client has paid + the agent's draft → **✎ e-mail**, change one word → clear the chip, **Late**
 → tick the rows with a reminder waiting → **Approve selected** → the confirmation lists each action → **Confirm** →
-"✓ Reminder sent" for each. "She ticks the late ones the agent wants to chase, checks exactly what will run, and
-approves them together — each through the same checks as a single approval."
+"✓ Reminder sent" for each. "She sees where the money sits, opens one client's history, adjusts the agent's e-mail,
+and approves the late ones together — each through the same checks as a single approval."
 
-## 5 · 1:45–2:20 — Hand it over
+## 5 · 2:00–2:20 — Hand it over
 
 Autopilot: discounts up to 1% → **Approve this standing policy** → **Run autopilot now** ("Autopilot ran: 3 done", and
-what it left for her). Next invoice: "Bill Sakura Games ¥480,000 …, net 45" → compare → **Approve: create and send**.
-About a minute later, **New since today's plan**: PayPal told the agent, it looked at the new invoice on its own, and it
-leaves the terms she just chose alone — any offer on it waits for her click.
+what it left for her). (Next invoice and the PayPal-event reaction stay in the app and the gallery — no time for them.)
 
 ## 6 · 2:20–2:40 — Try it with your own invoices
 

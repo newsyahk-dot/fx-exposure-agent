@@ -10,7 +10,11 @@ export type PaidToday = { invoice: Invoice; amount: number; value: number }; // 
 export function paidToday(invoices: Invoice[], rates: Rates, base: string, asOf: string): PaidToday[] {
   return invoices
     .map((invoice) => {
-      const amount = (invoice.payments ?? []).filter((p) => p.date === asOf).reduce((s, p) => s + p.amount, 0);
+      // On or after the book day: the demo book's day is the day of its last reset (src/lib/book.ts bookDay), so a
+      // payment made after midnight UTC but before the next reset is dated the next day and still belongs here.
+      // The grid uses the same rule (src/lib/invoice-rows.ts). With === it showed "Collected today $0" after a
+      // payment (blind review, 2026-11-09).
+      const amount = (invoice.payments ?? []).filter((p) => p.date >= asOf).reduce((s, p) => s + p.amount, 0);
       const rate = invoice.currency === base ? 1 : rates[invoice.currency];
       return { invoice, amount, value: rate > 0 ? amount * rate : 0 };
     })
@@ -29,7 +33,7 @@ export function dayChange(invoices: Invoice[], paid: PaidToday[], rates: Rates, 
   // "Today" is the creation time (UTC) when PayPal gives it, so it matches asOf whatever date PayPal printed on it.
   // Demo-book invoices (FXA-1234, FXA-1234-r5) are back-dated stand-ins re-created by a reset: they were "there"
   // at the start of the story, so a reset does not show the whole book as new.
-  const createdToday = (i: Invoice) => !parseSeedNumber(i.number) && (i.createdAt ?? i.invoiceDate).slice(0, 10) === asOf;
+  const createdToday = (i: Invoice) => !parseSeedNumber(i.number) && (i.createdAt ?? i.invoiceDate).slice(0, 10) >= asOf;
   const added = invoices
     .filter((i) => foreign(i) && createdToday(i) && (isOpen(i) || paidById.has(i.id)))
     .reduce((s, i) => s + ((isOpen(i) ? i.amountDue : 0) + (paidById.get(i.id) ?? 0)) * rates[i.currency], 0);

@@ -168,6 +168,12 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   big number, then the plan status, then the cards, then the money-in chart in its own panel (it used to sit above the
   cards). Cards carry a coloured left edge and icon by kind (amber reminder, blue offer; `src/app/icons.tsx`). Keep
   explanatory sentences short; long ones go in tooltips or details.
+- **Round 10 blind review fixes** (2026-11-09): "Collected today" counts payments dated on or after the book day
+  (`paidToday` in `src/lib/today.ts`, `>=` like the grid) — with `===` a payment after 00:00 UTC but before the next
+  demo reset showed $0. The replayed-range line ("x% narrower") lives on Evidence only. Heatmap cells show the home
+  currency (invoice currency in the tooltip) and take Enter; the overlay horizontal scrollbar is transparent so it no
+  longer cuts the last row on phones. Invoice grid: no ✎ when only one percent is allowed, phones hide Still owed (it is
+  in the detail row) to keep At risk on screen, the total row says how many invoices are in the home currency.
 - **Page after a write** (2026-10-29): `loadInputsForPage` retries a failed PayPal read once and then shows the last
   good book with `StaleNotice` (refreshes every 4 s) — one failed read after "Simulate client payment" used to replace
   the whole page with an error.

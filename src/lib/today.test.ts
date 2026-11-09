@@ -32,4 +32,15 @@ describe("today", () => {
     const seed: Invoice = { ...inv("s", "JPY", []), number: "FXA-3005-r10", status: "SENT", amountDue: 100000, invoiceDate: "2026-10-25", createdAt: "2026-10-26T00:07:00Z" };
     expect(dayChange([seed], [], { JPY: 0.0066 }, "USD", "2026-10-26").added).toBe(0);
   });
+  it("counts a payment made after midnight but before the next demo reset (book day held)", () => {
+    // Book day 2026-11-08 (reset at 00:07 UTC); the client paid at 00:02 UTC on the 9th, before the next reset.
+    const book = [inv("a", "EUR", [{ date: "2026-11-09", amount: 1800 }, { date: "2026-11-01", amount: 300 }])];
+    const p = paidToday(book, { EUR: 1.1 }, "USD", "2026-11-08");
+    expect(p.map((x) => x.amount)).toEqual([1800]);
+    expect(dayChange(book, p, { EUR: 1.1 }, "USD", "2026-11-08").paid).toBeCloseTo(1980, 9);
+  });
+  it("counts an invoice created after midnight but before the next reset as new", () => {
+    const open: Invoice = { ...inv("n", "JPY", []), status: "SENT", amountDue: 100000, invoiceDate: "2026-11-09", createdAt: "2026-11-09T00:01:00Z" };
+    expect(dayChange([open], [], { JPY: 0.0066 }, "USD", "2026-11-08").added).toBeCloseTo(660, 9);
+  });
 });
