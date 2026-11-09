@@ -1912,25 +1912,6 @@
   }
 }
 
-/* The first line on Today: what is late, in money — the pain before the totals. */
-.heroAlert {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  align-self: flex-start;
-  margin-bottom: 8px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  font-size: 16px;
-  color: var(--text-primary);
-  background: color-mix(in srgb, var(--warning) 12%, var(--surface-1));
-  border: 1px solid color-mix(in srgb, var(--warning) 40%, var(--border));
-}
-
-.heroAlert > svg {
-  margin-top: 3px;
-  color: var(--warning);
-}
 
 /* Phones: AG Grid draws its overlay ("invisible") horizontal scrollbar as a 16 px opaque strip over the last row of an
    auto-height grid, which cut the heatmap's bottom row in half (blind review, 2026-11-09). Let the row show through;
