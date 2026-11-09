@@ -55,9 +55,6 @@ export function InvoiceGrid({
   const api = useRef<GridApi<InvoiceRow> | null>(null);
   const router = useRouter();
   const narrow = useSyncExternalStore(subscribeNarrow, isNarrow, () => false);
-  // "In USD" only on wide screens: at 1366 px it pushed the Agent and Offer cells into truncation ("Nov 19" read
-  // "Nov 1"). The value is in the CSV and the detail row.
-  const wide = useSyncExternalStore(subscribeWide, isWide, () => false);
   // The seller's edits to the agent's drafts, by invoice id; applied over the rows from the server.
   const [edits, setEdits] = useState<Record<string, DraftEdit>>({});
   const edit = (id: string, e: DraftEdit | null) =>
@@ -332,9 +329,11 @@ export function InvoiceGrid({
         valueFormatter: (p) =>
           p.node?.rowPinned || !p.value
             ? ""
-            : `${p.value}${p.data?.offerState === "paid" ? " · paid" : p.data?.offerState === "expired" ? " · lapsed" : p.data?.offerState === "closed" ? " · closed" : ""}`,
+            : // "paid" shows in Agent today ("Paid today (offer)"); here it only cut the date off at 1366 px
+              `${p.value}${p.data?.offerState === "expired" ? " · lapsed" : p.data?.offerState === "closed" ? " · closed" : ""}`,
       },
-      { field: "value", headerName: `In ${base}`, headerTooltip: `What it is worth in ${base} at today's ECB rates`, minWidth: 80, hide: !wide, type: "rightAligned", valueFormatter: (p) => home(p.value) },
+      // In the CSV only: the page is never wider than 1080 px, and on screen this column cut Agent and Offer off.
+      { field: "value", headerName: `In ${base}`, headerTooltip: `What it is worth in ${base} at today's ECB rates`, minWidth: 80, hide: true, type: "rightAligned", valueFormatter: (p) => home(p.value) },
       {
         field: "swing",
         headerName: "Swing",
@@ -346,7 +345,7 @@ export function InvoiceGrid({
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [base, maxRisk, clientUrls, hasOffers, expanded, narrow, wide],
+    [base, maxRisk, clientUrls, hasOffers, expanded, narrow],
   );
 
   // Totals follow the filter: what is at risk among the invoices currently shown. The filtered list is tied to the
@@ -488,6 +487,16 @@ export function InvoiceGrid({
           rowSelection={rowSelection}
           selectionColumnDef={{ pinned: narrow ? undefined : "left", width: 44, minWidth: 44, maxWidth: 44, headerTooltip: "Select proposals to approve together" }}
           stopEditingWhenCellsLoseFocus
+          // Keyboard: Enter or Space on a focused invoice cell opens or closes its detail row (the ▸ button inside the
+          // cell is not reachable with the arrow keys).
+          onCellKeyDown={(e) => {
+            const k = (e.event as KeyboardEvent | null)?.key;
+            if (!("column" in e)) return; // a full-width (detail) row
+            if ((k === "Enter" || k === " ") && e.column.getColId() === "number" && e.data?.id && !e.data.detailOf && !e.node.rowPinned) {
+              (e.event as KeyboardEvent).preventDefault();
+              toggle(e.data.id);
+            }
+          }}
           onCellEditingStarted={(e) => {
             // AG Grid's large-text editor opens with the whole e-mail selected: typing would replace it. Put the cursor
             // at the end instead.
@@ -553,13 +562,6 @@ const subscribeNarrow = (cb: () => void) => {
   return () => m.removeEventListener("change", cb);
 };
 const isNarrow = () => window.matchMedia(NARROW).matches;
-const WIDE = "(min-width: 1440px)";
-const subscribeWide = (cb: () => void) => {
-  const m = window.matchMedia(WIDE);
-  m.addEventListener("change", cb);
-  return () => m.removeEventListener("change", cb);
-};
-const isWide = () => window.matchMedia(WIDE).matches;
 const isDetail = (p: { rowNode: { data?: InvoiceRow } }) => !!p.rowNode.data?.detailOf;
 // A detail row's height: measured from its content once shown (estimated until then).
 const measured = new Map<string, number>();

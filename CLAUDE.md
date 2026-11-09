@@ -189,8 +189,9 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   opens under the cell, the e-mail editor keeps its first line in view. /try cards show the client. Round 12: columns
   fit 1366 px (no sideways scroll); the transparent overlay-scrollbar CSS applies to phones only; the quick filter
   searches what cells show (`getQuickFilterText` on Client, Still owed, Due); Tab in the Draft editor keeps the edit
-  instead of opening the next row's editor; the Paid-today view's total reads "N paid today". Round 13: "In USD" shows
-  only at ≥1440 px so Agent and Offer fit at 1366 (checked: no truncated cell in USD or KRW); At risk uses compact
+  instead of opening the next row's editor; the Paid-today view's total reads "N paid today". Round 13–14: "In USD" is
+  hidden on screen (CSV only) — the page is never wider than 1080 px, so a ≥1440 px breakpoint made it overflow; the
+  Offer cell no longer adds "· paid"; Enter or Space on an invoice cell opens its detail row; At risk uses compact
   amounts for KRW/JPY; the e-mail editor puts the cursor before "Best regards"; heatmap cells and totals use full
   amounts, right-aligned, blank instead of "$0".
 - **Front door** (2026-11-09, user's choice of the spacious draft over a compact one): the top of every page is a
@@ -198,7 +199,14 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   like a treasury desk." (h1, second line in the accent colour), one sentence, a primary button "See today's plan ↓"
   (`/?step=today#actions-h`) and "Try your own invoices →", then the three moments as cards linking to Next invoice,
   Where it sits and Today. No separate landing page: it would add a click between a judge and the demo. On a 1440×900
-  screen the tiles start just below the fold.
+  screen the tiles start just below the fold. The big part (`.heroExtra`) shows on Today only; the other steps keep the
+  brand bar (CSS `:has([data-step])` on the step body).
+- **Automatic demo reset** (2026-11-09, `src/lib/auto-reset.ts`, `/api/auto-reset`): the shared book loses its story
+  once visitors pay every late invoice from abroad (round 5 reviewers saw only domestic reminders and called the FX view
+  decoration). A page visit whose book has no late invoice from abroad, has been quiet for `AUTO_RESET_IDLE_MIN` (30)
+  minutes (PayPal `last_update_time` and agent log) and is at least `AUTO_RESET_MIN_AGE_MIN` (60) minutes old asks
+  `/api/auto-reset`, which re-checks on fresh data, answers 202 and resets in `after()` like the nightly job (reset,
+  plan every currency, then expire the book). Never resets a real seller's book or someone mid-demo.
 - **Page after a write** (2026-10-29): `loadInputsForPage` retries a failed PayPal read once and then shows the last
   good book with `StaleNotice` (refreshes every 4 s) — one failed read after "Simulate client payment" used to replace
   the whole page with an error.
