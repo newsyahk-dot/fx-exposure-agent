@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { applyEdit, type DraftEdit, type InvoiceRow } from "@/lib/invoice-rows";
 import { annualCostPct } from "@/lib/offer-rule";
+import { compact } from "@/lib/format";
 import { FOCUS_EVENT, gridTheme, type FocusDetail } from "./grid-theme";
 import { approve } from "./actions";
 import styles from "./page.module.css";
@@ -54,6 +55,9 @@ export function InvoiceGrid({
   const api = useRef<GridApi<InvoiceRow> | null>(null);
   const router = useRouter();
   const narrow = useSyncExternalStore(subscribeNarrow, isNarrow, () => false);
+  // "In USD" only on wide screens: at 1366 px it pushed the Agent and Offer cells into truncation ("Nov 19" read
+  // "Nov 1"). The value is in the CSV and the detail row.
+  const wide = useSyncExternalStore(subscribeWide, isWide, () => false);
   // The seller's edits to the agent's drafts, by invoice id; applied over the rows from the server.
   const [edits, setEdits] = useState<Record<string, DraftEdit>>({});
   const edit = (id: string, e: DraftEdit | null) =>
@@ -175,7 +179,7 @@ export function InvoiceGrid({
         field: "number",
         headerName: "Invoice",
         pinned: narrow ? undefined : "left", // on a phone two pinned columns would fill the screen
-        minWidth: narrow ? 150 : 156,
+        minWidth: narrow ? 150 : 160,
         // The invoice number opens PayPal's client view (a separate column did not fit at desktop width).
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.data?.id && clientUrls[p.data.id] ? (
@@ -200,7 +204,7 @@ export function InvoiceGrid({
       {
         field: "client",
         headerName: "Client",
-        minWidth: 136,
+        minWidth: 150,
         hide: narrow, // a phone shows the money first; the client is in the detail row and in search
         tooltipField: "client",
         getQuickFilterText: (p) => `${p.data?.client ?? ""} ${p.data?.usuallyPays ?? ""}`, // search what is shown
@@ -233,7 +237,7 @@ export function InvoiceGrid({
       {
         field: "daysToDue",
         headerName: "Due",
-        minWidth: 100,
+        minWidth: 104,
         // Search the words on screen ("8 days late", "paid today"), not the raw number of days.
         getQuickFilterText: (p) =>
           p.data?.paidToday ? "paid today" : p.value == null ? "" : p.value < 0 ? `${-p.value} days late overdue` : p.value === 0 ? "today" : `in ${p.value} days`,
@@ -250,11 +254,11 @@ export function InvoiceGrid({
         valueFormatter: (p) => (p.value ? `±${home(p.value)}` : "none"), // used by the CSV export
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.node.rowPinned ? (
-            <strong>±{home(p.value)}</strong>
+            <strong>±{base === "KRW" || base === "JPY" ? compact(base, p.value) : home(p.value)}</strong>
           ) : p.value ? (
             <span className={styles.gridBar}>
               <i style={{ width: `${Math.round((p.value / maxRisk) * 100)}%` }} aria-hidden="true" />
-              <span>±{home(p.value)}</span>
+              <span>±{base === "KRW" || base === "JPY" ? compact(base, p.value) : home(p.value)}</span>
             </span>
           ) : (
             <span className={styles.muted}>none</span>
@@ -263,7 +267,7 @@ export function InvoiceGrid({
       {
         field: "agent",
         headerName: "Agent today",
-        minWidth: 120,
+        minWidth: 152,
         tooltipField: "agent",
         enableCellChangeFlash: true,
         cellClassRules: { [styles.gridActive]: (p) => /proposed|sent|Paid/.test(p.value ?? "") },
@@ -275,7 +279,7 @@ export function InvoiceGrid({
         colId: "draft",
         headerName: "Draft",
         headerTooltip: "Edit the agent's e-mail or discount before approving — checked again on the server",
-        minWidth: 80,
+        minWidth: 84,
         sortable: false,
         // An offer with only one percent within the rule has nothing to pick: no editor, no ✎.
         editable: (p) =>
@@ -321,7 +325,7 @@ export function InvoiceGrid({
         field: "offer",
         headerName: "Offer",
         headerTooltip: "A separate PayPal invoice for the discounted amount; it lapses after its date and the original applies",
-        minWidth: 124,
+        minWidth: 144,
         hide: !hasOffers,
         tooltipField: "offer",
         enableCellChangeFlash: true,
@@ -330,7 +334,7 @@ export function InvoiceGrid({
             ? ""
             : `${p.value}${p.data?.offerState === "paid" ? " · paid" : p.data?.offerState === "expired" ? " · lapsed" : p.data?.offerState === "closed" ? " · closed" : ""}`,
       },
-      { field: "value", headerName: `In ${base}`, headerTooltip: `What it is worth in ${base} at today's ECB rates`, minWidth: 80, hide: narrow, type: "rightAligned", valueFormatter: (p) => home(p.value) },
+      { field: "value", headerName: `In ${base}`, headerTooltip: `What it is worth in ${base} at today's ECB rates`, minWidth: 80, hide: !wide, type: "rightAligned", valueFormatter: (p) => home(p.value) },
       {
         field: "swing",
         headerName: "Swing",
@@ -342,7 +346,7 @@ export function InvoiceGrid({
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [base, maxRisk, clientUrls, hasOffers, expanded, narrow],
+    [base, maxRisk, clientUrls, hasOffers, expanded, narrow, wide],
   );
 
   // Totals follow the filter: what is at risk among the invoices currently shown. The filtered list is tied to the
@@ -491,7 +495,10 @@ export function InvoiceGrid({
             requestAnimationFrame(() => {
               const ta = document.querySelector<HTMLTextAreaElement>(".ag-large-text textarea, .ag-popup-editor textarea");
               if (!ta) return;
-              ta.setSelectionRange(ta.value.length, ta.value.length);
+              // Before the sign-off ("Best regards, Maya"), so what she types lands in the message, not after her name.
+              const sign = ta.value.search(/\s*(?:best|kind|warm)?\s*regards\b[\s\S]*$/i);
+              const at = sign > 0 ? sign : ta.value.length;
+              ta.setSelectionRange(at, at);
               ta.scrollTop = 0; // keep the greeting in view (on a phone the cursor at the end scrolled it away)
             });
           }}
@@ -546,6 +553,13 @@ const subscribeNarrow = (cb: () => void) => {
   return () => m.removeEventListener("change", cb);
 };
 const isNarrow = () => window.matchMedia(NARROW).matches;
+const WIDE = "(min-width: 1440px)";
+const subscribeWide = (cb: () => void) => {
+  const m = window.matchMedia(WIDE);
+  m.addEventListener("change", cb);
+  return () => m.removeEventListener("change", cb);
+};
+const isWide = () => window.matchMedia(WIDE).matches;
 const isDetail = (p: { rowNode: { data?: InvoiceRow } }) => !!p.rowNode.data?.detailOf;
 // A detail row's height: measured from its content once shown (estimated until then).
 const measured = new Map<string, number>();
