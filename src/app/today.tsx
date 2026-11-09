@@ -47,14 +47,18 @@ export async function TodayPlan({
   const r = await run;
   const c = (n: number) => compact(base, n);
   const cards = r.proposals.map((p) => ({ p, s: proposalState(p, input, invoices, r.plannedAt) }));
-  // Ordered by what each invoice puts at risk from exchange rates (a 3% move on its home-currency value), largest
-  // first: the treasury view decides the queue, whatever the action (blind review, 2026-11-09: "exposure never changes
-  // an action"). A card stays where it is while it goes open → sent → paid. Home-currency invoices carry no FX risk and
-  // come last.
-  const rank = (p: AgentProposal) => (p.currency === base ? 1 : 0);
-  cards.sort((a, b) => rank(a.p) - rank(b.p) || b.p.value - a.p.value || (a.p.kind === "reminder" ? -1 : 1));
+  // Late money first, the way a treasury desk works a receivables list: reminders by what is late in the home
+  // currency, largest first (whatever the currency), then the offers on money still on its way. Ordering everything by
+  // exchange-rate risk put a $4,200 invoice 13 days late after offers on invoices due in weeks (blind review round 3,
+  // 2026-11-09). Each card still shows its place by exchange-rate risk. A card stays where it is while it goes
+  // open → sent → paid.
+  const group = (p: AgentProposal) => (p.kind === "reminder" ? 0 : 1);
+  cards.sort((a, b) => group(a.p) - group(b.p) || b.p.value - a.p.value);
   const totalRisk = (waiting.reduce((s, w) => s + w.value, 0) * SHOCK_PCT) / 100;
-  const riskOrder = cards.filter((x) => x.p.currency !== base).map((x) => x.p.invoiceId);
+  const riskOrder = cards
+    .filter((x) => x.p.currency !== base)
+    .sort((a, b) => b.p.value - a.p.value)
+    .map((x) => x.p.invoiceId);
   const homeCards = cards.filter((x) => x.p.currency === base && x.s.state === "open").length;
   const states: Record<string, "sent" | "proposed"> = {};
   for (const { p, s } of cards) {
@@ -87,7 +91,7 @@ export async function TodayPlan({
             {lead ? lead : "nothing to do"}
             {r.notProposed.length > 0 && <>; {r.notProposed.length} left alone</>}.
             {r.plannedAt && <span className={styles.muted}> Made {r.plannedAt.slice(11, 16)} UTC.</span>}{" "}
-            <span className={styles.muted}>Cards are in order of what each invoice puts at risk from exchange rates.</span>
+            <span className={styles.muted}>Late money first, then money on its way; each card shows its place by exchange-rate risk.</span>
           </span>
         </p>
         {homeCards > 0 && (

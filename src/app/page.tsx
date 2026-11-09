@@ -111,9 +111,12 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   const open = inputs.invoices.filter((i) => OPEN_STATUSES.has(i.status) && i.amountDue > 0);
   const overdue = e.rows.reduce((s, r) => s + r.buckets.overdue * rates[r.currency], 0);
   const lateAbroad = open.filter((i) => i.currency !== base && (rates[i.currency] ?? 0) > 0 && i.dueDate < inputs.asOf);
-  const overdueCount = lateAbroad.length;
-  const lateClients = new Set(lateAbroad.map((i) => i.recipientName ?? i.id)).size;
   const lateDays = lateAbroad.map((i) => Math.round((Date.parse(inputs.asOf) - Date.parse(i.dueDate)) / 86_400_000));
+  // The Late tile counts every late invoice, in the home currency too (they get reminder cards as well); the share from
+  // abroad is said underneath. Counting only money from abroad made the first number smaller than the cards below it.
+  const lateAll = open.filter((i) => i.dueDate < inputs.asOf && (i.currency === base || (rates[i.currency] ?? 0) > 0));
+  const lateAllValue = lateAll.reduce((s, i) => s + i.amountDue * (i.currency === base ? 1 : rates[i.currency]), 0);
+  const lateAllClients = new Set(lateAll.map((i) => i.recipientName ?? i.id)).size;
   const dueSoon = e.rows.reduce((s, r) => s + (r.buckets.w1 + r.buckets.w2) * rates[r.currency], 0);
   // The demo persona lives in the US; another home currency shows the same book as if that were home.
   const away = base === PERSONA_HOME ? "from clients abroad" : `in currencies other than ${base}`;
@@ -200,10 +203,10 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
               <span className={styles.kpiLabel}>
                 <Icon name="clock" /> Late
               </span>
-              <strong>{c(overdue)}</strong>
+              <strong>{c(lateAllValue)}</strong>
               <span className={styles.kpiNote}>
-                {overdueCount > 0
-                  ? `${lateClients} client${lateClients === 1 ? "" : "s"} · ${rangeDays(lateDays)} overdue`
+                {lateAll.length > 0
+                  ? `${lateAllClients} client${lateAllClients === 1 ? "" : "s"}${overdue > 0 ? ` · ${c(overdue)} from abroad, ${rangeDays(lateDays)} overdue` : ""}`
                   : "nothing late"}
               </span>
             </div>

@@ -1913,15 +1913,17 @@
 }
 
 
-/* Phones: AG Grid draws its overlay ("invisible") horizontal scrollbar as a 16 px opaque strip over the last row of an
+/* Phones only (a desktop mouse needs the scrollbar): AG Grid draws its overlay ("invisible") horizontal scrollbar as a 16 px opaque strip over the last row of an
    auto-height grid, which cut the heatmap's bottom row in half (blind review, 2026-11-09). Let the row show through;
    a swipe still scrolls the grid. */
-.exposureGrid :global(.ag-body-horizontal-scroll.ag-scrollbar-invisible),
-.exposureGrid :global(.ag-body-horizontal-scroll.ag-scrollbar-invisible *),
-.gridWrap :global(.ag-body-horizontal-scroll.ag-scrollbar-invisible),
-.gridWrap :global(.ag-body-horizontal-scroll.ag-scrollbar-invisible *) {
-  background: transparent !important;
-  pointer-events: none;
+@media (max-width: 719px) {
+  .exposureGrid :global(.ag-body-horizontal-scroll.ag-scrollbar-invisible),
+  .exposureGrid :global(.ag-body-horizontal-scroll.ag-scrollbar-invisible *),
+  .gridWrap :global(.ag-body-horizontal-scroll.ag-scrollbar-invisible),
+  .gridWrap :global(.ag-body-horizontal-scroll.ag-scrollbar-invisible *) {
+    background: transparent !important;
+    pointer-events: none;
+  }
 }
 
 /* Each card's place in the queue by exchange-rate risk: the treasury view decides the order (2026-11-09). */
