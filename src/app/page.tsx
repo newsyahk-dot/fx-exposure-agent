@@ -63,8 +63,9 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
           <h1>FX Exposure Agent</h1>
         </div>
         <p className={styles.lede}>
-          When a client abroad pays late, an AI agent writes the PayPal reminder or early-payment offer in your voice. You
-          approve with one click — and see what exchange rates can do to the money still waiting.
+Money owed by clients abroad, seen the way a treasury desk sees it: when it comes in, in which currency, what is
+          late and what exchange rates can move. An AI agent takes the PayPal steps that shorten the wait — after you
+          approve.
         </p>
         <p>
           <Link href="/try" prefetch={false} className={`${styles.link} ${styles.tryLink}`}>
@@ -188,30 +189,28 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
       <div className={styles.stepBody}>
       {step === "today" ? (
         <section className={styles.hero} aria-label="Waiting to be paid">
-          {overdueCount > 0 && (
-            <p className={styles.heroAlert}>
-              <Icon name="clock" size={18} />
-              <span>
-                <strong>
-                  {lateClients} client{lateClients === 1 ? "" : "s"} abroad {lateClients === 1 ? "is" : "are"} paying late
-                </strong>{" "}
-                — {c(overdue)} is {rangeDays(lateDays)} overdue.
-              </span>
-            </p>
-          )}
           <p className={styles.heroLabel}>
             Waiting to be paid {away}, in {listAnd(e.rows.map((r) => r.currency)) || "foreign currencies"}
           </p>
           <HeroValue value={e.totalValue} base={base} collected={day.paid} />
           <div className={styles.kpis}>
+            <div className={styles.kpi} data-tone="late">
+              <span className={styles.kpiLabel}>
+                <Icon name="clock" /> Late
+              </span>
+              <strong>{c(overdue)}</strong>
+              <span className={styles.kpiNote}>
+                {overdueCount > 0
+                  ? `${lateClients} client${lateClients === 1 ? "" : "s"} · ${rangeDays(lateDays)} overdue`
+                  : "nothing late"}
+              </span>
+            </div>
             <div className={styles.kpi} data-tone="soon">
               <span className={styles.kpiLabel}>
-                <Icon name="clock" /> Due in the next 2 weeks
+                <Icon name="chart" /> Due in 2 weeks
               </span>
               <strong>{c(dueSoon)}</strong>
-              <span className={styles.kpiNote}>
-                {overdueCount > 0 ? `plus ${c(overdue)} already late` : "nothing late yet"}
-              </span>
+              <span className={styles.kpiNote}>{c(Math.max(0, e.totalValue - overdue - dueSoon))} due later</span>
             </div>
             <div className={styles.kpi} data-tone="risk" title="A stress test: up or down, equally likely — the size of the risk, not a forecast.">
               <span className={styles.kpiLabel}>
