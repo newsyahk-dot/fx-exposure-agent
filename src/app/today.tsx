@@ -270,10 +270,10 @@ export function ProposalCard({
       </p>
       {s.state === "open" && (
         <p className={styles.cardRisk}>
-          {riskRank && atRisk > 0 ? (
+          {atRisk > 0 ? (
             <>
               <strong>±{c(atRisk)}</strong> at risk from exchange rates
-              {riskRank.of > 0 && <> · of today&apos;s ±{c(riskRank.of)}</>}
+              {riskRank && riskRank.of > 0 && <> · of today&apos;s ±{c(riskRank.of)}</>}
             </>
           ) : (
             <>No exchange-rate risk (in {base})</>
@@ -311,7 +311,7 @@ export function ProposalCard({
               className={styles.muted}
               title="The client also gets an early-payment invoice for the lower amount; if it is not paid by that date it lapses and the original applies."
             >
-              Sent as a separate invoice — yours stays as it is.
+              Goes out as a separate invoice — yours stays as it is.
             </p>
           )}
         </>

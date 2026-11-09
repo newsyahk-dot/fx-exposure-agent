@@ -29,8 +29,8 @@ one-person business finds out at the end, when the payment lands. So the app loo
 treasury desk would — amount × currency × week — across the three moments that decide what she is paid: before she
 sends an invoice, while she waits, and when a client is late. Reminders alone are not
 the point: the app adds what the money still owed is worth in her own currency week by week, and how much of it a rate
-move can change. That view decides the order of the day's work: the agent's proposals are ranked by what each invoice
-puts at risk.
+move can change. The day's work is ordered the way a treasury desk works a receivables list — late money first, then
+money on its way — and each proposal shows what it puts at risk from exchange rates.
 
 - **Many people work this way.** 64 million Americans freelanced in 2023, 38% of the U.S. workforce
   ([Upwork, Freelance Forward 2023](https://investors.upwork.com/news-releases/news-release-details/upwork-study-finds-64-million-americans-freelanced-2023-adding)).
