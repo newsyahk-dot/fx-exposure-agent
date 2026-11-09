@@ -22,7 +22,7 @@ placeholders. Captions are mandatory (burned in).
 
 | Screen | Narration | Number |
 |---|---|---|
-| **Today**, USD. First line: "[2] clients abroad are paying late — [$3,965] is [8–18] days overdue", then "[$22K] waiting to be paid". | "Monday morning. Maya, a freelance designer in the US, opens her PayPal invoices. [Two] clients abroad are paying late — [$3,965] overdue. In all, [$22,000] is still owed to her in euros, pounds and yen." | $3,965 |
+| **Today**, USD. "[$31K] waiting to be paid from clients abroad", tiles **Late [$6,779] · [3] clients** · Due in 2 weeks · If rates move 3% · Collected today. | "Monday morning. Maya, a freelance designer in the US, opens her PayPal invoices. [Three] clients abroad are paying late — [$6,779] overdue. In all, [$31,000] is owed to her in euros, pounds and yen — seen the way a treasury desk would: what is late, what comes in when, and what a rate move can do to it." | $6,779 |
 | First card: **Chase a late payment** → **Approve: send reminder** → "✓ Reminder sent in PayPal". | "Every morning an AI agent goes through her invoices and proposes the day's work. One click, and the reminder goes out through PayPal." | — |
 | Client pays (in the automated take: "Simulate client payment", captioned as simulated; by hand: PayPal's invoice page with the sandbox buyer) → **"+[$2,807] collected"**. | "When the client pays, it shows up within seconds." | +$2,807 |
 
@@ -54,21 +54,24 @@ opens the row: how this client has paid + the agent's draft → **✎ e-mail**, 
 "✓ Reminder sent" for each. "She sees where the money sits, opens one client's history, adjusts the agent's e-mail,
 and approves the late ones together — each through the same checks as a single approval."
 
-## 5 · 2:00–2:20 — Hand it over
+## 5 · 2:00–2:20 — Before the next invoice
 
-Autopilot: discounts up to 1% → **Approve this standing policy** → **Run autopilot now** ("Autopilot ran: 3 done", and
-what it left for her). (Next invoice and the PayPal-event reaction stay in the app and the gallery — no time for them.)
+**Next invoice**: "Bill Sakura Games ¥480,000 for the level art pack, net 45" → the comparison: in yen, in dollars,
+on shorter terms, half up front — what each leaves riding on exchange rates, from this client's own payment history →
+**Approve: create and send**. "Before she sends the next invoice, she sees what each way of billing leaves at risk.
+The app never says which to pick."
 
-## 6 · 2:20–2:40 — Try it with your own invoices
+## 6 · 2:20–2:35 — Hand it over, and try your own
 
-**/try** → Load a sample → Show what's waiting: what is waiting, what is late, the exchange-rate risk by currency, the
-timeline and the plan. "Nothing is stored, and nothing in PayPal is touched."
+Autopilot: **Approve this standing policy** (reminders) → **Run autopilot now**. Then **/try** → Load a sample →
+"Paste your own invoice list; nothing is stored, nothing in PayPal is touched." (Ask-the-agent's refusal and the
+PayPal-event reaction stay in the app and the gallery.)
 
-## 7 · 2:40–2:55 — Close
+## 7 · 2:35–2:55 — Close
 
 Caption with the numbers from `docs/agent-eval.md` ("[N] agent runs · [M] proposals · [0] violations of our own checks"),
 then the end card: name, live URL, "PayPal Invoicing API · webhooks · invoice templates · PayPal MCP server · Claude".
-"When a client abroad pays late, the agent writes the reminder. You approve."
+"Before she sends, while she waits, when a client is late — her money from abroad, seen like a treasury desk sees it."
 
 Dropped from the video (still in the app): the Where-it-sits grid and the Evidence chart in detail.
 

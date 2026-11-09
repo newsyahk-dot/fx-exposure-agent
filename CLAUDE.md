@@ -158,13 +158,17 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   JS). Pages call `planSoon` (`src/lib/agent-cache.ts`): if Claude's plan is not ready in `PLAN_WAIT_MS` (8 s), the page
   shows the rule-based plan marked `pending` and the plan finishes in `after()`; refreshes swap it in (a cold EUR plan
   held the Today screen 58.6 s on 2026-10-30). `planFor` shares one in-flight run per key per instance.
-- **Lead with an event and late money** (2026-10-30, lessons from two lost contests: every winner's one-liner ended in an
-  action, opened on a dated event, and its first number was a loss): the one-liner says what the agent does ("When a
-  client abroad pays late, an AI agent writes the PayPal reminder… You approve with one click"); Today's first line is
-  "N clients abroad are paying late — $X is a–b days overdue" (`heroAlert`); README, Devpost and the video open on
-  "Monday morning" with Atelier Moreau (€1,800, 18 days) and Sakura Games (¥310,000, 8 days) from the seed book. Do not
-  quote win probabilities from our own reviews; use submissions and prize counts.
-- **Design for scanning** (2026-10-30): Today leads with three tiles (due in 2 weeks, ±3% stress test, collected today) under the
+- **Story: receivables from abroad, seen like a treasury desk** (2026-11-09, user decision after noticing the story had
+  drifted to "a late-payment reminder app" across review rounds — the generic part, not the different one). The
+  one-liner: "Money owed by clients abroad, seen the way a treasury desk sees it: when it comes in, in which currency,
+  what is late and what exchange rates can move. An AI agent takes the PayPal steps that shorten the wait — after you
+  approve." Three moments — before she sends an invoice (Next invoice), while she waits (exposure, timeline, offers),
+  when a client is late (reminders) — in README, Devpost and the video. Today: the big number, then four tiles (Late ·
+  Due in 2 weeks · If rates move 3% · Collected today). Lessons kept from two lost contests: the screen leads to an
+  action, the story opens on "Monday morning" with the seed book's late clients, the first tile is money that is late.
+  Blind reviewers reward the familiar story; do not drop the treasury view to please them. Do not quote win
+  probabilities from our own reviews; use submissions and prize counts.
+- **Design for scanning** (2026-10-30): Today leads with four tiles (late, due in 2 weeks, ±3% stress test, collected today) under the
   big number, then the plan status, then the cards, then the money-in chart in its own panel (it used to sit above the
   cards). Cards carry a coloured left edge and icon by kind (amber reminder, blue offer; `src/app/icons.tsx`). Keep
   explanatory sentences short; long ones go in tooltips or details.

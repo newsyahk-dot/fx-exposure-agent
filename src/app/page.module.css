@@ -1683,7 +1683,7 @@
 /* ---- Design pass 2026-10-30: tiles, typed cards, panels — easier to scan, less grey text. ---- */
 .kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
   gap: 10px;
   margin-top: 10px;
 }
@@ -1889,10 +1889,6 @@
   .kpis {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-  }
-
-  .kpi:last-child {
-    grid-column: 1 / -1;
   }
 
   .kpi {

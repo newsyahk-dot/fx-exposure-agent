@@ -11,7 +11,7 @@ FX Exposure Agent
 
 ## Elevator pitch (max 200 characters)
 
-When a client abroad pays late, an AI agent writes the PayPal reminder or early-payment offer in your voice. You approve with one click, and it goes out through PayPal.
+Money owed by clients abroad, seen like a treasury desk sees it: when, which currency, what's late, what rates can move. An AI agent takes the PayPal steps you approve.
 
 *(168 characters)*
 
@@ -25,7 +25,9 @@ Monday morning, a freelance designer in the US opens her PayPal invoices: a clie
 and one in Tokyo is 8 days late on ¥310,000. Writing those reminders is the job she keeps putting off — and until the
 money arrives, the exchange rate decides how much she actually earns. Freelancers and small sellers who bill abroad
 wait weeks to be paid, and late payers make the wait longer. Large companies have treasury teams for this. A
-one-person business finds out at the end, when the payment lands.
+one-person business finds out at the end, when the payment lands. So the app looks at her receivables the way a
+treasury desk would — amount × currency × week — across the three moments that decide what she is paid: before she
+sends an invoice, while she waits, and when a client is late.
 
 - **Many people work this way.** 64 million Americans freelanced in 2023, 38% of the U.S. workforce
   ([Upwork, Freelance Forward 2023](https://investors.upwork.com/news-releases/news-release-details/upwork-study-finds-64-million-americans-freelanced-2023-adding)).

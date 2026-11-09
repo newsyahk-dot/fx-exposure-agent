@@ -1,7 +1,11 @@
 # FX Exposure Agent
 
-**When a client abroad pays late, an AI agent writes the PayPal reminder or early-payment offer in your voice. You
-approve with one click — and see what exchange rates can do to the money still waiting.**
+**Money owed by clients abroad, seen the way a treasury desk sees it: when it comes in, in which currency, what is late
+and what exchange rates can move. An AI agent takes the PayPal steps that shorten the wait — after you approve.**
+
+A company with clients abroad has a treasury team watching this. A freelancer has a list of PayPal invoices. This app
+covers the three moments that decide what she is actually paid: **before she sends an invoice** (which currency, which
+terms), **while she waits** (what is coming in when, and what a rate move does to it) and **when a client is late**.
 
 Live demo: **https://fx-exposure-agent.vercel.app** (PayPal sandbox — no real money). Judges: the access code that
 lets you run the agent's actions is in the Devpost testing instructions; without it you can look around.
@@ -46,21 +50,21 @@ her how much is at stake, or which invoice to deal with first.
 
 ## What she gets
 
-1. **What she's waiting for, at a glance.** What is owed from clients abroad, what's already overdue, and what a 3%
-   move either way would do to it — up or down, equally likely; the size of the risk, not a forecast. A week-by-week
-   chart shows when the money comes in as invoiced, and if clients pay as proposed (a scenario, with its assumptions
-   on screen).
-2. **The day's work, done with a click.** An AI agent reads her PayPal invoices and proposes today's actions:
-   a reminder for the overdue invoice from London, written for that client; or, for a large invoice that isn't due
-   for two months, a small early-payment discount — shown as what it is: a price for getting paid weeks sooner, with
-   its cost as a yearly rate (the agent only offers terms at most 12% a year and at least three weeks sooner). She approves, and it
-   runs in PayPal. The offer is a separate early-payment invoice that lapses after its date: her own invoice never
-   changes, and the client gets the discount only by paying early.
-3. **The loop closes on its own.** When the client pays, PayPal notifies the app and her screen shows it within
-   seconds: "+ collected" with the amount, and what is still waiting goes down ("start of today → now").
-4. **Help before the next invoice.** She types "Bill Sakura Games ¥480,000 for the level art pack, net 45" and sees
+1. **Her money from abroad, the way a treasury desk sees it.** What clients abroad owe her by currency and by the week
+   it falls due, what is already late, and what a 3% move either way would do to it — up or down, equally likely; the
+   size of the risk, not a forecast. A week-by-week chart shows when the money comes in as invoiced, and if clients pay
+   as proposed (a scenario, with its assumptions on screen).
+2. **Before she sends an invoice.** She types "Bill Sakura Games ¥480,000 for the level art pack, net 45" and sees
    what billing in yen, in dollars, on shorter terms or half up front would leave at risk, using that client's own
    payment history. She picks one; it is created and sent in PayPal.
+3. **While she waits, and when a client is late — the day's work in one click.** An AI agent reads her PayPal invoices
+   and proposes today's actions: a reminder for the overdue invoice from London, written for that client; or, for a
+   large invoice that isn't due for two months, a small early-payment discount — shown as what it is: a price for
+   getting paid weeks sooner, with its cost as a yearly rate (the agent only offers terms at most 12% a year and at
+   least three weeks sooner). She approves, and it runs in PayPal. The offer is a separate early-payment invoice that
+   lapses after its date: her own invoice never changes, and the client gets the discount only by paying early.
+4. **The loop closes on its own.** When the client pays, PayPal notifies the app and her screen shows it within
+   seconds: "+ collected" with the amount, and what is still waiting goes down ("start of today → now").
 5. **Routine work handed over.** She approves a standing policy once (for example: reminders yes, discounts no more
    than 1%), and an autopilot runs the proposals that fit it every weekday morning. Anything else still waits for her,
    and it never changes the terms of an invoice she sent in the last 7 days.
