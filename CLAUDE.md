@@ -193,6 +193,12 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   only at ≥1440 px so Agent and Offer fit at 1366 (checked: no truncated cell in USD or KRW); At risk uses compact
   amounts for KRW/JPY; the e-mail editor puts the cursor before "Best regards"; heatmap cells and totals use full
   amounts, right-aligned, blank instead of "$0".
+- **Front door** (2026-11-09, user's choice of the spacious draft over a compact one): the top of every page is a
+  landing band — brand bar ("PayPal sandbox · no real money"), a two-line headline "Money from clients abroad, / seen
+  like a treasury desk." (h1, second line in the accent colour), one sentence, a primary button "See today's plan ↓"
+  (`/?step=today#actions-h`) and "Try your own invoices →", then the three moments as cards linking to Next invoice,
+  Where it sits and Today. No separate landing page: it would add a click between a judge and the demo. On a 1440×900
+  screen the tiles start just below the fold.
 - **Page after a write** (2026-10-29): `loadInputsForPage` retries a failed PayPal read once and then shows the last
   good book with `StaleNotice` (refreshes every 4 s) — one failed read after "Simulate client payment" used to replace
   the whole page with an error.
