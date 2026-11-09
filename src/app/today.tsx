@@ -47,10 +47,14 @@ export async function TodayPlan({
   const r = await run;
   const c = (n: number) => compact(base, n);
   const cards = r.proposals.map((p) => ({ p, s: proposalState(p, input, invoices, r.plannedAt) }));
-  // A fixed order (money from abroad first, then reminders before offers, then by value): a card stays where it is
-  // while it goes open → sent → paid. Home-currency reminders come last — the screen leads with money from abroad.
-  const rank = (p: AgentProposal) => (p.currency === base ? 2 : 0) + (p.kind === "reminder" ? 0 : 1);
-  cards.sort((a, b) => rank(a.p) - rank(b.p) || b.p.value - a.p.value);
+  // Ordered by what each invoice puts at risk from exchange rates (a 3% move on its home-currency value), largest
+  // first: the treasury view decides the queue, whatever the action (blind review, 2026-11-09: "exposure never changes
+  // an action"). A card stays where it is while it goes open → sent → paid. Home-currency invoices carry no FX risk and
+  // come last.
+  const rank = (p: AgentProposal) => (p.currency === base ? 1 : 0);
+  cards.sort((a, b) => rank(a.p) - rank(b.p) || b.p.value - a.p.value || (a.p.kind === "reminder" ? -1 : 1));
+  const totalRisk = (waiting.reduce((s, w) => s + w.value, 0) * SHOCK_PCT) / 100;
+  const riskOrder = cards.filter((x) => x.p.currency !== base).map((x) => x.p.invoiceId);
   const homeCards = cards.filter((x) => x.p.currency === base && x.s.state === "open").length;
   const states: Record<string, "sent" | "proposed"> = {};
   for (const { p, s } of cards) {
@@ -82,7 +86,8 @@ export async function TodayPlan({
             <strong>{r.source === "agent" ? "Claude's plan for today" : "Today's plan (rule-based)"}:</strong>{" "}
             {lead ? lead : "nothing to do"}
             {r.notProposed.length > 0 && <>; {r.notProposed.length} left alone</>}.
-            {r.plannedAt && <span className={styles.muted}> Made {r.plannedAt.slice(11, 16)} UTC.</span>}
+            {r.plannedAt && <span className={styles.muted}> Made {r.plannedAt.slice(11, 16)} UTC.</span>}{" "}
+            <span className={styles.muted}>Cards are in order of what each invoice puts at risk from exchange rates.</span>
           </span>
         </p>
         {homeCards > 0 && (
@@ -118,7 +123,7 @@ export async function TodayPlan({
       )}
       {sharedDemo && ranCount > 0 && openCount > 0 && (
         <p className={styles.muted}>
-          Done today: {ranCount} of {cards.length}. This demo book is shared, so other visitors may act on it too.
+          Run today: {ranCount} of {cards.length} proposals. This demo book is shared, so other visitors may act on it too.
         </p>
       )}
       {lockReason && cards.length > 0 && (
@@ -151,6 +156,7 @@ export async function TodayPlan({
                 agent={r.source === "agent"}
                 rejected={rejectedFor(r, p.invoiceNumber)}
                 featured={i === 0}
+                riskRank={p.currency === base ? undefined : { n: riskOrder.indexOf(p.invoiceId) + 1, of: totalRisk }}
               />
             );
           })}
@@ -229,6 +235,7 @@ export function ProposalCard({
   agent,
   rejected = [],
   featured = false,
+  riskRank,
 }: {
   p: AgentProposal;
   s: ProposalState;
@@ -242,6 +249,7 @@ export function ProposalCard({
   agent: boolean;
   rejected?: string[]; // why the checks rejected earlier drafts for this invoice (from the run's steps)
   featured?: boolean; // the first card shows the agent's reason and draft without a click
+  riskRank?: { n: number; of: number }; // its place in today's queue by exchange-rate risk, and today's total at risk
 }) {
   const atRisk = p.currency === base ? 0 : (p.value * SHOCK_PCT) / 100; // home-currency invoices carry no exchange-rate risk
   const daysSooner = p.kind === "early_pay_discount" ? Math.max(0, p.daysToDue - p.withinDays) : 0;
@@ -256,6 +264,18 @@ export function ProposalCard({
             ? `Ask to be paid ${daysSooner} days sooner, for ${p.percent}% off`
             : `Offer ${p.percent}% off for an earlier due date`}
       </p>
+      {s.state === "open" && (
+        <p className={styles.cardRisk}>
+          {riskRank && atRisk > 0 ? (
+            <>
+              #{riskRank.n} by exchange-rate risk · <strong>±{c(atRisk)}</strong>
+              {riskRank.of > 0 && <> of today&apos;s ±{c(riskRank.of)}</>}
+            </>
+          ) : (
+            <>No exchange-rate risk (in {base})</>
+          )}
+        </p>
+      )}
       <p className={styles.cardTitle}>
         {client ?? p.invoiceNumber} · {money(p.currency, p.amount)}
         {p.kind !== "reminder" && <span className={styles.muted}> ≈ {c(p.value)}</span>}
@@ -407,7 +427,10 @@ function rejectedFor(r: AgentRun, invoiceNumber: string): string[] {
           ? "a number not in the facts"
           : /link/.test(s.detail)
             ? "a link"
-            : /label|swing|stress/.test(s.detail)
+            : // before the label test: this reason's text also mentions "swing" ("treats a swing or a discount as …")
+              /gained or saved/.test(s.detail)
+              ? "called a discount or a swing money gained"
+              : /label|swing|stress/.test(s.detail)
               ? "a figure under the wrong label"
               : "failed a check",
     );

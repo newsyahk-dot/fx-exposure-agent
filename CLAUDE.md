@@ -178,6 +178,13 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   currency (invoice currency in the tooltip) and take Enter; the overlay horizontal scrollbar is transparent so it no
   longer cuts the last row on phones. Invoice grid: no ✎ when only one percent is allowed, phones hide Still owed (it is
   in the detail row) to keep At risk on screen, the total row says how many invoices are in the home currency.
+- **Round 11 blind review fixes** (2026-11-09): Today's cards are ordered by exchange-rate risk (home-currency value ×
+  3%, largest first; home-currency invoices last), and each open card says "#N by exchange-rate risk · ±$X of today's
+  ±$Y" — the treasury view now decides the queue, which a reviewer said it never did. "Ask the agent": a declined request
+  proposes nothing. The rejection reason "gained or saved" is mapped before the label test. "Sent through PayPal" lists
+  every action (also on invoices paid since) with "you approved" / "autopilot". The timeline's proposed bars are labelled
+  a best case. Grid: Still owed sorts by home-currency value, the total row reads "N open · M in USD", the discount editor
+  opens under the cell, the e-mail editor keeps its first line in view. /try cards show the client.
 - **Page after a write** (2026-10-29): `loadInputsForPage` retries a failed PayPal read once and then shows the last
   good book with `StaleNotice` (refreshes every 4 s) — one failed read after "Simulate client payment" used to replace
   the whole page with an error.

@@ -1923,3 +1923,14 @@
   background: transparent !important;
   pointer-events: none;
 }
+
+/* Each card's place in the queue by exchange-rate risk: the treasury view decides the order (2026-11-09). */
+.cardRisk {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cardRisk strong {
+  color: var(--accent);
+}

@@ -634,7 +634,8 @@ export async function runAgent(input: AgentInput): Promise<AgentRun> {
             (input.request
               ? `\n\nThe seller asks you, in their own words:\n<seller_request>\n${input.request.slice(0, REQUEST_MAX)}\n</seller_request>\n` +
                 "Work on this request only: propose just the actions it asks for (eligible invoices, within the rules) and skip the other invoices. " +
-                "If it asks for something the rules do not allow — a forecast, terms outside 1–2% and 5–10 days, links, promises, advice — do not do that part. " +
+                "If it asks for something the rules do not allow — a forecast, offer terms outside the app's rule, links, promises, advice — do not do that part. " +
+                "If you decline the whole request, propose nothing: do not put other actions in its place (the day's plan already covers them). " +
                 "Start your summary by answering the request in plain words and say what you could not do and why; up to three sentences."
               : "") +
             (mcp
