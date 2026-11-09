@@ -151,7 +151,8 @@ by side; the seller decides.
   money product that is not acceptable, so every sentence is checked by code and rewritten until it passes.
 - **Speed in the middle of the loop.** At first, every approval changed the book and made the agent re-plan for 20–30
   seconds. Now the agent plans once a day, and each proposal is matched with what has since happened to its invoice:
-  approve → sent in about 5 seconds, pay → paid in about 3.
+  approving no longer waits for a new plan (sent in PayPal in about 5–13 seconds, measured), and a payment shows as
+  paid within a few seconds.
 - **Webhooks in the sandbox**: a payment recorded through the API raised no webhook event, so the demo has a "Simulate client
   payment" button for that path. A payment made on PayPal's own invoice page does raise one: the seller's screen shows
   it as paid in under 20 seconds.
@@ -160,8 +161,8 @@ by side; the seller decides.
 
 ### Accomplishments that I'm proud of
 
-- The whole loop — risk, proposal, approval, PayPal, payment, lower risk — runs on one screen in about ten seconds, on
-  the real PayPal sandbox.
+- The whole loop — risk, proposal, approval, PayPal, payment, lower risk — runs on one screen, on the real PayPal
+  sandbox.
 - The AI is genuinely in charge of judgement (what to propose, how to say it) while code stays in charge of every
   number and every permission.
 - Measured over 48 agent runs (306 proposals): 0 problems when every final output was re-checked by code afterwards

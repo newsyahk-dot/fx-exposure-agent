@@ -12,7 +12,7 @@ import { StaleNotice } from "./stale-notice";
 import { ASSUME, bandsByWait, LOOKBACK_DAYS, replayBook, timelines } from "@/lib/evidence";
 import { OPEN_STATUSES } from "@/lib/exposure";
 import { BASES, type EcbQuotes } from "@/lib/fx";
-import { cell, compact, full, money } from "@/lib/format";
+import { compact, full, money } from "@/lib/format";
 import { clientViewUrl } from "@/lib/paypal";
 import { DEFAULT_POLICY, NEW_TERMS_DAYS } from "@/lib/policy";
 import { dayChange, paidToday } from "@/lib/today";
@@ -782,7 +782,7 @@ function ExposureTable({ view, skipped, baseOpen }: { view: BookView; skipped: {
   return (
     <section aria-labelledby="exposure-h">
       <h2 id="exposure-h">Where the exposure sits</h2>
-      <p className={styles.muted}>Unpaid amounts by currency and by when they fall due. Darker cells hold more money in {base} terms.</p>
+      <p className={styles.muted}>Unpaid amounts by currency and by when they fall due, in {base}. Darker cells hold more money; hover a cell for the amount in its own currency.</p>
       <ExposureGrid
         base={base}
         buckets={BUCKETS}
@@ -792,7 +792,9 @@ function ExposureTable({ view, skipped, baseOpen }: { view: BookView; skipped: {
           cells: Object.fromEntries(
             BUCKETS.map((b) => {
               const v = r.buckets[b] * rates[r.currency];
-              return [b, { text: cell(r.currency, r.buckets[b]), value: v, title: v ? `${money(r.currency, r.buckets[b])} ≈ ${full(base, v)}` : undefined }];
+              // Cells in the home currency, like the shading and the Total row (the invoice currency is in the
+              // tooltip): native amounts above a home-currency total read as a sum that does not add up.
+              return [b, { text: v ? c(v) : "", value: v, title: v ? `${money(r.currency, r.buckets[b])} ≈ ${full(base, v)}` : undefined }];
             }),
           ) as ExposureRow["cells"],
           value: c(r.value),

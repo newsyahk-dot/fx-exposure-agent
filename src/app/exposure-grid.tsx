@@ -4,7 +4,7 @@
 // money it holds in the home currency. Clicking a cell narrows the invoice grid below to that currency and bucket
 // (an event both grids share — src/app/grid-theme.ts); clicking a currency narrows it to that currency.
 
-import { AllCommunityModule, ModuleRegistry, type CellClickedEvent, type ColDef, type ICellRendererParams } from "ag-grid-community";
+import { AllCommunityModule, ModuleRegistry, type CellClickedEvent, type CellKeyDownEvent, type ColDef, type ICellRendererParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useMemo } from "react";
 import type { Bucket } from "@/lib/types";
@@ -13,7 +13,7 @@ import styles from "./page.module.css";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-export type ExposureCell = { text: string; value: number; title?: string }; // text in the invoice currency, value in home
+export type ExposureCell = { text: string; value: number; title?: string }; // text and value in home; title has the invoice currency
 export type ExposureRow = { currency: string; cells: Record<Bucket, ExposureCell>; value: string; shock: string; total?: boolean };
 
 export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: ExposureRow[]; total: ExposureRow; buckets: Bucket[]; labels: Record<Bucket, string>; base: string }) {
@@ -48,10 +48,11 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
         cellRenderer: (p: ICellRendererParams<ExposureRow>) => {
           const c = p.data?.cells[b];
           if (!c) return null;
-          return p.data?.total ? <strong>{c.text}</strong> : <span title={c.title}>{c.text}</span>;
+          return p.data?.total ? <strong>{c.text}</strong> : c.text;
         },
         cellClass: (p) => (p.data?.total ? "" : `${styles.heatCell} ${c(p.data?.cells[b].value ?? 0)}`),
-        tooltipValueGetter: (p) => (p.data && !p.data.total && p.data.cells[b].value > 0 ? `Click to see these invoices below` : undefined),
+        tooltipValueGetter: (p) =>
+          p.data && !p.data.total && p.data.cells[b].value > 0 ? `${p.data.cells[b].title} — click (or Enter) to see these invoices below` : undefined,
       })),
       { field: "value", headerName: `In ${base}`, type: "rightAligned", minWidth: 90 },
       { field: "shock", headerName: "±3%", type: "rightAligned", minWidth: 80, headerTooltip: "What a 3% move either way would change — not a forecast" },
@@ -63,7 +64,7 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
     const l = level(v);
     return l ? styles[`heat${l}`] : "";
   }
-  const onCellClicked = (e: CellClickedEvent<ExposureRow>) => {
+  const onCellClicked = (e: CellClickedEvent<ExposureRow> | CellKeyDownEvent<ExposureRow>) => {
     const r = e.data;
     if (!r || r.total) return;
     const id = e.column.getColId();
@@ -71,8 +72,12 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
     const b = id as Bucket;
     if (buckets.includes(b) && r.cells[b].value > 0) focus({ currency: r.currency, bucket: b, label: `${r.currency}, ${labels[b].toLowerCase()}` });
   };
+  // Keyboard: Enter on a focused cell does what a click does.
+  const onCellKeyDown = (e: CellKeyDownEvent<ExposureRow>) => {
+    if ((e.event as KeyboardEvent | null)?.key === "Enter") onCellClicked(e);
+  };
   return (
-    <div className={styles.exposureGrid}>
+    <div className={styles.exposureGrid} role="region" aria-label={`Money still owed by currency and due date, in ${base}`}>
     <AgGridReact<ExposureRow>
       theme={gridTheme}
       rowData={rows}
@@ -82,9 +87,9 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
       domLayout="autoHeight"
       getRowId={(p) => p.data.currency}
       onCellClicked={onCellClicked}
+      onCellKeyDown={onCellKeyDown}
       tooltipShowDelay={300}
       autoSizeStrategy={{ type: "fitGridWidth" }}
-      suppressCellFocus
     />
     </div>
   );
