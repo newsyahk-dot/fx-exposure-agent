@@ -801,11 +801,11 @@ function ExposureTable({ view, skipped, baseOpen }: { view: BookView; skipped: {
               const v = r.buckets[b] * rates[r.currency];
               // Cells in the home currency, like the shading and the Total row (the invoice currency is in the
               // tooltip): native amounts above a home-currency total read as a sum that does not add up.
-              return [b, { text: v ? c(v) : "", value: v, title: v ? `${money(r.currency, r.buckets[b])} ≈ ${full(base, v)}` : undefined }];
+              return [b, { text: v ? full(base, v) : "", value: v, title: v ? `${money(r.currency, r.buckets[b])} ≈ ${full(base, v)}` : undefined }];
             }),
           ) as ExposureRow["cells"],
-          value: c(r.value),
-          shock: `±${c(r.shock)}`,
+          value: full(base, r.value),
+          shock: `±${full(base, r.shock)}`,
         }))}
         total={{
           currency: "Total",
@@ -813,11 +813,11 @@ function ExposureTable({ view, skipped, baseOpen }: { view: BookView; skipped: {
           cells: Object.fromEntries(
             BUCKETS.map((b) => {
               const v = e.rows.reduce((s, r) => s + r.buckets[b] * rates[r.currency], 0);
-              return [b, { text: c(v), value: v }];
+              return [b, { text: v ? full(base, v) : "", value: v }]; // blank like the cells above, not "$0"
             }),
           ) as ExposureRow["cells"],
-          value: c(e.totalValue),
-          shock: `±${c(e.totalShock)}`,
+          value: full(base, e.totalValue),
+          shock: `±${full(base, e.totalShock)}`,
         }}
       />
       <p className={styles.muted}>Click a cell to see those invoices in the grid below; click a currency to see all of its invoices.</p>

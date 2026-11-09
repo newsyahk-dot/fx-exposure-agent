@@ -179,8 +179,8 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   longer cuts the last row on phones. Invoice grid: no ✎ when only one percent is allowed, phones hide Still owed (it is
   in the detail row) to keep At risk on screen, the total row says how many invoices are in the home currency.
 - **Round 11–12 blind review fixes** (2026-11-09): Today's cards: late money first (reminders by home-currency value,
-  any currency), then offers on money still on its way; each open card says "#N by exchange-rate risk · ±$X of today's
-  ±$Y". (Round 11 ordered everything by FX risk; round 12's reviewer showed it put a $4,200 invoice 13 days late after
+  any currency), then offers on money still on its way; each open card says "±$X at risk from exchange rates · of
+  today's ±$Y" (a rank number read "#3, #1, #2" once late cards came first, so round 13 dropped it). (Round 11 ordered everything by FX risk; round 12's reviewer showed it put a $4,200 invoice 13 days late after
   offers due in weeks — a treasury desk works late receivables first.) The Late tile counts every late invoice,
   home currency included, with the share from abroad underneath. "Ask the agent": a declined request
   proposes nothing. The rejection reason "gained or saved" is mapped before the label test. "Sent through PayPal" lists
@@ -189,7 +189,10 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   opens under the cell, the e-mail editor keeps its first line in view. /try cards show the client. Round 12: columns
   fit 1366 px (no sideways scroll); the transparent overlay-scrollbar CSS applies to phones only; the quick filter
   searches what cells show (`getQuickFilterText` on Client, Still owed, Due); Tab in the Draft editor keeps the edit
-  instead of opening the next row's editor; the Paid-today view's total reads "N paid today".
+  instead of opening the next row's editor; the Paid-today view's total reads "N paid today". Round 13: "In USD" shows
+  only at ≥1440 px so Agent and Offer fit at 1366 (checked: no truncated cell in USD or KRW); At risk uses compact
+  amounts for KRW/JPY; the e-mail editor puts the cursor before "Best regards"; heatmap cells and totals use full
+  amounts, right-aligned, blank instead of "$0".
 - **Page after a write** (2026-10-29): `loadInputsForPage` retries a failed PayPal read once and then shows the last
   good book with `StaleNotice` (refreshes every 4 s) — one failed read after "Simulate client payment" used to replace
   the whole page with an error.

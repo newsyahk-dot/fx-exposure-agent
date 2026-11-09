@@ -50,7 +50,8 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
           if (!c) return null;
           return p.data?.total ? <strong>{c.text}</strong> : c.text;
         },
-        cellClass: (p) => (p.data?.total ? "" : `${styles.heatCell} ${c(p.data?.cells[b].value ?? 0)}`),
+        // "ag-right-aligned-cell" keeps the numbers under their right-aligned header (a custom cellClass replaces it).
+        cellClass: (p) => (p.data?.total ? "ag-right-aligned-cell" : `ag-right-aligned-cell ${styles.heatCell} ${c(p.data?.cells[b].value ?? 0)}`),
         tooltipValueGetter: (p) =>
           p.data && !p.data.total && p.data.cells[b].value > 0 ? `${p.data.cells[b].title} — click (or Enter) to see these invoices below` : undefined,
       })),

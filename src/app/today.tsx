@@ -91,7 +91,7 @@ export async function TodayPlan({
             {lead ? lead : "nothing to do"}
             {r.notProposed.length > 0 && <>; {r.notProposed.length} left alone</>}.
             {r.plannedAt && <span className={styles.muted}> Made {r.plannedAt.slice(11, 16)} UTC.</span>}{" "}
-            <span className={styles.muted}>Late money first, then money on its way; each card shows its place by exchange-rate risk.</span>
+            <span className={styles.muted}>Late money first, then money on its way; each card shows what it puts at risk from exchange rates.</span>
           </span>
         </p>
         {homeCards > 0 && (
@@ -272,8 +272,8 @@ export function ProposalCard({
         <p className={styles.cardRisk}>
           {riskRank && atRisk > 0 ? (
             <>
-              #{riskRank.n} by exchange-rate risk · <strong>±{c(atRisk)}</strong>
-              {riskRank.of > 0 && <> of today&apos;s ±{c(riskRank.of)}</>}
+              <strong>±{c(atRisk)}</strong> at risk from exchange rates
+              {riskRank.of > 0 && <> · of today&apos;s ±{c(riskRank.of)}</>}
             </>
           ) : (
             <>No exchange-rate risk (in {base})</>
