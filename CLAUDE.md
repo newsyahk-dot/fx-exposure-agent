@@ -60,6 +60,8 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   enforces the app's rule for offers (`OFFER_MIN_DAYS_SOONER` 21 days, `OFFER_MAX_ANNUAL_PCT` 12% as a yearly rate by the
   trade-credit formula percent / (100 − percent) × 365 / days sooner) in `priceDiscount` and the propose tool; cards show
   cost, days sooner and the yearly rate; the swing stays as information. The default autopilot policy is reminders only.
+  No offer goes to a client who already owes a late invoice (code rule in `buildAgentInput`, round 7, 2026-11-09 — a
+  discount would reward a late payer; FXA-3005 moved to Mori Design Office so the JPY demo keeps an offer).
   Change the rule in code, prompt, eval and this line together.
 - **Conditional offer = a second invoice** (2026-10-28, `src/lib/offer-invoice.ts`, `offer-settle.ts`): PayPal's
   conditional-rules endpoint still answers HTTP 500 (re-tested 2026-10-28), and editing the sent invoice made the discount
@@ -217,3 +219,8 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   the whole page with an error.
 - UI, README and demo video are in **English** (judges). Code comments in English.
 - Run `npm test` before every push.
+- **Round 7 fixes** (2026-11-09): "Ask the agent" answers "which client needs attention most" by ordering on facts (days
+  late, amount owed, FX at risk) without advising; the e-mail editor puts the cursor before any common sign-off
+  ("Best,", "Thanks,", "Cheers", "Kind regards, Maya"); Tab leaves the invoice grid (`tabToNextCell` → false); the
+  At risk column is searchable ("±$"); Next invoice notes that PayPal's own conversion fee is not counted, linking
+  PayPal's fee page (no numbers).

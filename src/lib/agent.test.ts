@@ -66,6 +66,15 @@ describe("what code lets the agent do", () => {
     expect(inputFor("KRW", [soon]).candidates[0].notEligible[0]).toMatch(/too soon/);
   });
 
+  it("offers no discount to a client who already owes a late invoice", () => {
+    const far = SEED_BOOK.find((i) => i.number === "FXA-1004")!;
+    const late = { ...SEED_BOOK.find((i) => i.number === "FXA-1001")!, recipientName: far.recipientName };
+    const c = inputFor("KRW", [far, late]).candidates.find((x) => x.invoiceNumber === "FXA-1004")!;
+    expect(c.eligible).toEqual([]);
+    expect(c.notEligible[0]).toMatch(/late invoice/);
+    expect(inputFor("KRW", [far]).candidates[0].eligible).toEqual(["early_pay_discount"]);
+  });
+
   it("chases late invoices in the home currency too, but offers only on money from abroad", () => {
     const usdHome = inputFor("USD");
     const usd = usdHome.candidates.filter((c) => c.currency === "USD");

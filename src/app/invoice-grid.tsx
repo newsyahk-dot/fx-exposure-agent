@@ -41,6 +41,15 @@ const VIEWS = {
 } as const;
 type View = keyof typeof VIEWS;
 
+
+// Tab moves on to the next control on the page instead of walking every cell (round 7 review, 2026-11-09).
+const leaveGrid = () => false as const;
+
+// The e-mail's sign-off line and the name under it: "Best regards," "Kind regards" "Thanks," "Thank you," "Cheers,"
+// "Sincerely," "All the best," — the cursor goes to the end of the line before it.
+const SIGN_OFF =
+  /\n[ \t]*(?:(?:best|kind|warm(?:est)?)\s+(?:regards|wishes)|best|regards|many thanks|thanks(?: again)?|thank you|cheers|sincerely|all the best)[ \t]*(?:[.!]|,(?:[ \t]*[^\n,]{1,30})?)?[ \t]*(?:\n[^\n]*){0,2}\s*$/i;
+
 export function InvoiceGrid({
   rows,
   base,
@@ -249,6 +258,7 @@ export function InvoiceGrid({
         minWidth: 88,
         initialSort: "desc", // initial only: a column rebuild (opening a row) must not bring this sort back
         valueFormatter: (p) => (p.value ? `±${home(p.value)}` : "none"), // used by the CSV export
+        getQuickFilterText: (p) => (p.value ? `±${home(p.value)} ±${compact(base, p.value)}` : "none"), // search what is shown
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.node.rowPinned ? (
             <strong>±{base === "KRW" || base === "JPY" ? compact(base, p.value) : home(p.value)}</strong>
@@ -478,6 +488,8 @@ export function InvoiceGrid({
         <DetailCtx.Provider value={{ lockReason, busy: running, approveOne: (r) => runApprovals([r]), close: toggle, undo: (id) => edit(id, null) }}>
         <AgGridReact<InvoiceRow>
           theme={theme}
+          tabToNextCell={leaveGrid}
+          tabToNextHeader={leaveGrid}
           rowData={displayRows}
           columnDefs={columns}
           defaultColDef={{ sortable: true, resizable: true, filter: false }}
@@ -506,9 +518,11 @@ export function InvoiceGrid({
             requestAnimationFrame(() => {
               const ta = document.querySelector<HTMLTextAreaElement>(".ag-large-text textarea, .ag-popup-editor textarea");
               if (!ta) return;
-              // Before the sign-off ("Best regards, Maya"), so what she types lands in the message, not after her name.
-              const sign = ta.value.search(/\s*(?:best|kind|warm)?\s*regards\b[\s\S]*$/i);
-              const at = sign > 0 ? sign : ta.value.length;
+              // Before the sign-off ("Best regards, Maya", "Thanks,\nMaya", "Cheers"…), so what she types lands in the
+              // message, not after her name.
+              const sign = ta.value.search(SIGN_OFF);
+              let at = sign > 0 ? sign : ta.value.length;
+              while (at > 0 && /\s/.test(ta.value[at - 1])) at--; // end of the last message line, not a blank line
               ta.setSelectionRange(at, at);
               ta.scrollTop = 0; // keep the greeting in view (on a phone the cursor at the end scrolled it away)
             });
