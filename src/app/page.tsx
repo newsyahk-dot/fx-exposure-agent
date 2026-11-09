@@ -57,21 +57,56 @@ export const maxDuration = 300;
 export default function Home({ searchParams }: { searchParams: SearchParams }) {
   return (
     <main className={styles.page}>
+      {/* The front door: one headline, one sentence, two buttons, the three moments — then the product itself, on the
+          same page (a separate landing page would put one more click between a judge and the demo). */}
       <header className={styles.header}>
-        <div className={styles.brand}>
-          <Logo />
-          <h1>FX Exposure Agent</h1>
+        <div className={styles.topBar}>
+          <div className={styles.brand}>
+            <Logo />
+            <span className={styles.brandName}>FX Exposure Agent</span>
+          </div>
+          <span className={styles.topNote}>PayPal sandbox · no real money</span>
         </div>
+        <h1 className={styles.headline}>
+          Money from clients abroad,
+          <br />
+          <span>seen like a treasury desk.</span>
+        </h1>
         <p className={styles.lede}>
-Money owed by clients abroad, seen the way a treasury desk sees it: when it comes in, in which currency, what is
-          late and what exchange rates can move. An AI agent takes the PayPal steps that shorten the wait — after you
-          approve.
+          When it comes in, in which currency, what is late and what exchange rates can move. An AI agent takes the PayPal
+          steps that get you paid sooner — after you approve.
         </p>
-        <p>
-          <Link href="/try" prefetch={false} className={`${styles.link} ${styles.tryLink}`}>
-            Try it with your own invoices →
+        <div className={styles.ctaRow}>
+          <Link href="/?step=today#actions-h" prefetch={false} className={styles.ctaPrimary}>
+            See today&apos;s plan ↓
           </Link>
-        </p>
+          <Link href="/try" prefetch={false} className={styles.ctaSecondary}>
+            Try your own invoices →
+          </Link>
+        </div>
+        <ol className={styles.moments} aria-label="Three moments">
+          <li>
+            <Link href="/?step=invoice" prefetch={false}>
+              <span className={styles.momentNum}>1</span>
+              <strong>Before you invoice</strong>
+              <small>which currency, which terms</small>
+            </Link>
+          </li>
+          <li>
+            <Link href="/?step=exposure" prefetch={false}>
+              <span className={styles.momentNum}>2</span>
+              <strong>While you wait</strong>
+              <small>what comes in when, what rates can move</small>
+            </Link>
+          </li>
+          <li>
+            <Link href="/?step=today#actions-h" prefetch={false}>
+              <span className={styles.momentNum}>3</span>
+              <strong>When a client is late</strong>
+              <small>a reminder in your voice, one click</small>
+            </Link>
+          </li>
+        </ol>
       </header>
       <Suspense fallback={<p className={styles.muted}>Loading your PayPal invoices…</p>}>
         <Book searchParams={searchParams} />

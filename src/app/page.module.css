@@ -1936,3 +1936,145 @@
 .cardRisk strong {
   color: var(--accent);
 }
+
+/* ---- Front door (2026-11-09): headline, one sentence, two buttons, the three moments as cards. The user chose
+   this spacious version over a compact one that fit the tiles on a 1440×900 screen. ---- */
+.header {
+  gap: 14px;
+  padding-bottom: 8px;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brandName {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.topNote {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.header .headline {
+  margin-top: 18px;
+  font-size: clamp(34px, 5.2vw, 56px);
+  line-height: 1.06;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.headline span {
+  color: var(--accent);
+}
+
+.header .lede {
+  font-size: 19px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  max-width: 58ch;
+}
+
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  margin-top: 4px;
+}
+
+.ctaPrimary {
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 18px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff !important;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 10%), 0 4px 14px color-mix(in srgb, var(--accent) 30%, transparent);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ctaPrimary:hover {
+  transform: translateY(-1px);
+}
+
+.ctaSecondary {
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.ctaSecondary:hover {
+  text-decoration: underline;
+}
+
+.moments {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.moments a {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: baseline;
+  height: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.moments a:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface-1));
+}
+
+.moments small {
+  grid-column: 2;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.momentNum {
+  grid-row: span 2;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+@media (max-width: 600px) {
+  .topNote {
+    display: none;
+  }
+  .header .headline {
+    margin-top: 8px;
+  }
+  .header .lede {
+    font-size: 17px;
+  }
+  .moments {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
