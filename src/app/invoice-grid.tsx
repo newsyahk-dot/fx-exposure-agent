@@ -200,7 +200,7 @@ export function InvoiceGrid({
       {
         field: "client",
         headerName: "Client",
-        minWidth: 136,
+        minWidth: 156,
         hide: narrow, // a phone shows the money first; the client is in the detail row and in search
         tooltipField: "client",
         // Name, and underneath how this client has paid before (from their fully paid invoices).
@@ -220,6 +220,8 @@ export function InvoiceGrid({
         hide: narrow, // a phone keeps the ranking column (At risk) on screen instead; the amount is in the detail row
         type: "rightAligned",
         enableCellChangeFlash: true,
+        // Sort by what it is worth in the home currency: by face value every yen invoice sorted above every dollar one.
+        comparator: (_a, _b, na, nb) => (na.data?.value ?? 0) - (nb.data?.value ?? 0),
         valueFormatter: (p) =>
           p.data?.paidToday // what came in today ("paid today" shows under Due)
             ? fmt(p.data.currency, p.data.paidAmount)
@@ -281,7 +283,7 @@ export function InvoiceGrid({
         },
         cellEditorSelector: (p) =>
           p.data?.action?.kind === "early_pay_discount"
-            ? { component: PercentEditor, popup: true }
+            ? { component: PercentEditor, popup: true, popupPosition: "under" } // under the cell, not over it
             : { component: "agLargeTextCellEditor", popup: true },
         cellEditorParams: { maxLength: 900, rows: 10, cols: 64, fmtHome: home },
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) => {
@@ -475,7 +477,9 @@ export function InvoiceGrid({
             if (e.column.getColId() !== "draft") return;
             requestAnimationFrame(() => {
               const ta = document.querySelector<HTMLTextAreaElement>(".ag-large-text textarea, .ag-popup-editor textarea");
-              if (ta) ta.setSelectionRange(ta.value.length, ta.value.length);
+              if (!ta) return;
+              ta.setSelectionRange(ta.value.length, ta.value.length);
+              ta.scrollTop = 0; // keep the greeting in view (on a phone the cursor at the end scrolled it away)
             });
           }}
           onSelectionChanged={(e) => {
@@ -508,7 +512,8 @@ function total(all: InvoiceRow[], base: string): TotalRow {
   const rows = all.filter((r) => !r.paidToday && !r.detailOf);
   const home = rows.filter((r) => r.currency === base).length;
   return {
-    number: `${rows.length} open invoice${rows.length === 1 ? "" : "s"}${home ? ` (${home} in ${base})` : ""}`,
+    // Short enough for the pinned Invoice column ("17 open invoices (6 in USD)" was cut off at desktop width).
+    number: `${rows.length} open${home ? ` · ${home} in ${base}` : ""}`,
     value: rows.reduce((s, r) => s + r.value, 0),
     atRisk: rows.reduce((s, r) => s + r.atRisk, 0),
   };
@@ -691,7 +696,11 @@ function DetailRow({
                 <em>{a.clientNote}</em>
               </p>
             )}
-            {!a.edited && <p className={styles.muted}>Change it with ✎ in the Draft column{a.kind === "early_pay_discount" ? ` (allowed: ${a.percents.map((x) => `${x}%`).join(", ")})` : ""}.</p>}
+            {!a.edited && (a.kind === "reminder" || a.percents.length > 1) && (
+              <p className={styles.muted}>
+                Change it with ✎ in the Draft column{a.kind === "early_pay_discount" ? ` (allowed: ${a.percents.map((x) => `${x}%`).join(", ")})` : ""}.
+              </p>
+            )}
             <p>
               <button type="button" className={styles.approve} disabled={busy || !!lockReason} onClick={onApprove}>
                 {a.kind === "reminder" ? "Approve: send this reminder" : "Approve: send this offer"}

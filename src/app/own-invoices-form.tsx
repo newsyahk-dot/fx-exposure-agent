@@ -150,7 +150,7 @@ function OwnResult({ s }: { s: Extract<OwnState, { ok: true }> }) {
           ) : (
             <ul className={styles.cards}>
               {a.run.proposals.map((p) => (
-                <OwnCard key={`${p.kind}-${p.invoiceId}`} p={p} c={c} />
+                <OwnCard key={`${p.kind}-${p.invoiceId}`} p={p} c={c} client={a.clients?.[p.invoiceId]} />
               ))}
             </ul>
           )}
@@ -193,7 +193,7 @@ function OwnResult({ s }: { s: Extract<OwnState, { ok: true }> }) {
   );
 }
 
-function OwnCard({ p, c }: { p: AgentProposal; c: (n: number) => string }) {
+function OwnCard({ p, c, client }: { p: AgentProposal; c: (n: number) => string; client?: string }) {
   const daysSooner = p.kind === "early_pay_discount" ? Math.max(0, p.daysToDue - p.withinDays) : 0;
   return (
     <li className={styles.card} data-state="open">
@@ -201,7 +201,9 @@ function OwnCard({ p, c }: { p: AgentProposal; c: (n: number) => string }) {
         {p.kind === "reminder" ? "Chase a late payment" : `Ask to be paid ${daysSooner} days sooner, for ${p.percent}% off`}
       </p>
       <p className={styles.cardTitle}>
-        {p.invoiceNumber} · {money(p.currency, p.amount)}
+        {client ? `${client} · ` : ""}
+        {money(p.currency, p.amount)}
+        <span className={styles.cardNumber}>{p.invoiceNumber}</span>
       </p>
       {p.kind === "reminder" ? (
         <p className={styles.cardPitch}>

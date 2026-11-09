@@ -151,7 +151,7 @@ const INIT = `(() => {
     await show(timeline);
     const cap = (await timeline.locator('figcaption').innerText()).replace(/^When the money comes in\s*—\s*/, '');
     await hl(timeline);
-    await say('When the money comes in, week by week.', cap ? cap.charAt(0).toUpperCase() + cap.slice(1) + ' — a scenario, not a promise.' : 'As invoiced, and if clients pay as proposed — a scenario, not a promise.', 6000);
+    await say('When the money comes in, week by week.', cap ? cap.charAt(0).toUpperCase() + cap.slice(1) + ' — a best case, not a forecast.' : 'As invoiced, and the best case if every client pays as proposed — not a forecast.', 6000);
     await hl(timeline, false);
   }
 

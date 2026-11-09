@@ -7,6 +7,11 @@ A company with clients abroad has a treasury team watching this. A freelancer ha
 covers the three moments that decide what she is actually paid: **before she sends an invoice** (which currency, which
 terms), **while she waits** (what is coming in when, and what a rate move does to it) and **when a client is late**.
 
+Reminders alone are not the point. The app adds the view a treasury desk keeps: what the money still owed is worth in
+her own currency, week by week, and how much of it a rate move can change. That view decides the order of the day's
+work — the agent's proposals are ranked by what each invoice puts at risk — and an early-payment discount is priced as
+what it is, a yearly rate for getting paid sooner.
+
 Live demo: **https://fx-exposure-agent.vercel.app** (PayPal sandbox — no real money). Judges: the access code that
 lets you run the agent's actions is in the Devpost testing instructions; without it you can look around.
 
@@ -53,7 +58,7 @@ her how much is at stake, or which invoice to deal with first.
 1. **Her money from abroad, the way a treasury desk sees it.** What clients abroad owe her by currency and by the week
    it falls due, what is already late, and what a 3% move either way would do to it — up or down, equally likely; the
    size of the risk, not a forecast. A week-by-week chart shows when the money comes in as invoiced, and if clients pay
-   as proposed (a scenario, with its assumptions on screen).
+   as proposed (a best case, with its assumptions on screen).
 2. **Before she sends an invoice.** She types "Bill Sakura Games ¥480,000 for the level art pack, net 45" and sees
    what billing in yen, in dollars, on shorter terms or half up front would leave at risk, using that client's own
    payment history. She picks one; it is created and sent in PayPal.

@@ -138,8 +138,10 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   const day = dayChange(inputs.invoices, paid, rates, base, inputs.asOf);
 
   const allDone = inputs.invoices.flatMap((i) => (i.agentLog ?? []).filter((a) => a.kind !== "archived").map((a) => ({ ...a, inv: i })));
-  const done = allDone.filter((d) => OPEN_STATUSES.has(d.inv.status)).sort((a, b) => b.at.localeCompare(a.at));
-  const doneList = <DoneList done={done} closed={allDone.length - done.length} />;
+  // Every action sent through PayPal, newest first — including those on invoices paid since (they used to be hidden,
+  // so the count disagreed with "Run today: N of M" on Today; blind review, 2026-11-09).
+  const done = [...allDone].sort((a, b) => b.at.localeCompare(a.at));
+  const doneList = <DoneList done={done} />;
 
   return (
     <>
@@ -329,8 +331,8 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
             <ResetDemoButton disabledReason={lockReason} />
           </details>
           <details className={styles.leftAlone}>
-            <summary>Done by the agent ({done.length})</summary>
-            <DoneList done={done} closed={allDone.length - done.length} bare />
+            <summary>Sent through PayPal ({done.length})</summary>
+            <DoneList done={done} bare />
           </details>
         </>
       )}
@@ -744,32 +746,35 @@ function Replay({ r, ecb, input }: { r: AgentRun; ecb: EcbQuotes; input: AgentIn
   );
 }
 
-function DoneList({ done, closed, bare = false }: { done: { kind: string; at: string; auto?: true; inv: Invoice }[]; closed: number; bare?: boolean }) {
+function DoneList({ done, bare = false }: { done: { kind: string; at: string; auto?: true; inv: Invoice }[]; bare?: boolean }) {
   return (
-    <section aria-labelledby={bare ? undefined : "done-h"} aria-label={bare ? "Done by the agent" : undefined}>
-      {!bare && <h2 id="done-h">Done by the agent</h2>}
+    <section aria-labelledby={bare ? undefined : "done-h"} aria-label={bare ? "Sent through PayPal" : undefined}>
+      {!bare && <h2 id="done-h">Sent through PayPal</h2>}
       {done.length === 0 ? (
         <p className={styles.muted}>Nothing yet. Approved actions show up here and stay recorded on the invoice.</p>
       ) : (
         <ul className={styles.doneList}>
-          {done.map((d) => (
-            <li key={`${d.inv.id}-${d.kind}-${d.at}`}>
-              <time dateTime={d.at}>{d.at.slice(0, 16).replace("T", " ")} UTC</time>
-              <span>
-                {d.kind === "reminder" ? "Reminder sent" : d.kind === "created" ? "Invoice created" : "Early-payment offer sent"}
-                {d.auto && <strong className={styles.autoTag}> · autopilot</strong>}
-              </span>
-              <span>
-                {d.inv.number} · {money(d.inv.currency, d.inv.amountDue)} still owed, due {d.inv.dueDate}
-              </span>
-            </li>
-          ))}
+          {done.map((d) => {
+            const open = OPEN_STATUSES.has(d.inv.status) && d.inv.amountDue > 0;
+            return (
+              <li key={`${d.inv.id}-${d.kind}-${d.at}`}>
+                <time dateTime={d.at}>{d.at.slice(0, 16).replace("T", " ")} UTC</time>
+                <span>
+                  {d.kind === "reminder" ? "Reminder sent" : d.kind === "created" ? "Invoice created" : "Early-payment offer sent"}
+                  {d.auto ? <strong className={styles.autoTag}> · autopilot</strong> : <span className={styles.muted}> · you approved</span>}
+                </span>
+                <span>
+                  {d.inv.number} ·{" "}
+                  {open
+                    ? `${money(d.inv.currency, d.inv.amountDue)} still owed, due ${d.inv.dueDate}`
+                    : d.inv.status === "CANCELLED"
+                      ? "cancelled since"
+                      : "paid since"}
+                </span>
+              </li>
+            );
+          })}
         </ul>
-      )}
-      {closed > 0 && (
-        <p className={styles.muted}>
-          {closed} earlier {closed === 1 ? "action" : "actions"} on invoices since paid or cancelled not listed.
-        </p>
       )}
     </section>
   );

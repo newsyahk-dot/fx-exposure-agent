@@ -27,7 +27,10 @@ money arrives, the exchange rate decides how much she actually earns. Freelancer
 wait weeks to be paid, and late payers make the wait longer. Large companies have treasury teams for this. A
 one-person business finds out at the end, when the payment lands. So the app looks at her receivables the way a
 treasury desk would — amount × currency × week — across the three moments that decide what she is paid: before she
-sends an invoice, while she waits, and when a client is late.
+sends an invoice, while she waits, and when a client is late. Reminders alone are not
+the point: the app adds what the money still owed is worth in her own currency week by week, and how much of it a rate
+move can change. That view decides the order of the day's work: the agent's proposals are ranked by what each invoice
+puts at risk.
 
 - **Many people work this way.** 64 million Americans freelanced in 2023, 38% of the U.S. workforce
   ([Upwork, Freelance Forward 2023](https://investors.upwork.com/news-releases/news-release-details/upwork-study-finds-64-million-americans-freelanced-2023-adding)).

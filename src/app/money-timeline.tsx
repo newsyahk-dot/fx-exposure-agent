@@ -36,7 +36,7 @@ export function MoneyTimeline({ t, base, paid = 0 }: { t: Timeline; base: string
             ) : (
               <>nothing due as invoiced</>
             )}{" "}
-            → <strong className={styles.timelineUp}>{c(t.soon.asProposed)}</strong> if clients pay as proposed
+            → <strong className={styles.timelineUp}>{c(t.soon.asProposed)}</strong> if every client pays as proposed (best case)
           </span>
         ) : null}
       </figcaption>
@@ -49,8 +49,8 @@ export function MoneyTimeline({ t, base, paid = 0 }: { t: Timeline; base: string
           <i className={styles.barProposed} aria-hidden="true" /> If clients pay as proposed
         </span>
         <span className={styles.muted}>
-          Assumes a reminded invoice is paid within {ASSUME.afterReminderDays} days and an offer by its new due date (net of the
-          discount) — a scenario, not a promise.
+          Best case, not a forecast: it assumes every reminded client pays within {ASSUME.afterReminderDays} days and every
+          offer is taken by its new due date (net of the discount). Some clients will not.
         </span>
       </p>
     </figure>

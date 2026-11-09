@@ -31,7 +31,7 @@ placeholders. Captions are mandatory (burned in).
 | Screen | Narration | Number |
 |---|---|---|
 | Hero chip "±[$929] if rates move 3% either way". | "Until foreign money arrives, the exchange rate decides what she actually earns — about [$929] either way on a 3% move. Banks hedge this for big companies. The app never predicts rates; it helps her get paid sooner." | ±$929 |
-| **When the money comes in** chart: "within 2 weeks: [$2,016] as invoiced → [$24K] if clients pay as proposed". | "Week by week: as invoiced, and if clients pay as proposed — a scenario, not a promise." | $24K |
+| **When the money comes in** chart: "within 2 weeks: [$2,016] as invoiced → [$24K] if every client pays as proposed (best case)". | "Week by week: as invoiced, and the best case if every client pays as proposed — not a forecast." | $24K |
 
 ## 3 · 1:00–1:25 — The agent, checked by code
 

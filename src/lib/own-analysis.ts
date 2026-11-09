@@ -24,6 +24,7 @@ export type OwnAnalysis = {
   rows: { currency: string; total: number; value: number; shock: number; overdue: number; count: number }[];
   run: AgentRun;
   timeline: MoneyTimeline;
+  clients: Record<string, string>; // invoice id -> client name, for the proposal cards
 };
 
 export function analyzeOwn(text: string, base: Base, ecb: EcbQuotes, today: string, now = new Date()): { analysis: OwnAnalysis; agentInput: AgentInput } {
@@ -50,6 +51,7 @@ export function analyzeOwn(text: string, base: Base, ecb: EcbQuotes, today: stri
     rows: e.rows.map((r) => ({ currency: r.currency, total: r.total, value: r.value, shock: r.shock, overdue: overdueOf(r.currency), count: r.invoiceCount })),
     run: rulesRun(view.agentInput, "your invoices — rules"),
     timeline: { bins: [], soon: { days: 14, asInvoiced: 0, asProposed: 0 }, total: 0 },
+    clients: Object.fromEntries(parsed.invoices.filter((i) => i.recipientName).map((i) => [i.id, i.recipientName!])),
   };
   analysis.timeline = moneyTimeline(view.agentInput, analysis.run);
   return { analysis, agentInput: view.agentInput };
