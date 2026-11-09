@@ -1531,6 +1531,9 @@
   margin: 8px 0 10px;
   background: var(--surface-2);
 }
+.gridApprove[data-static] {
+  position: static;
+}
 .gridApprove ul {
   margin: 6px 0;
   padding-left: 18px;

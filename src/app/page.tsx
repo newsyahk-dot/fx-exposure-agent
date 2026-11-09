@@ -290,8 +290,9 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
             Waiting {away} <strong>{c(e.totalValue)}</strong>
             {Math.round(day.paid) > 0 && <span className={styles.ok}> (+{c(day.paid)} collected today)</span>}
           </span>
-          <span>
-            Overdue <strong>{c(overdue)}</strong>
+          <span title={overdue > 0 ? `${c(overdue)} of it from clients abroad` : undefined}>
+            Late <strong>{c(lateAllValue)}</strong>
+            {overdue > 0 && Math.round(overdue) !== Math.round(lateAllValue) && <span className={styles.muted}> ({c(overdue)} from abroad)</span>}
           </span>
           <span>
             If rates move ±{SHOCK_PCT}% <strong>±{c(e.totalShock)}</strong>
@@ -837,7 +838,7 @@ function ExposureTable({ view, skipped, baseOpen }: { view: BookView; skipped: {
   return (
     <section aria-labelledby="exposure-h">
       <h2 id="exposure-h">Where the exposure sits</h2>
-      <p className={styles.muted}>Unpaid amounts by currency and by when they fall due, in {base}. Darker cells hold more money; hover a cell for the amount in its own currency.</p>
+      <p className={styles.muted}>Unpaid amounts by currency and by when they fall due, in {base}. The stronger the blue, the more money; hover or focus a cell for the amount in its own currency.</p>
       <ExposureGrid
         base={base}
         buckets={BUCKETS}

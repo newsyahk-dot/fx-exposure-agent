@@ -8,9 +8,9 @@ covers the three moments that decide what she is actually paid: **before she sen
 terms), **while she waits** (what is coming in when, and what a rate move does to it) and **when a client is late**.
 
 Reminders alone are not the point. The app adds the view a treasury desk keeps: what the money still owed is worth in
-her own currency, week by week, and how much of it a rate move can change. That view decides the order of the day's
-work — the agent's proposals are ranked by what each invoice puts at risk — and an early-payment discount is priced as
-what it is, a yearly rate for getting paid sooner.
+her own currency, week by week, and how much of it a rate move can change. The day's work is ordered the way a treasury
+desk works a receivables list — late money first, then money on its way — and each proposal shows what it puts at risk
+from exchange rates; an early-payment discount is priced as what it is, a yearly rate for getting paid sooner.
 
 Live demo: **https://fx-exposure-agent.vercel.app** (PayPal sandbox — no real money). Judges: the access code that
 lets you run the agent's actions is in the Devpost testing instructions; without it you can look around.

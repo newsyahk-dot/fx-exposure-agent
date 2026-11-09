@@ -290,7 +290,7 @@ export function InvoiceGrid({
         },
         cellEditorSelector: (p) =>
           p.data?.action?.kind === "early_pay_discount"
-            ? { component: PercentEditor, popup: true, popupPosition: "under" } // under the cell, not over it
+            ? { component: PercentEditor, popup: true } // AG Grid places it over the cell and keeps it on screen ("under" ran off the bottom on low rows)
             : { component: "agLargeTextCellEditor", popup: true },
         cellEditorParams: { maxLength: 900, rows: 10, cols: 64, fmtHome: home },
         // Tab keeps the edit and stays on this row (AG Grid's default moved on and opened the next row's editor).
@@ -422,7 +422,9 @@ export function InvoiceGrid({
         </button>
       </div>
       {(selected.length > 0 || results.length > 0) && (
-        <div className={styles.gridApprove} role="region" aria-label="Approve from the grid">
+        // The short bar stays in view while she ticks rows; the confirmation list does not (sticky, it covered the
+        // header and the very rows it lists).
+        <div className={styles.gridApprove} data-static={confirming || running || results.length > 0 || undefined} role="region" aria-label="Approve from the grid">
           {selected.length > 0 && !confirming && !running && (
             <p>
               <strong>{selected.length} selected</strong> — the agent&apos;s wording or your edit, checked again on the server.{" "}

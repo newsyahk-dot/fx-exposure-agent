@@ -73,7 +73,8 @@ Caption with the numbers from `docs/agent-eval.md` ("[N] agent runs · [M] propo
 then the end card: name, live URL, "PayPal Invoicing API · webhooks · invoice templates · PayPal MCP server · Claude".
 "Before she sends, while she waits, when a client is late — her money from abroad, seen like a treasury desk sees it."
 
-Dropped from the video (still in the app): the Where-it-sits grid and the Evidence chart in detail.
+Dropped from the video (still in the app): the Evidence chart in detail, the PayPal-event reaction and the refusal
+(gallery only). The Where-it-sits grid is in beat 4b.
 
 ---
 

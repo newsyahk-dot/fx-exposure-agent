@@ -207,6 +207,11 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   minutes (PayPal `last_update_time` and agent log) and is at least `AUTO_RESET_MIN_AGE_MIN` (60) minutes old asks
   `/api/auto-reset`, which re-checks on fresh data, answers 202 and resets in `after()` like the nightly job (reset,
   plan every currency, then expire the book). Never resets a real seller's book or someone mid-demo.
+- **Round 15 fixes** (2026-11-09): every card shows its exchange-rate risk from its own value (Ask-the-agent cards had
+  no rank data and called EUR/JPY invoices "No exchange-rate risk"); offer cards say "Goes out as a separate invoice"
+  before approval; the other steps' summary shows the same Late figure as Today (with the share from abroad); heatmap
+  copy "the stronger the blue" (dark mode reverses light/dark); the grid's confirmation list is not sticky (it covered
+  the header and the rows it listed); the discount editor uses AG Grid's default popup position (kept on screen).
 - **Page after a write** (2026-10-29): `loadInputsForPage` retries a failed PayPal read once and then shows the last
   good book with `StaleNotice` (refreshes every 4 s) — one failed read after "Simulate client payment" used to replace
   the whole page with an error.
