@@ -150,6 +150,13 @@ function Plan({ plan, base, readOnly }: { plan: NonNullable<NonNullable<PlanStat
       <p className={styles.muted}>
         Swings and ranges are sizes of uncertainty, either way — not forecasts. The app does not say which option to pick.
       </p>
+      <p className={styles.muted}>
+        PayPal also charges its own fee when it converts a payment into another currency; it is not counted here. See{" "}
+        <a href="https://www.paypal.com/us/business/paypal-business-fees" target="_blank" rel="noopener noreferrer">
+          PayPal&apos;s fee page
+        </a>
+        .
+      </p>
     </div>
   );
 }

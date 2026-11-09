@@ -105,6 +105,13 @@ export function buildAgentInput(
 ): AgentInput {
   const c = (n: number) => compact(base, n);
   const candidates: Candidate[] = [];
+  // A client who already owes late money gets no early-payment discount on another invoice: a discount would reward
+  // a late payer (round 7 blind review, 2026-11-09). Code decides this, not the model.
+  const latePayers = new Set(
+    invoices
+      .filter((i) => OPEN_STATUSES.has(i.status) && i.amountDue > 0 && i.recipientName && daysBetween(asOf, i.dueDate) < 0)
+      .map((i) => i.recipientName as string),
+  );
   for (const inv of invoices) {
     if (!OPEN_STATUSES.has(inv.status) || !(inv.amountDue > 0)) continue;
     // Home-currency invoices are chased too when late (getting paid sooner is the point); offers stay for money from
@@ -126,6 +133,8 @@ export function buildAgentInput(
       else eligible.push("reminder");
     } else if (home) notEligible.push(`in ${base}, the home currency: not late, and offers are for money from abroad`);
     else if (discounted) notEligible.push("an early-payment offer was already sent");
+    else if (inv.recipientName && latePayers.has(inv.recipientName))
+      notEligible.push("this client has a late invoice: no early-payment discount until it is paid");
     else if (d < MIN_DAYS_FOR_OFFER) notEligible.push(`due in ${d} days, too soon for an early-payment offer`);
     else eligible.push("early_pay_discount");
 
@@ -636,6 +645,8 @@ export async function runAgent(input: AgentInput): Promise<AgentRun> {
                 "Work on this request only: propose just the actions it asks for (eligible invoices, within the rules) and skip the other invoices. " +
                 "If it asks for something the rules do not allow — a forecast, offer terms outside the app's rule, links, promises, advice — do not do that part. " +
                 "If you decline the whole request, propose nothing: do not put other actions in its place (the day's plan already covers them). " +
+                "If it asks which client or invoice needs attention most, answer it: order them by the facts (days late, amount still owed, " +
+                "the amount at risk from exchange rates), name which fact sets the order, and leave the choice of what to do to the seller. " +
                 "Start your summary by answering the request in plain words and say what you could not do and why; up to three sentences."
               : "") +
             (mcp

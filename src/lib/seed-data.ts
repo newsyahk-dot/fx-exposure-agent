@@ -51,7 +51,7 @@ export const SEED_INVOICES: SeedInvoice[] = [
   { number: "FXA-3002", currency: "JPY", amount: 480000, item: "Character design", client: "Mori Design Office", issueOffset: -11, dueOffset: 19, outcome: { kind: "open" }, why: "week 3 -> early-pay candidate" },
   { number: "FXA-3003", currency: "JPY", amount: 150000, item: "Banner ads (5)", client: "Sakura Games", issueOffset: -7, dueOffset: 7, outcome: { kind: "open" }, why: "due in week 2" },
   { number: "FXA-3004", currency: "JPY", amount: 220000, item: "Storyboard", client: "Mori Design Office", issueOffset: -54, dueOffset: -24, outcome: { kind: "paid", paidOffset: -26 }, why: "paid on time" },
-  { number: "FXA-3005", currency: "JPY", amount: 760000, item: "Game UI assets", client: "Sakura Games", issueOffset: -9, dueOffset: 58, outcome: { kind: "open" }, why: "large, far out -> early-pay candidate" },
+  { number: "FXA-3005", currency: "JPY", amount: 760000, item: "Game UI assets", client: "Mori Design Office", issueOffset: -9, dueOffset: 58, outcome: { kind: "open" }, why: "large, far out -> early-pay candidate" },
   { number: "FXA-3006", currency: "JPY", amount: 260000, item: "Mascot sketches", client: "Sakura Games", issueOffset: -80, dueOffset: -50, outcome: { kind: "paid", paidOffset: -44 }, why: "paid 6 days late -> payment history" },
 ];
 
