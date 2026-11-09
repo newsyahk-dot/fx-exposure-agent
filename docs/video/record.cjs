@@ -107,9 +107,10 @@ const INIT = `(() => {
   const lateText = await hero.locator('[data-tone="late"]').innerText().catch(() => '');
   const overdue = (lateText.match(/\$[\d,]+/) || ['some money'])[0];
   const n = (lateText.match(/(\d+) clients?/) || [null, null])[1];
-  const lateWho = n ? `${n === '1' ? 'One client' : `${n} clients`} abroad ${n === '1' ? 'is' : 'are'} paying late` : 'Clients abroad are paying late';
+  const abroad = (lateText.match(/(\$[\d,.]+K?) from abroad/) || [null, null])[1];
+  const lateWho = (n ? `${n === '1' ? 'One client is' : `${n} clients are`} paying late` : 'Clients are paying late') + (abroad ? ` — ${abroad} of it from abroad` : '');
   log('hero', total, overdue, lateWho);
-  await say('Monday morning. Maya, a freelance designer in the US, opens her PayPal invoices.', `${lateWho} — ${overdue} overdue.`);
+  await say('Monday morning. Maya, a freelance designer in the US, opens her PayPal invoices.', `${overdue} is overdue: ${lateWho}.`);
   await hl(hero);
   await say(`In all, ${total.replace('K', ',000').replace(/\$(\d+),000/, '$$$1,000')} is owed to her in euros, pounds and yen —`, 'seen the way a treasury desk would: what is late, what comes in when, and what a rate move can do to it.');
   await hl(hero, false);

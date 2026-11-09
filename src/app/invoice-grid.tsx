@@ -175,7 +175,7 @@ export function InvoiceGrid({
         field: "number",
         headerName: "Invoice",
         pinned: narrow ? undefined : "left", // on a phone two pinned columns would fill the screen
-        minWidth: narrow ? 150 : 164,
+        minWidth: narrow ? 150 : 156,
         // The invoice number opens PayPal's client view (a separate column did not fit at desktop width).
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.data?.id && clientUrls[p.data.id] ? (
@@ -200,9 +200,10 @@ export function InvoiceGrid({
       {
         field: "client",
         headerName: "Client",
-        minWidth: 156,
+        minWidth: 136,
         hide: narrow, // a phone shows the money first; the client is in the detail row and in search
         tooltipField: "client",
+        getQuickFilterText: (p) => `${p.data?.client ?? ""} ${p.data?.usuallyPays ?? ""}`, // search what is shown
         // Name, and underneath how this client has paid before (from their fully paid invoices).
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.node.rowPinned ? null : (
@@ -216,10 +217,12 @@ export function InvoiceGrid({
       {
         field: "amount",
         headerName: "Still owed",
-        minWidth: 128,
+        minWidth: 116,
         hide: narrow, // a phone keeps the ranking column (At risk) on screen instead; the amount is in the detail row
         type: "rightAligned",
         enableCellChangeFlash: true,
+        // Search the amount as shown ("760,000", "JPY 760,000").
+        getQuickFilterText: (p) => `${p.data?.currency ?? ""} ${p.value == null ? "" : new Intl.NumberFormat("en-US").format(p.value)}`,
         // Sort by what it is worth in the home currency: by face value every yen invoice sorted above every dollar one.
         comparator: (_a, _b, na, nb) => (na.data?.value ?? 0) - (nb.data?.value ?? 0),
         valueFormatter: (p) =>
@@ -230,7 +233,10 @@ export function InvoiceGrid({
       {
         field: "daysToDue",
         headerName: "Due",
-        minWidth: 116,
+        minWidth: 100,
+        // Search the words on screen ("8 days late", "paid today"), not the raw number of days.
+        getQuickFilterText: (p) =>
+          p.data?.paidToday ? "paid today" : p.value == null ? "" : p.value < 0 ? `${-p.value} days late overdue` : p.value === 0 ? "today" : `in ${p.value} days`,
         valueFormatter: (p) =>
           p.value == null ? "" : p.data?.paidToday ? "paid today" : p.value < 0 ? `${-p.value} days late` : p.value === 0 ? "today" : `in ${p.value} days`,
         cellClassRules: { [styles.gridLate]: (p) => !p.data?.paidToday && (p.value ?? 0) < 0 },
@@ -257,7 +263,7 @@ export function InvoiceGrid({
       {
         field: "agent",
         headerName: "Agent today",
-        minWidth: 156,
+        minWidth: 120,
         tooltipField: "agent",
         enableCellChangeFlash: true,
         cellClassRules: { [styles.gridActive]: (p) => /proposed|sent|Paid/.test(p.value ?? "") },
@@ -269,7 +275,7 @@ export function InvoiceGrid({
         colId: "draft",
         headerName: "Draft",
         headerTooltip: "Edit the agent's e-mail or discount before approving — checked again on the server",
-        minWidth: 84,
+        minWidth: 80,
         sortable: false,
         // An offer with only one percent within the rule has nothing to pick: no editor, no ✎.
         editable: (p) =>
@@ -286,6 +292,13 @@ export function InvoiceGrid({
             ? { component: PercentEditor, popup: true, popupPosition: "under" } // under the cell, not over it
             : { component: "agLargeTextCellEditor", popup: true },
         cellEditorParams: { maxLength: 900, rows: 10, cols: 64, fmtHome: home },
+        // Tab keeps the edit and stays on this row (AG Grid's default moved on and opened the next row's editor).
+        suppressKeyboardEvent: (p) => {
+          if (!p.editing || p.event.key !== "Tab") return false;
+          p.event.preventDefault();
+          p.api.stopEditing();
+          return true;
+        },
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) => {
           const a = p.data?.action;
           if (!a || p.node.rowPinned) return null;
@@ -308,7 +321,7 @@ export function InvoiceGrid({
         field: "offer",
         headerName: "Offer",
         headerTooltip: "A separate PayPal invoice for the discounted amount; it lapses after its date and the original applies",
-        minWidth: 104,
+        minWidth: 124,
         hide: !hasOffers,
         tooltipField: "offer",
         enableCellChangeFlash: true,
@@ -317,7 +330,7 @@ export function InvoiceGrid({
             ? ""
             : `${p.value}${p.data?.offerState === "paid" ? " · paid" : p.data?.offerState === "expired" ? " · lapsed" : p.data?.offerState === "closed" ? " · closed" : ""}`,
       },
-      { field: "value", headerName: `In ${base}`, headerTooltip: `What it is worth in ${base} at today's ECB rates`, minWidth: 84, hide: narrow, type: "rightAligned", valueFormatter: (p) => home(p.value) },
+      { field: "value", headerName: `In ${base}`, headerTooltip: `What it is worth in ${base} at today's ECB rates`, minWidth: 80, hide: narrow, type: "rightAligned", valueFormatter: (p) => home(p.value) },
       {
         field: "swing",
         headerName: "Swing",
@@ -511,6 +524,9 @@ export function InvoiceGrid({
 function total(all: InvoiceRow[], base: string): TotalRow {
   const rows = all.filter((r) => !r.paidToday && !r.detailOf);
   const home = rows.filter((r) => r.currency === base).length;
+  // The "Paid today" view has only paid rows: say that rather than "0 open".
+  const paid = all.filter((r) => r.paidToday && !r.detailOf).length;
+  if (!rows.length && paid) return { number: `${paid} paid today`, value: 0, atRisk: 0 };
   return {
     // Short enough for the pinned Invoice column ("17 open invoices (6 in USD)" was cut off at desktop width).
     number: `${rows.length} open${home ? ` · ${home} in ${base}` : ""}`,
@@ -607,6 +623,7 @@ function PercentEditor(p: CustomCellEditorProps<InvoiceRow, number> & { fmtHome?
         <button
           key={x}
           type="button"
+          autoFocus={p.value === x} // keyboard focus moves into the editor when it opens
           aria-pressed={p.value === x}
           className={styles.chip}
           onClick={() => {
