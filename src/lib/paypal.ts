@@ -254,7 +254,7 @@ export type PPInvoice = {
     currency_code: string;
     invoice_date?: string;
     payment_term?: { term_type?: string; due_date?: string };
-    metadata?: { create_time?: string };
+    metadata?: { create_time?: string; last_update_time?: string };
   };
   primary_recipients?: { billing_info?: { email_address?: string; business_name?: string; name?: { given_name?: string; surname?: string; full_name?: string } } }[];
   amount?: PPMoney;
@@ -291,6 +291,7 @@ export function toInvoice(pp: PPInvoice): { invoice: Invoice } | { skipped: { id
         ?.filter((t) => t.payment_date && t.amount)
         .map((t) => ({ date: t.payment_date!, amount: Number(t.amount!.value) })),
       createdAt: pp.detail.metadata?.create_time,
+      updatedAt: pp.detail.metadata?.last_update_time,
       agentLog: parseAgentLog(pp.detail.memo),
       ...(pp.items?.length ? { items: pp.items.map((i) => (i.name ?? "").trim()).filter(Boolean) } : {}),
       ...(parseOfferMemo(pp.detail.memo) ? { offerFor: parseOfferMemo(pp.detail.memo)! } : {}),

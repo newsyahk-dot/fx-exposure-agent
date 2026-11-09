@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { after, connection } from "next/server";
+import { headers } from "next/headers";
+import { autoResetReason } from "@/lib/auto-reset";
 import { Suspense } from "react";
 import { REQUEST_MAX, rulesRun, type AgentInput, type AgentRun } from "@/lib/agent";
 import { askFor, planSoon, warmOtherPlans } from "@/lib/agent-cache";
@@ -67,46 +69,49 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
           </div>
           <span className={styles.topNote}>PayPal sandbox · no real money</span>
         </div>
-        <h1 className={styles.headline}>
-          Money from clients abroad,
-          <br />
-          <span>seen like a treasury desk.</span>
-        </h1>
-        <p className={styles.lede}>
-          When it comes in, in which currency, what is late and what exchange rates can move. An AI agent takes the PayPal
-          steps that get you paid sooner — after you approve.
-        </p>
-        <div className={styles.ctaRow}>
-          <Link href="/?step=today#actions-h" prefetch={false} className={styles.ctaPrimary}>
-            See today&apos;s plan ↓
-          </Link>
-          <Link href="/try" prefetch={false} className={styles.ctaSecondary}>
-            Try your own invoices →
-          </Link>
+        {/* The front door's big part shows on Today only (CSS: .page:has([data-step]) …); the other steps keep the brand bar. */}
+        <div className={styles.heroExtra}>
+          <h1 className={styles.headline}>
+            Money from clients abroad,
+            <br />
+            <span>seen like a treasury desk.</span>
+          </h1>
+          <p className={styles.lede}>
+            When it comes in, in which currency, what is late and what exchange rates can move. An AI agent takes the PayPal
+            steps that get you paid sooner — after you approve.
+          </p>
+          <div className={styles.ctaRow}>
+            <Link href="/?step=today#actions-h" prefetch={false} className={styles.ctaPrimary}>
+              See today&apos;s plan ↓
+            </Link>
+            <Link href="/try" prefetch={false} className={styles.ctaSecondary}>
+              Try your own invoices →
+            </Link>
+          </div>
+          <ol className={styles.moments} aria-label="Three moments">
+            <li>
+              <Link href="/?step=invoice" prefetch={false}>
+                <span className={styles.momentNum}>1</span>
+                <strong>Before you invoice</strong>
+                <small>which currency, which terms</small>
+              </Link>
+            </li>
+            <li>
+              <Link href="/?step=exposure" prefetch={false}>
+                <span className={styles.momentNum}>2</span>
+                <strong>While you wait</strong>
+                <small>what comes in when, what rates can move</small>
+              </Link>
+            </li>
+            <li>
+              <Link href="/?step=today#actions-h" prefetch={false}>
+                <span className={styles.momentNum}>3</span>
+                <strong>When a client is late</strong>
+                <small>a reminder in your voice, one click</small>
+              </Link>
+            </li>
+          </ol>
         </div>
-        <ol className={styles.moments} aria-label="Three moments">
-          <li>
-            <Link href="/?step=invoice" prefetch={false}>
-              <span className={styles.momentNum}>1</span>
-              <strong>Before you invoice</strong>
-              <small>which currency, which terms</small>
-            </Link>
-          </li>
-          <li>
-            <Link href="/?step=exposure" prefetch={false}>
-              <span className={styles.momentNum}>2</span>
-              <strong>While you wait</strong>
-              <small>what comes in when, what rates can move</small>
-            </Link>
-          </li>
-          <li>
-            <Link href="/?step=today#actions-h" prefetch={false}>
-              <span className={styles.momentNum}>3</span>
-              <strong>When a client is late</strong>
-              <small>a reminder in your voice, one click</small>
-            </Link>
-          </li>
-        </ol>
       </header>
       <Suspense fallback={<p className={styles.muted}>Loading your PayPal invoices…</p>}>
         <Book searchParams={searchParams} />
@@ -171,6 +176,14 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   // Keep the other home currencies' plans ready, so a currency switch never waits a minute for the agent.
   if (!demo) after(() => warmOtherPlans(inputs, base, BASES));
 
+  // The shared demo book has run out of story (no late invoice from abroad, nobody active): ask for a reset. The route
+  // re-checks on fresh data and resets in the background; this visit is not slowed down.
+  if (!demo && autoResetReason(inputs, new Date())) {
+    const h = await headers();
+    const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+    after(() => fetch(`${origin}/api/auto-reset`, { cache: "no-store" }).catch(() => {}));
+  }
+
   // Before/after for today: payments that arrived today no longer count as exposure.
   const paid = paidToday(inputs.invoices, rates, base, inputs.asOf);
   const day = dayChange(inputs.invoices, paid, rates, base, inputs.asOf);
@@ -226,7 +239,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
       </nav>
       {step !== "exposure" && <PreloadGrid />}
 
-      <div className={styles.stepBody}>
+      <div className={styles.stepBody} data-step={step}>
       {step === "today" ? (
         <section className={styles.hero} aria-label="Waiting to be paid">
           <p className={styles.heroLabel}>

@@ -16,6 +16,7 @@ export type Invoice = {
   total?: number; // invoice total, in the invoice currency
   payments?: { date: string; amount: number }[]; // recorded payments (filled for paid invoices only)
   createdAt?: string; // when the invoice was created in PayPal (ISO, UTC)
+  updatedAt?: string; // PayPal's last update time (ISO, UTC): payments, reminders and memo edits move it
   agentLog?: AgentLogEntry[]; // actions the agent already took on this invoice (from the memo)
   offerFor?: { originalId: string; percent: number }; // this is an early-payment offer for another invoice
   offer?: OfferInfo; // the early-payment offer sent for this invoice, if any (src/lib/offer-invoice.ts)

@@ -2078,3 +2078,14 @@
     gap: 8px;
   }
 }
+
+/* The big front door belongs to the first screen; on the other steps it repeated above every page (blind review). */
+.heroExtra {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.page:has([data-step]:not([data-step="today"])) .heroExtra {
+  display: none;
+}
