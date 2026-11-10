@@ -269,4 +269,13 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   narrowed to (`FocusDetail.keyboard`), the chip is a live region, and Tab leaves the heatmap like the other grids.
   Offers: `WINDOW_DAYS` 14–21 (five days was too short for a client's payables run; the rules fallback uses the
   minimum), client notes in the seller's voice ("I", never "we") and worded per client.
+- **Round 12 blind review fixes** (2026-11-10): Next invoice's comparison limit is 800 characters (`COMPARISON_MAX`;
+  four options with the real wait ran 610–650 and fell back to rules after three rejections). The offer-note prompt no
+  longer says "payables run" (it leaked into a note as "in time for your payment run") and forbids claims about the
+  client's processes the facts do not state. /try search normalises Intl's no-break space ("EUR 6,800") and searches
+  agent reasons only for unread lines ("late" matched "has a late invoice"). CSV: paid-today Swing blank; the wait grid
+  exports Received as a number with its own Ccy column and Days late as shown. Phones: the heatmap merges w1–w4 into
+  "Next 4 weeks" (`PHONE_GROUPS`; a merged cell filters by `FocusDetail.buckets`), TableGrid columns can be
+  `hideOnPhone` (the wait grid keeps Invoice · Days late · Effect), the invoice grid's risk header reads "±3%".
+  Draft search text matches "1% · fixed".
 

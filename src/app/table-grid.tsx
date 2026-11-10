@@ -5,7 +5,7 @@
 
 import { type ColDef, type GridApi } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useSyncExternalStore } from "react";
 import { gridTheme } from "./grid-theme";
 import styles from "./page.module.css";
 
@@ -20,6 +20,7 @@ export type TableCol = {
   late?: string; // a boolean field: show the cell in the "late" colour
   minWidth?: number;
   flex?: number; // share of the free width (the date column took "(28 d…" at every width — blind review round 11)
+  hideOnPhone?: boolean; // under 720 px, so the column the table exists for stays on screen (blind review round 12)
   tooltip?: string;
 };
 export type TableRow = Record<string, string | number | boolean | null>;
@@ -38,20 +39,30 @@ export function TableGrid({
   highlightField?: string; // a boolean field: highlight the row (e.g. paid today)
 }) {
   const api = useRef<GridApi<TableRow> | null>(null);
+  const narrow = useSyncExternalStore(
+    (cb) => {
+      const m = window.matchMedia("(max-width: 719px)");
+      m.addEventListener("change", cb);
+      return () => m.removeEventListener("change", cb);
+    },
+    () => window.matchMedia("(max-width: 719px)").matches,
+    () => false,
+  );
   const columns = useMemo<ColDef<TableRow>[]>(
     () =>
       cols.map((c) => ({
         field: c.field,
         headerName: c.header,
         headerTooltip: c.tooltip,
-        minWidth: c.minWidth ?? 90,
+        minWidth: narrow ? Math.min(c.minWidth ?? 90, 110) : (c.minWidth ?? 90),
         flex: c.flex ?? 1,
+        hide: narrow && !!c.hideOnPhone,
         type: c.right ? "rightAligned" : undefined,
         tooltipField: c.right ? undefined : c.field,
         ...(c.sortBy ? { comparator: (_a: unknown, _b: unknown, na, nb) => Number(na.data?.[c.sortBy!] ?? 0) - Number(nb.data?.[c.sortBy!] ?? 0) } : {}),
         ...(c.late ? { cellClassRules: { [styles.gridLate]: (p) => !!p.data?.[c.late!] } } : {}),
       })),
-    [cols],
+    [cols, narrow],
   );
   return (
     <div className={styles.gridWrap} role="region" aria-label={label}>

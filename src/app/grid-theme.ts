@@ -19,7 +19,8 @@ export const gridTheme = themeQuartz.withParams({
 
 export const FOCUS_EVENT = "fxa:focus";
 // keyboard: the pick came from Enter, so focus moves into the invoice grid too (blind review round 11).
-export type FocusDetail = { currency: string; bucket: Bucket | null; label: string; keyboard?: boolean } | null;
+// buckets: several due-date buckets at once (the merged "Next 4 weeks" cell of the heatmap on phones).
+export type FocusDetail = { currency: string; bucket: Bucket | null; buckets?: Bucket[]; label: string; keyboard?: boolean } | null;
 
 // Search words, but keep what reads as one phrase on screen together: "15 days late", "in 46 days", "paid today",
 // "GBP 3,800.00". Word by word, "15 days late" matched any row with a 15 somewhere (blind review round 8).

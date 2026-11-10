@@ -716,15 +716,17 @@ function Timing({ view }: { view: BookView }) {
         highlightField="today"
         cols={[
           { field: "invoice", header: "Invoice", minWidth: 210 },
-          { field: "received", header: "Received", right: true, sortBy: "receivedValue", minWidth: 120 },
-          { field: "dates", header: "Invoiced → paid", minWidth: 270, flex: 2, sortBy: "daysWaited" },
-          { field: "lateText", header: "Days late", right: true, sortBy: "daysLate", csvBy: "daysLate", minWidth: 96, late: "isLate" },
+          { field: "received", header: "Received", right: true, sortBy: "receivedValue", csvBy: "receivedValue", minWidth: 120, hideOnPhone: true },
+          { field: "currency", header: "Ccy", minWidth: 64, flex: 0.4, hideOnPhone: true },
+          { field: "dates", header: "Invoiced → paid", minWidth: 270, flex: 2, sortBy: "daysWaited", hideOnPhone: true },
+          { field: "lateText", header: "Days late", right: true, sortBy: "daysLate", minWidth: 96, late: "isLate" }, // CSV: "on time" / "11 days", as shown
           { field: "effect", header: `Effect in ${view.base}`, right: true, sortBy: "effectValue", csvBy: "effectValue", minWidth: 110 },
         ]}
         rows={t.rows.map((r) => ({
           invoice: `${r.invoiceNumber}${r.paidDate === t.to ? " · paid today" : ""}`,
           received: money(r.currency, r.amount),
-          receivedValue: r.amount,
+          receivedValue: r.amount, // the CSV gets the number; the currency has its own column
+          currency: r.currency,
           dates: `${r.invoiceDate} → ${r.paidDate} (${r.daysWaited} days)`,
           daysWaited: r.daysWaited,
           // "on time" instead of a blank, which read as missing data (blind review round 10).
