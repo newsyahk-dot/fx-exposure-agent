@@ -252,4 +252,13 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   heatmap cells have aria-labels, a five-level legend, and wider-spaced dark-mode blues. /try: wrapped reasons, the
   sample has a line with no due date (shown in red). Draft cells read "1% · fixed" when there is nothing to pick; CSV
   "Due" exports the date and the words; search finds "≈ $", "e-mail".
+- **Round 10 blind review fixes** (2026-11-10): invoice CSV leaves the pinned total row's Due blank (it exported
+  "undefined (in undefined days)"); the discount editor is at least 340 px with one option per line. /try grid uses the
+  shared `parseSearch` (now in `grid-theme.ts`), full home amounts, a text filter on Due ("late"), searchable unread
+  reasons and a CSV with plain numbers and the reason. "What the wait already did" and the /try per-currency summary
+  are AG Grids too (`src/app/table-grid.tsx`: the server passes display text plus a numeric sort/CSV field, because
+  functions cannot cross from a server component; "on time" instead of a blank). Ask's ranking answers read late
+  money from abroad first, then home currency, by days late within each (`lateList` sorts that way). Next invoice
+  facts state the wait including the client's usual lateness, so Claude's sentence matches the note. README/Devpost
+  quote the 2026-11-10 eval (36 runs, 207 proposals, 0 problems in proposals, 1 flagged summary sentence).
 

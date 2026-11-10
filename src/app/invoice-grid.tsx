@@ -19,7 +19,7 @@ import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef,
 import { applyEdit, type DraftEdit, type InvoiceRow } from "@/lib/invoice-rows";
 import { annualCostPct } from "@/lib/offer-rule";
 import { compact } from "@/lib/format";
-import { FOCUS_EVENT, gridTheme, type FocusDetail } from "./grid-theme";
+import { FOCUS_EVENT, gridTheme, parseSearch, type FocusDetail } from "./grid-theme";
 import { approve } from "./actions";
 import styles from "./page.module.css";
 
@@ -39,12 +39,6 @@ const VIEWS = {
 } as const;
 type View = keyof typeof VIEWS;
 
-
-// Search words, but keep what reads as one phrase on screen together: "15 days late", "in 46 days", "paid today",
-// "GBP 3,800.00". Word by word, "15 days late" matched any row with a 15 somewhere (blind review round 8).
-const parseSearch = (q: string) =>
-  // AG Grid upper-cases both the search and the row text before matching.
-  q.toUpperCase().match(/\bIN\s+\d+\s+DAYS?|\d+\s+DAYS?\s+LATE|PAID\s+TODAY|\b(?:USD|EUR|GBP|JPY|KRW|CHF|CAD|AUD|NZD|SEK|NOK|DKK|PLN|SGD|HKD|CNY|INR|MXN|BRL)\s+[\d,.]*\d|\S+/g) ?? [];
 
 // Tab moves on to the next control on the page instead of walking every cell (round 7 review, 2026-11-09).
 const leaveGrid = () => false as const;
@@ -456,7 +450,9 @@ export function InvoiceGrid({
                   case "amount":
                     return d?.paidToday ? d.paidAmount : (p.value ?? "");
                   case "daysToDue": // the due date, and the words on screen ("15 days late")
-                    return d?.paidToday ? "paid today" : d ? `${d.dueDate} (${p.value < 0 ? `${-p.value} days late` : p.value === 0 ? "today" : `in ${p.value} days`})` : "";
+                    // The pinned total row has no due date: leave it blank (it exported "undefined (in undefined days)").
+                    if (p.node?.rowPinned || !d?.dueDate || typeof p.value !== "number") return d?.paidToday ? "paid today" : "";
+                    return d.paidToday ? "paid today" : `${d.dueDate} (${p.value < 0 ? `${-p.value} days late` : p.value === 0 ? "today" : `in ${p.value} days`})`;
                   case "atRisk":
                   case "value":
                     return typeof p.value === "number" ? Math.round(p.value * 100) / 100 : (p.value ?? "");
@@ -555,6 +551,7 @@ export function InvoiceGrid({
           defaultColDef={{ sortable: true, resizable: true, filter: false }}
           quickFilterText={search}
           quickFilterParser={parseSearch}
+          overlayNoRowsTemplate="No open invoice matches this view or search."
           pinnedBottomRowData={totals as InvoiceRow[]}
           getRowId={(p) => p.data.id ?? p.data.number}
           rowHeight={52}

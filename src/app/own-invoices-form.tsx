@@ -10,7 +10,7 @@ import { annualCostPct } from "@/lib/offer-rule";
 import { BASES } from "@/lib/fx";
 import { compact, money } from "@/lib/format";
 import { sampleCsv } from "@/lib/own-invoices";
-import { OwnGrid } from "./lazy";
+import { OwnGrid, TableGrid } from "./lazy";
 import { MoneyTimeline } from "./money-timeline";
 import { analyzeOwnAction, type OwnState } from "./try-actions";
 import styles from "./page.module.css";
@@ -78,6 +78,8 @@ export function OwnInvoicesForm() {
 function OwnResult({ s }: { s: Extract<OwnState, { ok: true }> }) {
   const a = s.analysis;
   const c = (n: number) => compact(a.base, n);
+  // Full amounts in tables ("$12K" next to "$2,406" read as a rounding error — blind review round 10).
+  const full = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: a.base, maximumFractionDigits: 0 }).format(n);
   const away = a.rows.map((r) => r.currency).join(", ");
   return (
     <section aria-label="Your invoices" className={styles.ownResult}>
@@ -108,30 +110,29 @@ function OwnResult({ s }: { s: Extract<OwnState, { ok: true }> }) {
       )}
 
       {a.rows.length > 0 && (
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th scope="col">Currency</th>
-              <th scope="col" className={styles.num}>Still owed</th>
-              <th scope="col" className={styles.num}>In {a.base}</th>
-              <th scope="col" className={styles.num}>Overdue</th>
-              <th scope="col" className={styles.num}>If rates move 3%</th>
-            </tr>
-          </thead>
-          <tbody>
-            {a.rows.map((r) => (
-              <tr key={r.currency}>
-                <th scope="row">
-                  {r.currency} <span className={styles.muted}>· {r.count}</span>
-                </th>
-                <td className={styles.num}>{money(r.currency, r.total)}</td>
-                <td className={styles.num}>{c(r.value)}</td>
-                <td className={styles.num}>{r.overdue > 0 ? c(r.overdue) : "—"}</td>
-                <td className={styles.num}>±{c(r.shock)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <TableGrid
+          label="What is waiting, by currency"
+          csvName="waiting-by-currency.csv"
+          cols={[
+            { field: "currency", header: "Currency", minWidth: 110 },
+            { field: "owed", header: "Still owed", right: true, sortBy: "total", csvBy: "total", minWidth: 140 },
+            { field: "value", header: `In ${a.base}`, right: true, sortBy: "valueNum", csvBy: "valueNum" },
+            { field: "overdue", header: "Overdue", right: true, sortBy: "overdueNum", csvBy: "overdueNum", late: "isLate" },
+            { field: "shock", header: "If rates move 3%", right: true, sortBy: "shockNum", csvBy: "shockNum", minWidth: 130, tooltip: "Up or down — not a forecast" },
+          ]}
+          rows={a.rows.map((r) => ({
+            currency: `${r.currency} · ${r.count} invoice${r.count === 1 ? "" : "s"}`,
+            owed: money(r.currency, r.total),
+            total: r.total,
+            value: full(r.value),
+            valueNum: Math.round(r.value * 100) / 100,
+            overdue: r.overdue > 0 ? full(r.overdue) : "none",
+            overdueNum: Math.round(r.overdue * 100) / 100,
+            isLate: r.overdue > 0,
+            shock: `±${full(r.shock)}`,
+            shockNum: Math.round(r.shock * 100) / 100,
+          }))}
+        />
       )}
 
       {a.lines.length > 0 && (

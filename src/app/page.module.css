@@ -1632,9 +1632,13 @@
   cursor: pointer;
 }
 .percentEditor {
+  /* Wide enough for "1.5% off · costs $84 · about 7.9% a year" on one line (it opened at the Draft column's 135 px
+     and folded each option into four lines — blind review round 10). */
+  min-width: min(340px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column; /* one option per line */
+  align-items: stretch;
   gap: 6px;
   padding: 10px 12px;
   background: var(--surface-1);
@@ -2192,4 +2196,15 @@
   padding-top: 7px;
   padding-bottom: 7px;
   word-break: normal;
+}
+
+.percentEditor > button {
+  white-space: nowrap;
+  text-align: left;
+}
+
+/* TableGrid: the row paid today (it used to be a bold blue table row). */
+.gridTodayRow {
+  font-weight: 600;
+  color: var(--accent);
 }

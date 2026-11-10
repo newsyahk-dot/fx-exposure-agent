@@ -7,9 +7,8 @@ import { type ColDef, type GridApi, type ICellRendererParams } from "ag-grid-com
 import { AgGridReact } from "ag-grid-react";
 import { useMemo, useRef, useState } from "react";
 import type { AgentRun } from "@/lib/agent";
-import { compact } from "@/lib/format";
 import type { OwnLine } from "@/lib/own-analysis";
-import { gridTheme } from "./grid-theme";
+import { gridTheme, parseSearch } from "./grid-theme";
 import styles from "./page.module.css";
 
 import "./grid-modules";
@@ -23,7 +22,11 @@ const dueText = (d: number | null) => (d == null ? "" : d < 0 ? `${-d} days late
 export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun; base: string }) {
   const api = useRef<GridApi<Row> | null>(null);
   const [search, setSearch] = useState("");
-  const home = useMemo(() => (v: number) => compact(base, v), [base]);
+  // Full amounts in the home currency ("$12K" next to "$2,406" read as rounding errors — blind review round 10).
+  const home = useMemo(() => {
+    const f = new Intl.NumberFormat("en-US", { style: "currency", currency: base, maximumFractionDigits: 0 });
+    return (v: number) => f.format(v);
+  }, [base]);
   const rows = useMemo<Row[]>(() => {
     const did = new Map(run.proposals.map((p) => [p.invoiceNumber, p.kind === "reminder" ? "Payment reminder" : `Early-payment offer, ${p.percent}% off`]));
     const why = new Map(run.notProposed.map((n) => [n.invoiceNumber, n.why]));
@@ -58,9 +61,11 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
         field: "daysToDue",
         headerName: "Due",
         minWidth: 100,
-        filter: "agNumberColumnFilter",
-        filterParams: { buttons: ["reset"] },
-        headerTooltip: "Filter by days to due date: negative numbers are days late",
+        // Filter by the words on screen ("late", "in 16 days"), not by a signed number of days.
+        filter: "agTextColumnFilter",
+        filterValueGetter: (p) => dueText(p.data?.daysToDue ?? null),
+        headerTooltip: "Type \"late\" to see late invoices",
+        comparator: (a, b) => (a ?? 1e9) - (b ?? 1e9),
         valueFormatter: (p) => dueText(p.value),
         getQuickFilterText: (p) => dueText(p.value),
         cellClassRules: { [styles.gridLate]: (p) => (p.value ?? 0) < 0 },
@@ -72,6 +77,7 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
         type: "rightAligned",
         filter: "agNumberColumnFilter",
         valueFormatter: (p) => (p.value == null ? "" : home(p.value)),
+        getQuickFilterText: (p) => (p.value == null ? "" : home(p.value)),
       },
       {
         field: "atRisk",
@@ -82,6 +88,7 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
         filter: "agNumberColumnFilter",
         headerTooltip: "What a 3% move either way would change, in the home currency — the size of the risk, not a forecast",
         valueFormatter: (p) => (p.value == null ? "" : p.value ? `±${home(p.value)}` : "none"),
+        getQuickFilterText: (p) => (p.value == null ? "" : p.value ? `±${home(p.value)}` : "none"),
       },
       {
         field: "agent",
@@ -92,6 +99,7 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
         autoHeight: true,
         filter: "agTextColumnFilter",
         tooltipValueGetter: (p) => p.data?.error ?? p.value,
+        getQuickFilterText: (p) => (p.data?.error ? `not read ${p.data.error}` : p.value),
         cellRenderer: (p: ICellRendererParams<Row>) => (p.data?.error ? <span className={styles.gridLateText}>{p.data.error}</span> : p.value),
       },
     ],
@@ -109,7 +117,29 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button type="button" className={styles.secondaryButton} onClick={() => api.current?.exportDataAsCsv({ fileName: "my-invoices-fx.csv" })}>
+        <button type="button" className={styles.secondaryButton} onClick={() =>
+            api.current?.exportDataAsCsv({
+              fileName: "my-invoices-fx.csv",
+              // Numbers as numbers, the due date with its words, and the reason for every line that was not read.
+              processCellCallback: (p) => {
+                const d = p.node?.data;
+                switch (p.column.getColId()) {
+                  case "number":
+                    return d?.error && !d.number ? "not read" : (p.value ?? "");
+                  case "daysToDue":
+                    return d?.dueDate ? `${d.dueDate} (${dueText(p.value)})` : "";
+                  case "value":
+                  case "atRisk":
+                    return typeof p.value === "number" ? Math.round(p.value * 100) / 100 : "";
+                  case "agent":
+                    return d?.error ?? p.value ?? "";
+                  default:
+                    return p.value ?? "";
+                }
+              },
+            })
+          }
+        >
           Download CSV
         </button>
         <span className={styles.muted}>
@@ -122,6 +152,7 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
         columnDefs={columns}
         defaultColDef={{ sortable: true, resizable: true, floatingFilter: true, suppressHeaderMenuButton: true }}
         quickFilterText={search}
+        quickFilterParser={parseSearch}
         domLayout="autoHeight"
         rowClassRules={{ [styles.gridErrorRow]: (p) => !!p.data?.error }}
         tooltipShowDelay={300}
