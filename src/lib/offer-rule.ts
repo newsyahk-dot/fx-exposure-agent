@@ -18,7 +18,7 @@ export function percentsWithinRule(daysSooner: number): number[] {
 // The note on the offer invoice in code's own words — used when the seller changes the percent, so the agent's
 // sentence (which named the old percent) is not sent with new terms.
 export function offerNoteTemplate(newDueDate: string, percent: number) {
-  return `Early-payment offer: pay by ${newDueDate} and take ${percent}% off. Thank you for your business!`;
+  return `Early-payment offer: pay this invoice by ${newDueDate} and take ${percent}% off. Thank you for your business!`;
 }
 
 // The discount's cost as a yearly rate, rounded to 0.1%.

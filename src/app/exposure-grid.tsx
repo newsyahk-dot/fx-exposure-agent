@@ -4,14 +4,14 @@
 // money it holds in the home currency. Clicking a cell narrows the invoice grid below to that currency and bucket
 // (an event both grids share — src/app/grid-theme.ts); clicking a currency narrows it to that currency.
 
-import { AllCommunityModule, ModuleRegistry, type CellClickedEvent, type CellKeyDownEvent, type ColDef, type ICellRendererParams } from "ag-grid-community";
+import { type CellClickedEvent, type CellKeyDownEvent, type ColDef, type ICellRendererParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useMemo, useSyncExternalStore } from "react";
 import type { Bucket } from "@/lib/types";
 import { FOCUS_EVENT, gridTheme, type FocusDetail } from "./grid-theme";
 import styles from "./page.module.css";
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+import "./grid-modules";
 
 export type ExposureCell = { text: string; value: number; title?: string }; // text and value in home; title has the invoice currency
 export type ExposureRow = { currency: string; cells: Record<Bucket, ExposureCell>; value: string; shock: string; total?: boolean };
@@ -58,7 +58,14 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
         cellRenderer: (p: ICellRendererParams<ExposureRow>) => {
           const c = p.data?.cells[b];
           if (!c) return null;
-          return p.data?.total ? <strong>{c.text}</strong> : c.text;
+          if (p.data?.total) return <strong>{c.text}</strong>;
+          // A screen reader hears the row, the column and the level, not just "$5,597" (blind review round 9).
+          const lvl = level(c.value);
+          return (
+            <span aria-label={c.value > 0 ? `${p.data?.currency}, ${labels[b]}: ${c.text}, level ${lvl} of 5` : `${p.data?.currency}, ${labels[b]}: nothing`}>
+              {c.text}
+            </span>
+          );
         },
         // "ag-right-aligned-cell" keeps the numbers under their right-aligned header (a custom cellClass replaces it).
         cellClass: (p) => (p.data?.total ? "ag-right-aligned-cell" : `ag-right-aligned-cell ${styles.heatCell} ${c(p.data?.cells[b].value ?? 0)}`),

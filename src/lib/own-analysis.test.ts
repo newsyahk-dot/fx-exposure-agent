@@ -23,7 +23,8 @@ describe("your own invoices", () => {
 
   it("values every foreign invoice and keeps the home-currency one apart", () => {
     expect(a.read).toBe(6);
-    expect(a.skipped).toEqual([]);
+    expect(a.skipped.map((k) => k.row)).toEqual([8]); // the sample line with no due date
+    expect(a.lines.find((l) => l.row === 8)?.error).toBeTruthy();
     expect(a.rows.map((r) => r.currency).sort()).toEqual(["CAD", "EUR", "GBP", "JPY"]);
     expect(a.baseTotal).toBe(2500); // the USD invoice carries no FX risk for a USD seller
     expect(a.waiting).toBeGreaterThan(0);

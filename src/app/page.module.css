@@ -49,11 +49,12 @@
     --warning: #e0a83a;
     --critical: #e66767;
     --good: #4cbb72;
-    --seq-1: #0d366b;
-    --seq-2: #104281;
-    --seq-3: #184f95;
-    --seq-4: #1c5cab;
-    --seq-5: #256abf;
+    /* Spread wider (round 9): the old dark levels were hard to tell apart, the lowest from an empty cell. */
+    --seq-1: #173a63;
+    --seq-2: #1d4f88;
+    --seq-3: #2464ab;
+    --seq-4: #2c78c8;
+    --seq-5: #3a8ade;
     --seq-ink: #f0efec;
     --series-1: #3987e5;
     --series-2: #d95926;
@@ -2141,4 +2142,54 @@
     font-size: 12.5px;
     gap: 2px;
   }
+}
+
+/* Round 9: the reminder e-mail editor (own component, so the cursor lands before the sign-off). */
+.messageEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.12);
+  max-width: calc(100vw - 32px);
+}
+.messageEditor textarea {
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  width: min(560px, calc(100vw - 60px));
+  resize: vertical;
+}
+
+/* Round 9: a legend for the heatmap's five levels (the lowest was hard to tell from an empty cell in dark mode). */
+.heatLegend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: -2px;
+}
+.heatLegend i {
+  display: inline-block;
+  width: 22px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+/* /try grid: wrapped reasons read as a paragraph, not one word per tall line. */
+.ownGrid :global(.ag-cell-wrap-text) {
+  line-height: 1.35;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  word-break: normal;
 }

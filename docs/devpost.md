@@ -140,10 +140,10 @@ by side; the seller decides.
   row selection (checkboxes only on rows with a proposal waiting) to approve
   several actions at once through the same server action, full-width detail rows (client's paid invoices + the agent's
   draft + approve one) kept under their invoice through sorting and filtering, cell editing of the agent's draft (the
-  built-in large-text editor for the e-mail, a custom React editor for the discount, both re-checked on the server), a two-line client cell with the client's payment history,
+  custom React popup editors — the e-mail with the cursor placed before the sign-off, the discount with only the percents within the rule — both re-checked on the server), a two-line client cell with the client's payment history,
   an external filter for the quick views, a pinned total row that follows
   the filter, cell change flash on PayPal updates, row class rules, custom cell renderers (risk bars, PayPal links),
-  quick-filter search that matches what the cells show (a custom quick-filter parser keeps "15 days late" or
+  row selection whose "select all" takes only the rows on screen, quick-filter search that matches what the cells show (a custom quick-filter parser keeps "15 days late" or
   "GBP 3,800.00" together), keyboard access to the detail rows (Enter opens one and moves into it, Tab walks its
   buttons, Escape closes it), and a CSV export with plain numbers. A third grid on /try holds every pasted line, with
   floating column filters (text and number), sorting, search, CSV, and the lines that could not be read kept in red
@@ -199,7 +199,7 @@ by side; the seller decides.
 
 ## Built with (tags)
 
-paypal, paypal-invoicing-api, paypal-webhooks, claude, anthropic, next.js, react, typescript, vercel, ag-grid, frankfurter, zod, vitest
+paypal, paypal-invoicing-api, paypal-webhooks, paypal-mcp-server, model-context-protocol, claude, anthropic, next.js, react, typescript, vercel, ag-grid, ag-charts, frankfurter, zod, vitest
 
 ## Try it out (links)
 

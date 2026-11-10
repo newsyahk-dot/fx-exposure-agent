@@ -239,3 +239,17 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   say "paid today" and history leaves the invoice itself out; editing the draft closes the open detail row; phones show
   Invoice · Due · At risk only, the heatmap drops its value columns. /try: every pasted line in an AG Grid
   (`src/app/own-grid.tsx`, floating filters, CSV, unread lines in red with the reason).
+- **Round 9 blind review fixes** (2026-11-10): grid row selection uses `selectAll: "filtered"` and deselects rows a view
+  or search hides (Late + header checkbox used to approve 7 actions, 3 off screen). The e-mail editor is our own
+  `MessageEditor` (it places the cursor before the sign-off itself; AG Grid's large-text editor selected everything and
+  the old rAF fix raced it); Enter makes a new line (`suppressKeyboardEvent`). Ask the agent gets `lateList` — every
+  late invoice made by code, with "from abroad" or "in USD" — and must not say "only"/"all" unless the list shows it
+  (it once called one invoice "the only overdue one exchange rates change" while naming another); the eval flags any
+  "only … late" sentence when more than one is late. The offer's client note must say "this invoice", not the original
+  number (`offerNoteNamesOriginal`, checked in the propose tool, on approve and in the eval). AG Grid modules are
+  listed in `src/app/grid-modules.ts` instead of `AllCommunityModule` (a missing one logs AG Grid error #200 — e.g.
+  `TextEditorModule`, which any editable column loads). Chart wrapper lost `role="img"` (keyboard navigation on);
+  heatmap cells have aria-labels, a five-level legend, and wider-spaced dark-mode blues. /try: wrapped reasons, the
+  sample has a line with no due date (shown in red). Draft cells read "1% · fixed" when there is nothing to pick; CSV
+  "Due" exports the date and the words; search finds "≈ $", "e-mail".
+

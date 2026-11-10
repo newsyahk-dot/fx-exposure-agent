@@ -4,6 +4,7 @@ import {
   buildAgentInput,
   discountNoteTemplate,
   labelContext,
+  lateList,
   OFFER_MAX_ANNUAL_PCT,
   OFFER_MIN_DAYS_SOONER,
   priceDiscount,
@@ -73,6 +74,15 @@ describe("what code lets the agent do", () => {
     expect(c.eligible).toEqual([]);
     expect(c.notEligible[0]).toMatch(/late invoice/);
     expect(inputFor("KRW", [far]).candidates[0].eligible).toEqual(["early_pay_discount"]);
+  });
+
+  it("lists every late invoice for ranking answers, marking which ones exchange rates change", () => {
+    const t = lateList(inputFor("USD"));
+    const late = inputFor("USD").candidates.filter((c) => c.daysOverdue != null);
+    expect(t.split("\n").length).toBe(late.length + 1);
+    for (const c of late) expect(t).toContain(c.invoiceNumber);
+    expect(t).toMatch(/in USD, so exchange rates do not change it/);
+    expect(t).toMatch(/from abroad: a 3% move either way/);
   });
 
   it("chases late invoices in the home currency too, but offers only on money from abroad", () => {
