@@ -59,7 +59,8 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
         filter: false,
         headerTooltip: "Sorted by what it is worth in the home currency",
         valueFormatter: (p) => (p.value == null || !p.data?.currency ? "" : fmtCcy(p.data.currency, p.value)),
-        getQuickFilterText: (p) => (p.value == null || !p.data?.currency ? "" : `${fmtCcy(p.data.currency, p.value)} ${p.data.currency}`),
+        // Intl puts a no-break space after the code; search with a plain one ("EUR 6,800" found nothing — round 12).
+        getQuickFilterText: (p) => (p.value == null || !p.data?.currency ? "" : `${fmtCcy(p.data.currency, p.value)} ${p.data.currency}`.replace(/\s/g, " ")),
       },
       {
         field: "daysToDue",
@@ -103,7 +104,9 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
         autoHeight: true,
         filter: "agTextColumnFilter",
         tooltipValueGetter: (p) => p.data?.error ?? p.value,
-        getQuickFilterText: (p) => (p.data?.error ? `not read ${p.data.error}` : p.value),
+        // Only unread lines are searchable here: reasons like "has a late invoice" made a search for "late" match invoices
+        // that are not late (blind review round 12). "late" finds the Due column's words.
+        getQuickFilterText: (p) => (p.data?.error ? `not read ${p.data.error}` : ""),
         cellRenderer: (p: ICellRendererParams<Row>) => (p.data?.error ? <span className={styles.gridLateText}>{p.data.error}</span> : p.value),
       },
     ],

@@ -16,14 +16,17 @@ import "./grid-modules";
 export type ExposureCell = { text: string; value: number; title?: string }; // text and value in home; title has the invoice currency
 export type ExposureRow = { currency: string; cells: Record<Bucket, ExposureCell>; value: string; shock: string; total?: boolean };
 
-export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: ExposureRow[]; total: ExposureRow; buckets: Bucket[]; labels: Record<Bucket, string>; base: string }) {
-  const maxCell = Math.max(1, ...rows.flatMap((r) => buckets.map((b) => r.cells[b].value)));
-  const level = (v: number) => (v > 0 ? Math.min(5, Math.ceil((v / maxCell) * 5)) : 0);
-  const focus = (d: FocusDetail) => {
-    window.dispatchEvent(new CustomEvent<FocusDetail>(FOCUS_EVENT, { detail: d }));
-    document.getElementById("grid-h")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-  // Phones: narrower bucket columns and no "In …"/±3% columns (both are in the tiles above), so less sideways scrolling.
+// Phones: three columns instead of six (Overdue · Next 4 weeks · Later), so every bucket fits 390 px without sideways
+// scrolling ("28+ days", the largest bucket, sat off screen — blind review round 12). A merged cell filters the invoice
+// grid to all of its buckets.
+const PHONE_GROUPS: { key: Bucket; label: string; parts: Bucket[] }[] = [
+  { key: "overdue", label: "Overdue", parts: ["overdue"] },
+  { key: "w1", label: "Next 4 weeks", parts: ["w1", "w2", "w3", "w4"] },
+  { key: "later", label: "Later", parts: ["later"] },
+];
+
+export function ExposureGrid(props: { rows: ExposureRow[]; total: ExposureRow; buckets: Bucket[]; labels: Record<Bucket, string>; base: string }) {
+  // Phones: narrower columns and no "In …"/±3% columns (both are in the tiles above).
   const narrow = useSyncExternalStore(
     (cb) => {
       const m = window.matchMedia("(max-width: 719px)");
@@ -33,6 +36,36 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
     () => window.matchMedia("(max-width: 719px)").matches,
     () => false,
   );
+  const { base } = props;
+  const merged = useMemo(() => {
+    if (!narrow) return { rows: props.rows, total: props.total, buckets: props.buckets, labels: props.labels, parts: {} as Partial<Record<Bucket, Bucket[]>> };
+    const fmt = new Intl.NumberFormat("en-US", { style: "currency", currency: base, maximumFractionDigits: 0 });
+    const mergeRow = (r: ExposureRow): ExposureRow => {
+      const cells = { ...r.cells };
+      for (const g of PHONE_GROUPS) {
+        const value = g.parts.reduce((s, b) => s + (r.cells[b]?.value ?? 0), 0);
+        const titles = g.parts.map((b) => r.cells[b]).filter((x) => x && x.value > 0 && x.title).map((x) => x.title);
+        cells[g.key] = { value, text: value > 0 ? fmt.format(value) : "", title: titles.join("; ") || undefined };
+      }
+      return { ...r, cells };
+    };
+    const labels = { ...props.labels };
+    for (const g of PHONE_GROUPS) labels[g.key] = g.label;
+    return {
+      rows: props.rows.map(mergeRow),
+      total: mergeRow(props.total),
+      buckets: PHONE_GROUPS.map((g) => g.key),
+      labels,
+      parts: Object.fromEntries(PHONE_GROUPS.map((g) => [g.key, g.parts])) as Partial<Record<Bucket, Bucket[]>>,
+    };
+  }, [narrow, props.rows, props.total, props.buckets, props.labels, base]);
+  const { rows, total, buckets, labels } = merged;
+  const maxCell = Math.max(1, ...rows.flatMap((r) => buckets.map((b) => r.cells[b].value)));
+  const level = (v: number) => (v > 0 ? Math.min(5, Math.ceil((v / maxCell) * 5)) : 0);
+  const focus = (d: FocusDetail) => {
+    window.dispatchEvent(new CustomEvent<FocusDetail>(FOCUS_EVENT, { detail: d }));
+    document.getElementById("grid-h")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const columns = useMemo<ColDef<ExposureRow>[]>(
     () => [
       {
@@ -53,7 +86,7 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
         colId: b,
         headerName: labels[b],
         type: "rightAligned",
-        minWidth: narrow ? 84 : 96,
+        minWidth: narrow ? 88 : 96,
         valueGetter: (p) => p.data?.cells[b].value ?? 0,
         cellRenderer: (p: ICellRendererParams<ExposureRow>) => {
           const c = p.data?.cells[b];
@@ -88,8 +121,14 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
     const id = e.column.getColId();
     if (id === "currency") return focus({ currency: r.currency, bucket: null, label: `${r.currency}, every due date`, keyboard });
     const b = id as Bucket;
-    if (buckets.includes(b) && r.cells[b].value > 0)
-      focus({ currency: r.currency, bucket: b, label: `${r.currency}, ${labels[b].toLowerCase()}`, keyboard });
+    if (buckets.includes(b) && r.cells[b].value > 0) {
+      const parts = merged.parts[b];
+      focus(
+        parts && parts.length > 1
+          ? { currency: r.currency, bucket: null, buckets: parts, label: `${r.currency}, ${labels[b].toLowerCase()}`, keyboard }
+          : { currency: r.currency, bucket: b, label: `${r.currency}, ${labels[b].toLowerCase()}`, keyboard },
+      );
+    }
   };
   // Keyboard: Enter on a focused cell does what a click does, and focus follows to the invoice grid.
   const onCellKeyDown = (e: CellKeyDownEvent<ExposureRow>) => {

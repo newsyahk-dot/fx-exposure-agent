@@ -177,7 +177,12 @@ export function InvoiceGrid({
         const r = n.data; // a detail row carries its invoice's fields
         const f = focusRef.current;
         if (!r || !VIEWS[viewRef.current].pass(r)) return false;
-        return !f || (r.currency === f.currency && (f.bucket == null || r.bucket === f.bucket) && !r.paidToday);
+        return (
+          !f ||
+          (r.currency === f.currency &&
+            (f.buckets ? r.bucket != null && f.buckets.includes(r.bucket) : f.bucket == null || r.bucket === f.bucket) &&
+            !r.paidToday)
+        );
       },
     }),
     [],
@@ -282,7 +287,7 @@ export function InvoiceGrid({
       },
       {
         field: "atRisk",
-        headerName: "At risk",
+        headerName: narrow ? "±3%" : "At risk", // "At …" on a 390 px phone
         headerTooltip: "What a 3% move either way would change, in the home currency — the size of the risk, not a forecast",
         minWidth: narrow ? 74 : 88,
         initialSort: "desc", // initial only: a column rebuild (opening a row) must not bring this sort back
@@ -321,7 +326,7 @@ export function InvoiceGrid({
             ? ""
             : p.data.action.kind === "reminder"
               ? `e-mail email ${p.data.action.edited ? "edited" : ""} ${p.data.action.subject} ${p.data.action.message}`
-              : `${p.data.action.percent}% discount ${p.data.action.percents.length < 2 ? "fixed" : ""}`,
+              : `${p.data.action.percent}% · discount ${p.data.action.percents.length < 2 ? "· fixed" : ""}`, // as the cell reads ("1% · fixed")
         headerTooltip: "Edit the agent's e-mail or discount before approving — checked again on the server",
         minWidth: 84,
         hide: narrow,
@@ -463,7 +468,8 @@ export function InvoiceGrid({
                   case "atRisk":
                   case "value":
                     return typeof p.value === "number" ? Math.round(p.value * 100) / 100 : (p.value ?? "");
-                  case "swing":
+                  case "swing": // a row paid today has no swing left (it exported "overdue")
+                    if (d?.paidToday) return "";
                     return typeof p.value === "number" ? Math.round(p.value * 100) / 100 : p.value === null ? "overdue" : "";
                   case "draft": {
                     const a = d?.action;
