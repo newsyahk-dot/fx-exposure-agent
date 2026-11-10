@@ -19,6 +19,13 @@ import { moneyTimeline } from "@/lib/money-timeline";
 import { ResetDemoButton } from "./reset-demo";
 import styles from "./page.module.css";
 
+// The order of cards everywhere (Today and Ask the agent): late money from abroad, then money from abroad still on its
+// way, then late money in the home currency; largest first within each. Ask used to list a USD reminder first
+// (blind review round 11).
+export const cardGroup = (p: AgentProposal, base: string) => (p.currency === base ? 2 : p.kind === "reminder" ? 0 : 1);
+export const byCardOrder = (a: AgentProposal, b: AgentProposal, base: string) =>
+  cardGroup(a, base) - cardGroup(b, base) || b.value - a.value;
+
 export async function TodayPlan({
   run,
   base,
@@ -54,8 +61,8 @@ export async function TodayPlan({
   // open → sent → paid.
   // Round 8 (2026-11-09): money from abroad first — late, then on its way — and late home-currency invoices last under
   // their own heading. A USD reminder with "no exchange-rate risk" as the first card contradicted the treasury view.
-  const group = (p: AgentProposal) => (p.currency === base ? 2 : p.kind === "reminder" ? 0 : 1);
-  cards.sort((a, b) => group(a.p) - group(b.p) || b.p.value - a.p.value);
+  const group = (p: AgentProposal) => cardGroup(p, base);
+  cards.sort((a, b) => byCardOrder(a.p, b.p, base));
   const totalRisk = (waiting.reduce((s, w) => s + w.value, 0) * SHOCK_PCT) / 100;
   const riskOrder = cards
     .filter((x) => x.p.currency !== base)
@@ -370,8 +377,8 @@ export function ProposalCard({
         <p>{p.rationale}</p>
         {rejected.length > 0 && (
           <p className={styles.muted}>
-            The checks sent back {rejected.length === 1 ? "an earlier draft" : `${rejected.length} earlier drafts`} (
-            {[...new Set(rejected)].join("; ")}); Claude rewrote {rejected.length === 1 ? "it" : "them"} before you saw this.
+            The checks sent back {rejected.length === 1 ? "an earlier draft" : `${rejected.length} earlier drafts`} because{" "}
+            {[...new Set(rejected)].join("; ")}. Claude rewrote {rejected.length === 1 ? "it" : "them"} before you saw this.
           </p>
         )}
       </details>
@@ -435,18 +442,21 @@ function rejectedFor(r: AgentRun, invoiceNumber: string): string[] {
   return r.steps
     .filter((s) => !s.ok && s.invoice === invoiceNumber && s.tool.startsWith("propose"))
     .map((s) =>
+      // Whole clauses, so the sentence on the card reads ("…because it used a number that is not in the facts").
       /forecast|advice/.test(s.detail)
-        ? "forecast or advice wording"
+        ? "it read as a forecast or advice"
         : /numbers? not in the facts/.test(s.detail)
-          ? "a number not in the facts"
+          ? "it used a number that is not in the facts"
           : /link/.test(s.detail)
-            ? "a link"
+            ? "it included a link"
             : // before the label test: this reason's text also mentions "swing" ("treats a swing or a discount as …")
               /gained or saved/.test(s.detail)
-              ? "called a discount or a swing money gained"
+              ? "it described a discount or a rate swing as money gained"
               : /label|swing|stress/.test(s.detail)
-              ? "a figure under the wrong label"
-              : "failed a check",
+              ? "it put a figure under the wrong label"
+              : /original invoice/.test(s.detail)
+                ? "it named the original invoice in the offer note"
+                : "it failed a check",
     );
 }
 

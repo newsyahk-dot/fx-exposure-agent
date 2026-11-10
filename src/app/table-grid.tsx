@@ -19,6 +19,7 @@ export type TableCol = {
   right?: boolean;
   late?: string; // a boolean field: show the cell in the "late" colour
   minWidth?: number;
+  flex?: number; // share of the free width (the date column took "(28 d…" at every width — blind review round 11)
   tooltip?: string;
 };
 export type TableRow = Record<string, string | number | boolean | null>;
@@ -44,6 +45,7 @@ export function TableGrid({
         headerName: c.header,
         headerTooltip: c.tooltip,
         minWidth: c.minWidth ?? 90,
+        flex: c.flex ?? 1,
         type: c.right ? "rightAligned" : undefined,
         tooltipField: c.right ? undefined : c.field,
         ...(c.sortBy ? { comparator: (_a: unknown, _b: unknown, na, nb) => Number(na.data?.[c.sortBy!] ?? 0) - Number(nb.data?.[c.sortBy!] ?? 0) } : {}),
