@@ -6,7 +6,9 @@ const known = new Set(["USD", "EUR", "GBP", "JPY", "CAD"]);
 describe("reading a pasted invoice list", () => {
   it("finds columns by header name and reads the sample", () => {
     const r = parseOwnInvoices(sampleCsv("2026-10-27"), known);
-    expect(r.skipped).toEqual([]);
+    // The sample's last line has no due date on purpose: it is listed with the reason, not dropped.
+    expect(r.skipped).toHaveLength(1);
+    expect(r.skipped[0].row).toBe(8);
     expect(r.invoices).toHaveLength(6);
     expect(r.invoices[0]).toMatchObject({ number: "INV-104", currency: "EUR", amountDue: 4200, dueDate: "2026-10-03", recipientName: "Studio Nord (Berlin)" });
     expect(r.columns).toMatchObject({ amount: "Amount due", due: "Due date", currency: "Currency" });

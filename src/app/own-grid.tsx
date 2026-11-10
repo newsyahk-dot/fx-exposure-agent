@@ -3,7 +3,7 @@
 // (floating), quick search, sorting by home-currency value and CSV export. Rows that could not be read or valued stay
 // in the grid with the reason, so nothing is silently dropped. Read-only: these invoices are not in PayPal.
 
-import { AllCommunityModule, ModuleRegistry, type ColDef, type GridApi, type ICellRendererParams } from "ag-grid-community";
+import { type ColDef, type GridApi, type ICellRendererParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useMemo, useRef, useState } from "react";
 import type { AgentRun } from "@/lib/agent";
@@ -12,7 +12,7 @@ import type { OwnLine } from "@/lib/own-analysis";
 import { gridTheme } from "./grid-theme";
 import styles from "./page.module.css";
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+import "./grid-modules";
 
 type Row = OwnLine & { agent: string };
 
@@ -43,7 +43,7 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
         filter: "agTextColumnFilter",
         cellRenderer: (p: ICellRendererParams<Row>) => (p.data?.error && !p.value ? <span className={styles.gridLateText}>Not read</span> : p.value),
       },
-      { field: "client", headerName: "Client", minWidth: 120, filter: "agTextColumnFilter" },
+      { field: "client", headerName: "Client", minWidth: 140, filter: "agTextColumnFilter", wrapText: true, autoHeight: true },
       { field: "currency", headerName: "Ccy", minWidth: 64, maxWidth: 80, filter: false },
       {
         field: "amount",
@@ -86,7 +86,10 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
       {
         field: "agent",
         headerName: "Agent today",
-        minWidth: 160,
+        minWidth: 230,
+        flex: 1,
+        wrapText: true, // the reason is the point of this column: show it whole, not "this client has a late inv…"
+        autoHeight: true,
         filter: "agTextColumnFilter",
         tooltipValueGetter: (p) => p.data?.error ?? p.value,
         cellRenderer: (p: ICellRendererParams<Row>) => (p.data?.error ? <span className={styles.gridLateText}>{p.data.error}</span> : p.value),
@@ -97,7 +100,7 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
 
   const unread = rows.filter((r) => r.error).length;
   return (
-    <div className={styles.gridWrap}>
+    <div className={`${styles.gridWrap} ${styles.ownGrid}`}>
       <div className={styles.gridTools}>
         <input
           type="search"

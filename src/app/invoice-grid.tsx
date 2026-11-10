@@ -8,8 +8,6 @@
 // AG Grid's own editors; the server checks the edited text again before anything goes to PayPal. Colours come from the page's CSS variables, so the grid follows light and dark mode.
 
 import {
-  AllCommunityModule,
-  ModuleRegistry,
   type ColDef,
   type GridApi,
   type ICellRendererParams,
@@ -25,7 +23,7 @@ import { FOCUS_EVENT, gridTheme, type FocusDetail } from "./grid-theme";
 import { approve } from "./actions";
 import styles from "./page.module.css";
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+import "./grid-modules";
 
 const theme = gridTheme;
 
@@ -54,7 +52,7 @@ const leaveGrid = () => false as const;
 // The e-mail's sign-off line and the name under it: "Best regards," "Kind regards" "Thanks," "Thank you," "Cheers,"
 // "Sincerely," "All the best," — the cursor goes to the end of the line before it.
 const SIGN_OFF =
-  /\n[ \t]*(?:(?:best|kind|warm(?:est)?)\s+(?:regards|wishes)|best|regards|many thanks|thanks(?: again)?|thank you|cheers|sincerely|all the best)[ \t]*(?:[.!]|,(?:[ \t]*[^\n,]{1,30})?)?[ \t]*(?:\n[^\n]*){0,2}\s*$/i;
+  /(?:\n|(?<=[.!?])[ \t]+)[ \t]*(?:(?:best|kind|warm(?:est)?)\s+(?:regards|wishes)|best|regards|many thanks|thanks(?: again| so much)?|thank you(?: (?:very|so) much)?|cheers|sincerely|all the best|warmly)[ \t]*(?:[.!]|,(?:[ \t]*[^\n,]{1,30})?)?[ \t]*(?:\n[^\n]*){0,2}\s*$/i;
 
 export function InvoiceGrid({
   rows,
@@ -97,7 +95,15 @@ export function InvoiceGrid({
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<{ number: string; ok: boolean; message: string }[]>([]);
   const rowSelection = useMemo<RowSelectionOptions<InvoiceRow>>(
-    () => ({ mode: "multiRow", isRowSelectable: (n) => !!n.data?.action && !n.data.detailOf, hideDisabledCheckboxes: true, enableClickSelection: false }),
+    // selectAll "filtered": the header checkbox selects only the rows on screen. With the default it also picked
+    // offers hidden by the Late view, and "Approve selected" listed actions nobody could see (blind review round 9).
+    () => ({
+      mode: "multiRow",
+      selectAll: "filtered",
+      isRowSelectable: (n) => !!n.data?.action && !n.data.detailOf,
+      hideDisabledCheckboxes: true,
+      enableClickSelection: false,
+    }),
     [],
   );
   const approveSelected = () => runApprovals(selected);
@@ -242,7 +248,7 @@ export function InvoiceGrid({
         // Search the amount as shown ("760,000", "JPY 760,000").
         getQuickFilterText: (p) =>
           p.data?.currency && p.value != null
-            ? `${fmt(p.data.currency, p.data.paidToday ? p.data.paidAmount : p.value)} ${new Intl.NumberFormat("en-US").format(p.value)} ${p.data.value ? home(p.data.value) : ""}`.replace(/\s/g, " ") // Intl puts a no-break space after the code
+            ? `${fmt(p.data.currency, p.data.paidToday ? p.data.paidAmount : p.value)} ${new Intl.NumberFormat("en-US").format(p.value)} ${p.data.value ? `≈ ${home(p.data.value)}` : ""}`.replace(/\s/g, " ") // Intl puts a no-break space after the code
             : "",
         // Sort by what it is worth in the home currency: by face value every yen invoice sorted above every dollar one.
         comparator: (_a, _b, na, nb) => (na.data?.value ?? 0) - (nb.data?.value ?? 0),
@@ -308,6 +314,13 @@ export function InvoiceGrid({
         // server checks the edited text again (numbers from the facts only, no forecasts, no links).
         colId: "draft",
         headerName: "Draft",
+        // Search what the cell shows ("e-mail", "edited", "1%"), plus the e-mail text itself.
+        getQuickFilterText: (p) =>
+          !p.data?.action
+            ? ""
+            : p.data.action.kind === "reminder"
+              ? `e-mail email ${p.data.action.edited ? "edited" : ""} ${p.data.action.subject} ${p.data.action.message}`
+              : `${p.data.action.percent}% discount ${p.data.action.percents.length < 2 ? "fixed" : ""}`,
         headerTooltip: "Edit the agent's e-mail or discount before approving — checked again on the server",
         minWidth: 84,
         hide: narrow,
@@ -325,10 +338,11 @@ export function InvoiceGrid({
         cellEditorSelector: (p) =>
           p.data?.action?.kind === "early_pay_discount"
             ? { component: PercentEditor, popup: true } // AG Grid places it over the cell and keeps it on screen ("under" ran off the bottom on low rows)
-            : { component: "agLargeTextCellEditor", popup: true },
+            : { component: MessageEditor, popup: true },
         cellEditorParams: { maxLength: 900, rows: 10, cols: 64, fmtHome: home },
         // Tab keeps the edit and stays on this row (AG Grid's default moved on and opened the next row's editor).
         suppressKeyboardEvent: (p) => {
+          if (p.editing && p.event.key === "Enter") return true; // a new line in the e-mail, not "finish editing"
           if (!p.editing || p.event.key !== "Tab") return false;
           p.event.preventDefault();
           p.api.stopEditing();
@@ -338,7 +352,11 @@ export function InvoiceGrid({
           const a = p.data?.action;
           if (!a || p.node.rowPinned) return null;
           if (a.kind === "early_pay_discount" && a.percents.length < 2)
-            return <span title="The only discount within the app's offer rule for these dates">{a.percent}%</span>;
+            return (
+              <span className={styles.muted} title="The only discount within the app's offer rule for these dates, so there is nothing to pick">
+                {a.percent}% · fixed
+              </span>
+            );
           return (
             <button
               type="button"
@@ -390,6 +408,10 @@ export function InvoiceGrid({
     const list: InvoiceRow[] = [];
     api.current?.forEachNodeAfterFilter((n) => n.data && !n.data.detailOf && list.push(n.data));
     setShown({ from: rows, list });
+    // A selected row that a view or search hides is deselected: approving only ever covers rows on screen.
+    const visible = new Set(list.map((r) => r.id));
+    const hidden = api.current?.getSelectedNodes().filter((n) => n.data && !visible.has(n.data.id)) ?? [];
+    if (hidden.length) api.current?.setNodesSelected({ nodes: hidden, newValue: false });
   };
 
   return (
@@ -433,8 +455,8 @@ export function InvoiceGrid({
                 switch (p.column.getColId()) {
                   case "amount":
                     return d?.paidToday ? d.paidAmount : (p.value ?? "");
-                  case "daysToDue":
-                    return d?.paidToday ? "paid today" : (p.value ?? "");
+                  case "daysToDue": // the due date, and the words on screen ("15 days late")
+                    return d?.paidToday ? "paid today" : d ? `${d.dueDate} (${p.value < 0 ? `${-p.value} days late` : p.value === 0 ? "today" : `in ${p.value} days`})` : "";
                   case "atRisk":
                   case "value":
                     return typeof p.value === "number" ? Math.round(p.value * 100) / 100 : (p.value ?? "");
@@ -564,23 +586,10 @@ export function InvoiceGrid({
             }
           }}
           onCellEditingStarted={(e) => {
-            // AG Grid's large-text editor opens with the whole e-mail selected: typing would replace it. Put the cursor
-            // at the end instead.
             if (e.column.getColId() !== "draft") return;
             // The open detail row shows the same draft: close it while editing, or the popup covers it and the text
             // shows twice (blind review round 8).
             if (e.data?.id && expanded.has(e.data.id)) toggle(e.data.id);
-            requestAnimationFrame(() => {
-              const ta = document.querySelector<HTMLTextAreaElement>(".ag-large-text textarea, .ag-popup-editor textarea");
-              if (!ta) return;
-              // Before the sign-off ("Best regards, Maya", "Thanks,\nMaya", "Cheers"…), so what she types lands in the
-              // message, not after her name.
-              const sign = ta.value.search(SIGN_OFF);
-              let at = sign > 0 ? sign : ta.value.length;
-              while (at > 0 && /\s/.test(ta.value[at - 1])) at--; // end of the last message line, not a blank line
-              ta.setSelectionRange(at, at);
-              ta.scrollTop = 0; // keep the greeting in view (on a phone the cursor at the end scrolled it away)
-            });
           }}
           onSelectionChanged={(e) => {
             const rows = e.api.getSelectedRows();
@@ -722,6 +731,42 @@ const detailHeight = (r: InvoiceRow | undefined) => {
   const hist = Math.max(1, (r?.history.length ?? 0) * (narrow ? 2 : 1));
   return Math.max(narrow ? 190 : 150, 70 + 22 * (narrow ? hist + draft + 1 : Math.max(hist, draft)) + (a ? 56 : 0));
 };
+
+// Popup cell editor for the reminder e-mail. AG Grid's large-text editor selects the whole text when it opens, and
+// moving the cursor afterwards raced it (one run in two left everything selected, so the first key erased the e-mail —
+// blind review round 9). This editor places the cursor itself, before the sign-off ("Best regards, Maya", "Thanks,",
+// "Cheers"…), so what she types lands in the message, and keeps the greeting in view.
+function MessageEditor(p: CustomCellEditorProps<InvoiceRow, string>) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const [text, setText] = useState(String(p.value ?? ""));
+  useLayoutEffect(() => {
+    const ta = ref.current;
+    if (!ta) return;
+    ta.focus({ preventScroll: true });
+    const sign = ta.value.search(SIGN_OFF);
+    let at = sign > 0 ? sign : ta.value.length;
+    while (at > 0 && /\s/.test(ta.value[at - 1])) at--; // end of the last message line, not a blank line
+    ta.setSelectionRange(at, at);
+    ta.scrollTop = 0;
+  }, []);
+  return (
+    <div className={styles.messageEditor}>
+      <textarea
+        ref={ref}
+        aria-label={`E-mail to ${p.data?.client || "the client"} for ${p.data?.number}`}
+        value={text}
+        maxLength={900}
+        rows={10}
+        cols={64}
+        onChange={(e) => {
+          setText(e.target.value);
+          p.onValueChange(e.target.value);
+        }}
+      />
+      <span className={styles.muted}>Tab or click outside to keep it · Esc to cancel · checked again on the server</span>
+    </div>
+  );
+}
 
 // Popup cell editor for an offer's discount: one button per percent the app's offer rule allows for this invoice.
 function PercentEditor(p: CustomCellEditorProps<InvoiceRow, number> & { fmtHome?: (v: number) => string }) {

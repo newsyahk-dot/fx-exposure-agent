@@ -76,11 +76,14 @@ export function TimelineChart({ bins, base }: { bins: MoneyTimeline["bins"]; bas
           line: { enabled: false },
         },
       },
+      keyboard: { enabled: true }, // arrow keys walk the bars; the figure caption around the chart names it
     } as unknown as AgCartesianChartOptions;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pal, bins, base]);
   return (
-    <div ref={ref} style={{ minHeight: 210 }} aria-label="Money from clients abroad by the week it is due, as invoiced and as proposed" role="img">
+    // No role="img" on the wrapper: it hid AG Charts' own keyboard navigation and screen-reader layer. The chart
+    // sits in a figure whose caption names it.
+    <div ref={ref} style={{ minHeight: 210 }}>
       {options && <AgCharts options={options} />}
     </div>
   );

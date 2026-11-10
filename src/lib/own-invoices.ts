@@ -130,7 +130,8 @@ export function parseOwnInvoices(text: string, known: Set<string>): OwnParse {
     if (!/^[A-Z]{3}$/.test(currency)) skipped.push({ row, reason: `currency "${cell(cells, "currency")}" is not a 3-letter code` });
     else if (!known.has(currency)) skipped.push({ row, reason: `no ECB reference rate for ${currency}` });
     else if (amount == null || amount <= 0) skipped.push({ row, reason: `amount "${cell(cells, "amount")}" is not an amount still owed` });
-    else if (!due) skipped.push({ row, reason: `due date "${cell(cells, "due")}" is not a date` });
+    else if (!due)
+      skipped.push({ row, reason: cell(cells, "due").trim() ? `due date "${cell(cells, "due")}" is not a date` : "no due date, so it cannot be placed in a week" });
     else {
       const number = cell(cells, "number") || `Row ${row}`;
       const issued = parseDate(cell(cells, "issued")) ?? due;
@@ -164,5 +165,7 @@ export function sampleCsv(today: string): string {
     `INV-110,Studio Nord (Berlin),EUR,6800,${d(54)}`,
     `INV-111,Maple Apps,CAD,3100,${d(32)}`,
     `INV-112,Acme Inc.,USD,2500,${d(19)}`,
+    // One line a real export often has: no due date. It stays in the list with the reason (nothing silently dropped).
+    `INV-113,Lindqvist AB,SEK,18000,`,
   ].join("\n");
 }

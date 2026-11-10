@@ -851,6 +851,14 @@ function ExposureTable({ view, skipped, baseOpen }: { view: BookView; skipped: {
     <section aria-labelledby="exposure-h">
       <h2 id="exposure-h">Where the exposure sits</h2>
       <p className={styles.muted}>Unpaid amounts by currency and by when they fall due, in {base}. The stronger the blue, the more money; hover or focus a cell for the amount in its own currency.</p>
+      <p className={styles.heatLegend} aria-hidden="true">
+        <span>less</span>
+        {[1, 2, 3, 4, 5].map((l) => (
+          <i key={l} className={styles[`heat${l}`]} />
+        ))}
+        <span>more</span>
+        <span className={styles.muted}>· empty = nothing due</span>
+      </p>
       <ExposureGrid
         base={base}
         buckets={BUCKETS}

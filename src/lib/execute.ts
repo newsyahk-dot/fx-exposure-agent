@@ -2,7 +2,7 @@
 // the caller has already re-derived the candidate from a fresh book; this re-checks the terms and the
 // client-facing text, then calls PayPal and logs the action in the invoice's private memo.
 
-import { DISCOUNT_PCTS, priceDiscount, WINDOW_DAYS, type Candidate } from "./agent";
+import { DISCOUNT_PCTS, offerNoteNamesOriginal, priceDiscount, WINDOW_DAYS, type Candidate } from "./agent";
 import { checkClientText } from "./checks";
 import { money } from "./format";
 import { offerAmount } from "./offer-invoice";
@@ -46,7 +46,9 @@ export async function executeAction(
     // The app's offer rule holds for the seller's own edits too, not only for what the agent proposes.
     if (!p.withinRule)
       return { ok: false, message: `Not sent — ${percent}% for ${p.daysSooner} days sooner is outside the app's offer rule (at least 21 days sooner, at most 12% a year).` };
-    const why = checkClientText(req.clientNote, `${cand.facts} ${p.facts}`, { maxLen: 300, allowOffer: true });
+    const why =
+      checkClientText(req.clientNote, `${cand.facts} ${p.facts}`, { maxLen: 300, allowOffer: true }) ??
+      offerNoteNamesOriginal(req.clientNote, cand.invoiceNumber);
     if (why) return { ok: false, message: `Not sent — the client note failed a check: ${why}.` };
     // A separate offer invoice; the seller's invoice stays as it is (src/lib/offer-invoice.ts).
     const amount = offerAmount(cand.amount, percent, cand.currency);
