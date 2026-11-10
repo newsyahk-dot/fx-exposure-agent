@@ -29,7 +29,7 @@ export const AGENT_MODEL = process.env.FXA_AGENT_MODEL || process.env.FXA_EXPLAI
 // Server-side refusal fallback exists only on some models (Haiku 5.5 has none); send it only where it applies.
 export const FALLBACK_MODELS = new Set(["claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
 const SHOCK_PCT = 3;
-const REMIND_COOLDOWN_DAYS = 3;
+export const REMIND_COOLDOWN_DAYS = 3;
 const TOOL_BUDGET = 40;
 export const WINDOW_DAYS = { min: 5, max: 10 } as const;
 const MIN_DAYS_FOR_OFFER = OFFER_MIN_DAYS_SOONER + WINDOW_DAYS.min;

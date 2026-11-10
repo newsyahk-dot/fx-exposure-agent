@@ -3,7 +3,8 @@ import { after, connection } from "next/server";
 import { headers } from "next/headers";
 import { autoResetReason } from "@/lib/auto-reset";
 import { Suspense } from "react";
-import { REQUEST_MAX, rulesRun, type AgentInput, type AgentRun } from "@/lib/agent";
+import { REMIND_COOLDOWN_DAYS, REQUEST_MAX, rulesRun, type AgentInput, type AgentRun } from "@/lib/agent";
+import { lastOf } from "@/lib/agent-log";
 import { askFor, planSoon, warmOtherPlans } from "@/lib/agent-cache";
 import { newInvoicesRequest } from "@/lib/autopilot";
 import { notInPlan } from "@/lib/plan-state";
@@ -145,7 +146,8 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   } catch {
     return <StaleNotice failed />;
   }
-  const view = viewFor(inputs, base, new Date());
+  const now = new Date();
+  const view = viewFor(inputs, base, now);
   const { exposure: e, rates } = view;
   const c = (n: number) => compact(base, n);
   const open = inputs.invoices.filter((i) => OPEN_STATUSES.has(i.status) && i.amountDue > 0);
@@ -157,6 +159,12 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
   const lateAll = open.filter((i) => i.dueDate < inputs.asOf && (i.currency === base || (rates[i.currency] ?? 0) > 0));
   const lateAllValue = lateAll.reduce((s, i) => s + i.amountDue * (i.currency === base ? 1 : rates[i.currency]), 0);
   const lateAllClients = new Set(lateAll.map((i) => i.recipientName ?? i.id)).size;
+  // Late invoices already reminded in the last few days have no card today (the agent waits); say so, or the tile's
+  // client count and the number of reminder cards disagree (blind review round 8).
+  const remindedRecently = lateAll.filter((i) => {
+    const at = lastOf(i.agentLog ?? [], "reminder");
+    return at && now.getTime() - Date.parse(at) < REMIND_COOLDOWN_DAYS * 86_400_000;
+  }).length;
   const dueSoon = e.rows.reduce((s, r) => s + (r.buckets.w1 + r.buckets.w2) * rates[r.currency], 0);
   // The demo persona lives in the US; another home currency shows the same book as if that were home.
   const away = base === PERSONA_HOME ? "from clients abroad" : `in currencies other than ${base}`;
@@ -211,8 +219,12 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
             </span>
           </span>
         </p>
-        <span className={styles.sourceBadge} data-source={inputs.source}>
-          {inputs.source === "live" ? "Live · PayPal sandbox" : "Demo snapshot"} · as of {inputs.asOf}
+        <span
+          className={styles.sourceBadge}
+          data-source={inputs.source}
+          title={inputs.startedAt ? "The demo book runs on the day of its last reset (nightly, 00:07 UTC); its rates are the last ECB fixing before that day." : undefined}
+        >
+          {inputs.source === "live" ? "Live sandbox" : "Demo snapshot"} · {inputs.startedAt ? "demo day" : "as of"} {inputs.asOf} · ECB {inputs.ecb.date}
           {!readOnly && <span className={styles.ok}> · actions unlocked</span>}
         </span>
       </div>
@@ -254,7 +266,7 @@ async function Book({ searchParams }: { searchParams: SearchParams }) {
               <strong>{c(lateAllValue)}</strong>
               <span className={styles.kpiNote}>
                 {lateAll.length > 0
-                  ? `${lateAllClients} client${lateAllClients === 1 ? "" : "s"}${overdue > 0 ? ` · ${c(overdue)} from abroad, ${rangeDays(lateDays)} overdue` : ""}`
+                  ? `${lateAllClients} client${lateAllClients === 1 ? "" : "s"}${overdue > 0 ? ` · ${c(overdue)} from abroad, ${rangeDays(lateDays)} overdue` : ""}${remindedRecently ? ` · ${remindedRecently} reminded in the last ${REMIND_COOLDOWN_DAYS} days` : ""}`
                   : "nothing late"}
               </span>
             </div>

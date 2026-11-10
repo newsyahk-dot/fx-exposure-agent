@@ -17,11 +17,19 @@ export function autoResetReason(inputs: Pick<BookInputs, "startedAt" | "asOf" | 
   const lateAbroad = inputs.invoices.filter(
     (i) => i.currency !== DEMO_HOME && OPEN_STATUSES.has(i.status) && i.amountDue > 0 && i.dueDate < inputs.asOf,
   );
-  if (lateAbroad.length) return null;
+  // A late invoice from abroad paid since the reset: the story the README and the video tell starts on those late
+  // clients, so once one is gone the next judge cannot follow it (blind review round 8: Atelier Moreau already paid).
+  const day = inputs.startedAt.slice(0, 10);
+  const storyPaid = inputs.invoices.some(
+    (i) => i.currency !== DEMO_HOME && i.dueDate < inputs.asOf && (i.payments ?? []).some((p) => p.date >= day),
+  );
+  if (lateAbroad.length && !storyPaid) return null;
   const times = [inputs.startedAt, ...inputs.invoices.flatMap((i) => [i.updatedAt ?? "", ...(i.agentLog ?? []).map((a) => a.at)])]
     .map((x) => Date.parse(x))
     .filter((x) => Number.isFinite(x));
   const last = Math.max(...times);
   if (t - last < AUTO_RESET_IDLE_MIN * 60_000) return null;
-  return "no late invoice from abroad is left, and the demo book has been quiet";
+  return lateAbroad.length
+    ? "a late invoice from abroad has been paid since the reset, and the demo book has been quiet"
+    : "no late invoice from abroad is left, and the demo book has been quiet";
 }

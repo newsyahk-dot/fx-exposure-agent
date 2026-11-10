@@ -14,6 +14,13 @@ describe("automatic demo reset", () => {
     const b = book([inv({ number: "a", currency: "EUR", status: "PAID", amountDue: 0 }), inv({ number: "b", currency: "USD", dueDate: "2026-11-01" })]);
     expect(autoResetReason(b, now)).toMatch(/no late invoice from abroad/);
   });
+  it("resets a quiet book once a late invoice from abroad has been paid since the reset", () => {
+    const paid = inv({ number: "p", status: "PAID", amountDue: 0, dueDate: "2026-10-20", payments: [{ date: "2026-11-09", amount: 100 }] });
+    const b = book([inv({ dueDate: "2026-11-01" }), paid]);
+    expect(autoResetReason(b, now)).toMatch(/has been paid since the reset/);
+    const before = inv({ number: "q", status: "PAID", amountDue: 0, dueDate: "2026-10-20", payments: [{ date: "2026-10-25", amount: 100 }] });
+    expect(autoResetReason(book([inv({ dueDate: "2026-11-01" }), before]), now)).toBeNull();
+  });
   it("keeps the book while a foreign invoice is still late", () => {
     expect(autoResetReason(book([inv({ dueDate: "2026-11-01" })]), now)).toBeNull();
   });

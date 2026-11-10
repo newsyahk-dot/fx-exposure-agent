@@ -6,7 +6,7 @@
 
 import { AllCommunityModule, ModuleRegistry, type CellClickedEvent, type CellKeyDownEvent, type ColDef, type ICellRendererParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import type { Bucket } from "@/lib/types";
 import { FOCUS_EVENT, gridTheme, type FocusDetail } from "./grid-theme";
 import styles from "./page.module.css";
@@ -23,13 +23,23 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
     window.dispatchEvent(new CustomEvent<FocusDetail>(FOCUS_EVENT, { detail: d }));
     document.getElementById("grid-h")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+  // Phones: narrower bucket columns and no "In …"/±3% columns (both are in the tiles above), so less sideways scrolling.
+  const narrow = useSyncExternalStore(
+    (cb) => {
+      const m = window.matchMedia("(max-width: 719px)");
+      m.addEventListener("change", cb);
+      return () => m.removeEventListener("change", cb);
+    },
+    () => window.matchMedia("(max-width: 719px)").matches,
+    () => false,
+  );
   const columns = useMemo<ColDef<ExposureRow>[]>(
     () => [
       {
         field: "currency",
         headerName: "Currency",
         pinned: "left",
-        minWidth: 116,
+        minWidth: narrow ? 84 : 116,
         cellRenderer: (p: ICellRendererParams<ExposureRow>) =>
           p.data?.total ? (
             <strong>Total</strong>
@@ -43,7 +53,7 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
         colId: b,
         headerName: labels[b],
         type: "rightAligned",
-        minWidth: 96,
+        minWidth: narrow ? 84 : 96,
         valueGetter: (p) => p.data?.cells[b].value ?? 0,
         cellRenderer: (p: ICellRendererParams<ExposureRow>) => {
           const c = p.data?.cells[b];
@@ -55,11 +65,11 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
         tooltipValueGetter: (p) =>
           p.data && !p.data.total && p.data.cells[b].value > 0 ? `${p.data.cells[b].title} — click (or Enter) to see these invoices below` : undefined,
       })),
-      { field: "value", headerName: `In ${base}`, type: "rightAligned", minWidth: 90 },
-      { field: "shock", headerName: "±3%", type: "rightAligned", minWidth: 80, headerTooltip: "What a 3% move either way would change — not a forecast" },
+      { field: "value", headerName: `In ${base}`, type: "rightAligned", minWidth: 90, hide: narrow },
+      { field: "shock", headerName: "±3%", type: "rightAligned", minWidth: 80, hide: narrow, headerTooltip: "What a 3% move either way would change — not a forecast" },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [buckets, labels, base, maxCell],
+    [buckets, labels, base, maxCell, narrow],
   );
   function c(v: number) {
     const l = level(v);

@@ -52,14 +52,15 @@ export async function TodayPlan({
   // exchange-rate risk put a $4,200 invoice 13 days late after offers on invoices due in weeks (blind review round 3,
   // 2026-11-09). Each card still shows its place by exchange-rate risk. A card stays where it is while it goes
   // open → sent → paid.
-  const group = (p: AgentProposal) => (p.kind === "reminder" ? 0 : 1);
+  // Round 8 (2026-11-09): money from abroad first — late, then on its way — and late home-currency invoices last under
+  // their own heading. A USD reminder with "no exchange-rate risk" as the first card contradicted the treasury view.
+  const group = (p: AgentProposal) => (p.currency === base ? 2 : p.kind === "reminder" ? 0 : 1);
   cards.sort((a, b) => group(a.p) - group(b.p) || b.p.value - a.p.value);
   const totalRisk = (waiting.reduce((s, w) => s + w.value, 0) * SHOCK_PCT) / 100;
   const riskOrder = cards
     .filter((x) => x.p.currency !== base)
     .sort((a, b) => b.p.value - a.p.value)
     .map((x) => x.p.invoiceId);
-  const homeCards = cards.filter((x) => x.p.currency === base && x.s.state === "open").length;
   const states: Record<string, "sent" | "proposed"> = {};
   for (const { p, s } of cards) {
     if (s.state === "done") states[p.invoiceId] = "sent";
@@ -91,15 +92,9 @@ export async function TodayPlan({
             {lead ? lead : "nothing to do"}
             {r.notProposed.length > 0 && <>; {r.notProposed.length} left alone</>}.
             {r.plannedAt && <span className={styles.muted}> Made {r.plannedAt.slice(11, 16)} UTC.</span>}{" "}
-            <span className={styles.muted}>Late money first, then money on its way; each card shows what it puts at risk from exchange rates.</span>
+            <span className={styles.muted}>Money from abroad first — late, then on its way; each card shows what it puts at risk from exchange rates.</span>
           </span>
         </p>
-        {homeCards > 0 && (
-          <p className={styles.muted}>
-            Includes {homeCards} reminder{homeCards === 1 ? "" : "s"} for {base} invoices — late too, but with no exchange-rate risk, so not
-            in the bar above.
-          </p>
-        )}
         {r.pending && (
           <p className={`${styles.muted} ${styles.slowNote}`}>
             Claude is still writing today&apos;s plan (about a minute after a new day or a reset). Until it is ready you see
@@ -142,9 +137,20 @@ export async function TodayPlan({
       {cards.length === 0 ? (
         <p className={styles.muted}>Nothing to do today: no overdue invoices to chase and no large distant ones worth an offer.</p>
       ) : (
+        <>
+        {[0, 1, 2].map((g) => {
+          const list = cards.filter((x) => group(x.p) === g);
+          if (!list.length) return null;
+          return (
+            <div key={g}>
+              <h3 className={styles.cardGroup}>
+                {g === 0 ? "Late, from clients abroad" : g === 1 ? "On its way from abroad" : `Late, in ${base} — no exchange-rate risk`}
+                <span className={styles.muted}> · {list.length}</span>
+              </h3>
         <ul className={styles.cards}>
-          {cards.map(({ p, s }, i) => {
+          {list.map(({ p, s }) => {
             const inv = invoices.find((x) => x.id === p.invoiceId);
+            const i = cards.findIndex((x) => x.p === p);
             return (
               <ProposalCard
                 key={`${p.kind}-${p.invoiceId}`}
@@ -165,6 +171,10 @@ export async function TodayPlan({
             );
           })}
         </ul>
+            </div>
+          );
+        })}
+        </>
       )}
 
       <section className={styles.panel} aria-label="When the money comes in">

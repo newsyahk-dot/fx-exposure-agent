@@ -27,3 +27,8 @@ export const TimelineChart = dynamic(() => import("./timeline-chart").then((m) =
   ssr: false,
   loading: () => <Loading height={210} label="Loading the chart…" />,
 });
+
+export const OwnGrid = dynamic(() => import("./own-grid").then((m) => m.OwnGrid), {
+  ssr: false,
+  loading: () => <Loading height={260} label="Loading the table…" />,
+});

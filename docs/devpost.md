@@ -99,10 +99,11 @@ that client's own payment history, and Claude compares them in plain words. One 
 **Try it with your own invoices.** Any seller can paste an invoice list (CSV — an export from PayPal or any invoicing
 tool) at /try and see the same analysis on their own numbers: what is waiting from clients abroad in any ECB currency,
 what is late, where the exchange-rate risk sits, and what the agent would do today (rule-based for everyone; Claude's
-own plan with the access code). Nothing is stored and no PayPal account is touched.
+own plan with the access code). Every pasted line lands in a sortable, filterable grid; lines that could not be read
+stay in it with the reason. Nothing is stored and no PayPal account is touched.
 
 **Routine work handed over.** The seller approves a standing policy once (reminders yes; discounts up to 1%; at most
-three actions a run). Every weekday morning the agent runs what fits; everything else still waits for a click, and
+three actions a run). Once every weekday (00:17 UTC) the agent runs what fits; everything else still waits for a click, and
 terms she set in the last 7 days are never changed on its own. The
 policy is stored in the seller's PayPal account as an invoice template.
 
@@ -142,7 +143,11 @@ by side; the seller decides.
   built-in large-text editor for the e-mail, a custom React editor for the discount, both re-checked on the server), a two-line client cell with the client's payment history,
   an external filter for the quick views, a pinned total row that follows
   the filter, cell change flash on PayPal updates, row class rules, custom cell renderers (risk bars, PayPal links),
-  quick-filter search and a CSV export with plain numbers. **AG Charts Community** for the money-in timeline (grouped
+  quick-filter search that matches what the cells show (a custom quick-filter parser keeps "15 days late" or
+  "GBP 3,800.00" together), keyboard access to the detail rows (Enter opens one and moves into it, Tab walks its
+  buttons, Escape closes it), and a CSV export with plain numbers. A third grid on /try holds every pasted line, with
+  floating column filters (text and number), sorting, search, CSV, and the lines that could not be read kept in red
+  with the reason. **AG Charts Community** for the money-in timeline (grouped
   bars by week, themed from the page's colours). **ECB reference rates via Frankfurter** for exchange rates.
 
 ### Challenges I ran into
@@ -156,8 +161,8 @@ by side; the seller decides.
   money product that is not acceptable, so every sentence is checked by code and rewritten until it passes.
 - **Speed in the middle of the loop.** At first, every approval changed the book and made the agent re-plan for 20–30
   seconds. Now the agent plans once a day, and each proposal is matched with what has since happened to its invoice:
-  approving no longer waits for a new plan (sent in PayPal in about 5–13 seconds, measured), and a payment shows as
-  paid within a few seconds.
+  approving no longer waits for a new plan (sent in PayPal in about 5–15 seconds, measured), and a payment made on
+  PayPal's invoice page shows as paid in under 20 seconds (a simulated payment can take up to about a minute).
 - **Webhooks in the sandbox**: a payment recorded through the API raised no webhook event, so the demo has a "Simulate client
   payment" button for that path. A payment made on PayPal's own invoice page does raise one: the seller's screen shows
   it as paid in under 20 seconds.
@@ -224,7 +229,7 @@ paypal, paypal-invoicing-api, paypal-webhooks, claude, anthropic, next.js, react
 
 Without an API key, or if a call fails, rule-based proposals with fixed wording take over, so the app keeps working.
 
-Also used: **AG Grid Community** (the exposure heatmap and the invoice grid, linked), **AG Charts Community** (the
+Also used: **AG Grid Community** (the exposure heatmap and the invoice grid, linked; the pasted list on /try), **AG Charts Community** (the
 money-in timeline), **Vercel** (hosting, cron, shared cache).
 
 ---

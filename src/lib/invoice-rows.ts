@@ -114,7 +114,7 @@ export function invoiceRows(
       paidToday,
       paidAmount: paidToday ? (inv.payments ?? []).filter((x) => x.date >= o.asOf).reduce((s, x) => s + x.amount, 0) : 0,
       usuallyPays: usuallyPays(invoices, inv.recipientName),
-      history: paidHistory(invoices, inv.recipientName),
+      history: paidHistory(invoices, inv.recipientName, inv.id),
       ...(action ? { action } : {}),
     });
   }
@@ -124,10 +124,11 @@ export function invoiceRows(
 const shortDay = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 // The client's fully paid invoices, newest first (at most 6): when each was due and when it was paid.
-function paidHistory(invoices: Invoice[], client: string | undefined): InvoiceRow["history"] {
+// The invoice itself is left out: a row paid today listed itself as its client's history (blind review round 8).
+function paidHistory(invoices: Invoice[], client: string | undefined, self?: string): InvoiceRow["history"] {
   if (!client) return [];
   return invoices
-    .filter((i) => sameClient(i.recipientName, client) && !(i.amountDue > 0) && i.payments?.length)
+    .filter((i) => i.id !== self && sameClient(i.recipientName, client) && !(i.amountDue > 0) && i.payments?.length)
     .map((i) => {
       const paidOn = i.payments!.map((p) => p.date).sort().at(-1)!;
       return {

@@ -42,6 +42,12 @@ const VIEWS = {
 type View = keyof typeof VIEWS;
 
 
+// Search words, but keep what reads as one phrase on screen together: "15 days late", "in 46 days", "paid today",
+// "GBP 3,800.00". Word by word, "15 days late" matched any row with a 15 somewhere (blind review round 8).
+const parseSearch = (q: string) =>
+  // AG Grid upper-cases both the search and the row text before matching.
+  q.toUpperCase().match(/\bIN\s+\d+\s+DAYS?|\d+\s+DAYS?\s+LATE|PAID\s+TODAY|\b(?:USD|EUR|GBP|JPY|KRW|CHF|CAD|AUD|NZD|SEK|NOK|DKK|PLN|SGD|HKD|CNY|INR|MXN|BRL)\s+[\d,.]*\d|\S+/g) ?? [];
+
 // Tab moves on to the next control on the page instead of walking every cell (round 7 review, 2026-11-09).
 const leaveGrid = () => false as const;
 
@@ -129,6 +135,7 @@ export function InvoiceGrid({
   // Detail rows (AG Grid full-width rows, Community): open an invoice to see how this client has paid before and the
   // agent's draft for it, and approve just that one.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const focusOnOpen = useRef<string | null>(null);
   const toggle = (id: string) =>
     setExpanded((s) => {
       const n = new Set(s);
@@ -185,7 +192,7 @@ export function InvoiceGrid({
         field: "number",
         headerName: "Invoice",
         pinned: narrow ? undefined : "left", // on a phone two pinned columns would fill the screen
-        minWidth: narrow ? 150 : 160,
+        minWidth: narrow ? 134 : 160,
         // The invoice number opens PayPal's client view (a separate column did not fit at desktop width).
         cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
           p.data?.id && clientUrls[p.data.id] ? (
@@ -200,7 +207,8 @@ export function InvoiceGrid({
                 {expanded.has(p.data.id) ? "▾" : "▸"}
               </button>
               <a href={clientUrls[p.data.id]} target="_blank" rel="noopener noreferrer" className={styles.link} title="Open in PayPal as the client">
-                {p.value} ↗
+                {p.value}
+                {!narrow && " ↗"}
               </a>
             </span>
           ) : (
@@ -232,9 +240,23 @@ export function InvoiceGrid({
         type: "rightAligned",
         enableCellChangeFlash: true,
         // Search the amount as shown ("760,000", "JPY 760,000").
-        getQuickFilterText: (p) => `${p.data?.currency ?? ""} ${p.value == null ? "" : new Intl.NumberFormat("en-US").format(p.value)}`,
+        getQuickFilterText: (p) =>
+          p.data?.currency && p.value != null
+            ? `${fmt(p.data.currency, p.data.paidToday ? p.data.paidAmount : p.value)} ${new Intl.NumberFormat("en-US").format(p.value)} ${p.data.value ? home(p.data.value) : ""}`.replace(/\s/g, " ") // Intl puts a no-break space after the code
+            : "",
         // Sort by what it is worth in the home currency: by face value every yen invoice sorted above every dollar one.
         comparator: (_a, _b, na, nb) => (na.data?.value ?? 0) - (nb.data?.value ?? 0),
+        headerTooltip: `Sorted by what it is worth in ${base} (shown underneath), not by face value`,
+        // The amount, and underneath what it is worth in the home currency — the sort key, so the order makes sense.
+        cellRenderer: (p: ICellRendererParams<InvoiceRow>) =>
+          p.node.rowPinned || !p.data?.currency ? (
+            p.valueFormatted
+          ) : (
+            <span className={`${styles.gridTwoLine} ${styles.gridTwoLineRight}`}>
+              <span>{p.valueFormatted}</span>
+              {p.data.currency !== base && p.data.value > 0 && <small>≈ {home(p.data.value)}</small>}
+            </span>
+          ),
         valueFormatter: (p) =>
           p.data?.paidToday // what came in today ("paid today" shows under Due)
             ? fmt(p.data.currency, p.data.paidAmount)
@@ -243,7 +265,7 @@ export function InvoiceGrid({
       {
         field: "daysToDue",
         headerName: "Due",
-        minWidth: 104,
+        minWidth: narrow ? 102 : 104,
         // Search the words on screen ("8 days late", "paid today"), not the raw number of days.
         getQuickFilterText: (p) =>
           p.data?.paidToday ? "paid today" : p.value == null ? "" : p.value < 0 ? `${-p.value} days late overdue` : p.value === 0 ? "today" : `in ${p.value} days`,
@@ -255,7 +277,7 @@ export function InvoiceGrid({
         field: "atRisk",
         headerName: "At risk",
         headerTooltip: "What a 3% move either way would change, in the home currency — the size of the risk, not a forecast",
-        minWidth: 88,
+        minWidth: narrow ? 74 : 88,
         initialSort: "desc", // initial only: a column rebuild (opening a row) must not bring this sort back
         valueFormatter: (p) => (p.value ? `±${home(p.value)}` : "none"), // used by the CSV export
         getQuickFilterText: (p) => (p.value ? `±${home(p.value)} ±${compact(base, p.value)}` : "none"), // search what is shown
@@ -275,6 +297,7 @@ export function InvoiceGrid({
         field: "agent",
         headerName: "Agent today",
         minWidth: 152,
+        hide: narrow, // phones: Invoice, Due and At risk fit 390 px; the agent's action is in the detail row
         tooltipField: "agent",
         enableCellChangeFlash: true,
         cellClassRules: { [styles.gridActive]: (p) => /proposed|sent|Paid/.test(p.value ?? "") },
@@ -287,6 +310,7 @@ export function InvoiceGrid({
         headerName: "Draft",
         headerTooltip: "Edit the agent's e-mail or discount before approving — checked again on the server",
         minWidth: 84,
+        hide: narrow,
         sortable: false,
         // An offer with only one percent within the rule has nothing to pick: no editor, no ✎.
         editable: (p) =>
@@ -333,7 +357,7 @@ export function InvoiceGrid({
         headerName: "Offer",
         headerTooltip: "A separate PayPal invoice for the discounted amount; it lapses after its date and the original applies",
         minWidth: 144,
-        hide: !hasOffers,
+        hide: !hasOffers || narrow,
         tooltipField: "offer",
         enableCellChangeFlash: true,
         valueFormatter: (p) =>
@@ -483,9 +507,23 @@ export function InvoiceGrid({
           )}
         </div>
       )}
-      {narrow && <p className={styles.muted}>Scroll the grid sideways for the agent and the draft →; ▸ shows the amount and details.</p>}
+      {narrow && <p className={styles.muted}>▸ opens an invoice: the amount, the client, what the agent proposes, and approve.</p>}
       <div role="region" aria-label="Every open invoice, ranked by what it puts at risk">
-        <DetailCtx.Provider value={{ lockReason, busy: running, approveOne: (r) => runApprovals([r]), close: toggle, undo: (id) => edit(id, null) }}>
+        <DetailCtx.Provider
+          value={{
+            lockReason,
+            busy: running,
+            approveOne: (r) => runApprovals([r]),
+            close: toggle,
+            undo: (id) => edit(id, null),
+            clientUrl: (id) => clientUrls[id],
+            focusOnOpen,
+            refocus: (id) => {
+              const node = api.current?.getRowNode(id);
+              if (node?.rowIndex != null) api.current?.setFocusedCell(node.rowIndex, "number");
+            },
+          }}
+        >
         <AgGridReact<InvoiceRow>
           theme={theme}
           tabToNextCell={leaveGrid}
@@ -494,6 +532,7 @@ export function InvoiceGrid({
           columnDefs={columns}
           defaultColDef={{ sortable: true, resizable: true, filter: false }}
           quickFilterText={search}
+          quickFilterParser={parseSearch}
           pinnedBottomRowData={totals as InvoiceRow[]}
           getRowId={(p) => p.data.id ?? p.data.number}
           rowHeight={52}
@@ -505,9 +544,22 @@ export function InvoiceGrid({
           // cell is not reachable with the arrow keys).
           onCellKeyDown={(e) => {
             const k = (e.event as KeyboardEvent | null)?.key;
-            if (!("column" in e)) return; // a full-width (detail) row
+            if (!("column" in e)) {
+              // A focused detail row: Tab or Enter moves into its buttons and link (Tab used to leave the grid and skip
+              // them — blind review round 8).
+              const t = (e.event as KeyboardEvent).target as HTMLElement | null;
+              if ((k === "Tab" || k === "Enter") && t?.classList.contains("ag-full-width-row")) {
+                const first = t.querySelector<HTMLElement>("button:not([disabled]), a[href]");
+                if (first) {
+                  (e.event as KeyboardEvent).preventDefault();
+                  first.focus();
+                }
+              }
+              return;
+            }
             if ((k === "Enter" || k === " ") && e.column.getColId() === "number" && e.data?.id && !e.data.detailOf && !e.node.rowPinned) {
               (e.event as KeyboardEvent).preventDefault();
+              if (!expanded.has(e.data.id)) focusOnOpen.current = e.data.id;
               toggle(e.data.id);
             }
           }}
@@ -515,6 +567,9 @@ export function InvoiceGrid({
             // AG Grid's large-text editor opens with the whole e-mail selected: typing would replace it. Put the cursor
             // at the end instead.
             if (e.column.getColId() !== "draft") return;
+            // The open detail row shows the same draft: close it while editing, or the popup covers it and the text
+            // shows twice (blind review round 8).
+            if (e.data?.id && expanded.has(e.data.id)) toggle(e.data.id);
             requestAnimationFrame(() => {
               const ta = document.querySelector<HTMLTextAreaElement>(".ag-large-text textarea, .ag-popup-editor textarea");
               if (!ta) return;
@@ -569,8 +624,25 @@ function total(all: InvoiceRow[], base: string): TotalRow {
 
 // Grid callbacks live outside the component: AG Grid redraws full-width rows when these props change identity, and a
 // redraw inside a render made the grid loop once a row was opened. The detail renderer reads live state from context.
-type DetailState = { lockReason?: string; busy: boolean; approveOne: (r: InvoiceRow) => void; close: (id: string) => void; undo: (id: string) => void };
-const DetailCtx = createContext<DetailState>({ busy: false, approveOne: () => {}, close: () => {}, undo: () => {} });
+type DetailState = {
+  lockReason?: string;
+  busy: boolean;
+  approveOne: (r: InvoiceRow) => void;
+  close: (id: string) => void;
+  undo: (id: string) => void;
+  clientUrl: (id: string) => string | undefined;
+  focusOnOpen: { current: string | null }; // the row opened from the keyboard: focus moves into its detail row
+  refocus: (id: string) => void; // back to the invoice cell after Escape
+};
+const DetailCtx = createContext<DetailState>({
+  busy: false,
+  approveOne: () => {},
+  close: () => {},
+  undo: () => {},
+  clientUrl: () => undefined,
+  focusOnOpen: { current: null },
+  refocus: () => {},
+});
 const NARROW = "(max-width: 719px)";
 const subscribeNarrow = (cb: () => void) => {
   const m = window.matchMedia(NARROW);
@@ -620,7 +692,21 @@ function DetailCell(p: ICellRendererParams<InvoiceRow>) {
   const r = { ...d, id: d.detailOf, detailOf: undefined };
   return (
     <div ref={ref}>
-      <DetailRow r={r} lockReason={ctx.lockReason} busy={ctx.busy} onApprove={() => ctx.approveOne(r)} onClose={() => ctx.close(r.id)} onUndo={() => ctx.undo(r.id)} />
+      <DetailRow
+        r={r}
+        lockReason={ctx.lockReason}
+        busy={ctx.busy}
+        clientUrl={ctx.clientUrl(r.id)}
+        autoFocus={ctx.focusOnOpen.current === r.id}
+        onFocused={() => (ctx.focusOnOpen.current = null)}
+        onApprove={() => ctx.approveOne(r)}
+        onClose={() => ctx.close(r.id)}
+        onEscape={() => {
+          ctx.close(r.id);
+          ctx.refocus(r.id);
+        }}
+        onUndo={() => ctx.undo(r.id)}
+      />
     </div>
   );
 }
@@ -680,23 +766,79 @@ function DetailRow({
   r,
   lockReason,
   busy,
+  clientUrl,
+  autoFocus,
+  onFocused,
   onApprove,
   onClose,
+  onEscape,
   onUndo,
 }: {
   r: InvoiceRow;
   lockReason?: string;
   busy: boolean;
+  clientUrl?: string;
+  autoFocus: boolean;
+  onFocused: () => void;
   onApprove: () => void;
   onClose: () => void;
+  onEscape: () => void;
   onUndo: () => void;
 }) {
   const a = r.action;
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!autoFocus) return;
+    box.current?.querySelector<HTMLElement>("button:not([disabled]), a[href]")?.focus();
+    onFocused();
+  }, [autoFocus, onFocused]);
+  // Keyboard inside the detail row is the browser's: Tab walks its buttons and link, Escape closes it and returns to the
+  // invoice cell. A native listener, because React's handlers run at the root, after AG Grid has already taken the key
+  // for cell navigation.
+  const escape = useRef(onEscape);
+  useEffect(() => {
+    escape.current = onEscape;
+  });
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target === el) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        escape.current();
+      }
+      e.stopPropagation();
+    };
+    el.addEventListener("keydown", onKey);
+    return () => el.removeEventListener("keydown", onKey);
+  }, []);
   return (
-    <div className={styles.gridDetail}>
+    <div
+      ref={box}
+      className={styles.gridDetail}
+    >
       <div>
         <p>
-          {r.number} · {r.client || "client"} · <strong>{fmt(r.currency, r.amount)}</strong> still owed
+          {r.number} · {r.client || "client"} ·{" "}
+          {r.paidToday ? (
+            <>
+              <strong>{fmt(r.currency, r.paidAmount)}</strong> paid today
+            </>
+          ) : (
+            <>
+              <strong>{fmt(r.currency, r.amount)}</strong> still owed
+            </>
+          )}
+          {clientUrl && (
+            <>
+              {" "}
+              ·{" "}
+              <a href={clientUrl} target="_blank" rel="noopener noreferrer" className={styles.link}>
+                Open in PayPal as the client ↗
+              </a>
+            </>
+          )}
         </p>
         <p>
           <strong>How {r.client || "this client"} has paid</strong>

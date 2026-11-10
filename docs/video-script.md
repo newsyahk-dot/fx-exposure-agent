@@ -24,7 +24,7 @@ placeholders. Captions are mandatory (burned in).
 |---|---|---|
 | **Today**, USD. "[$31K] waiting to be paid from clients abroad", tiles **Late [$6,779] · [3] clients** · Due in 2 weeks · If rates move 3% · Collected today. | "Monday morning. Maya, a freelance designer in the US, opens her PayPal invoices. [Three] clients abroad are paying late — [$6,779] overdue. In all, [$31,000] is owed to her in euros, pounds and yen — seen the way a treasury desk would: what is late, what comes in when, and what a rate move can do to it." | $6,779 |
 | First card: **Chase a late payment** → **Approve: send reminder** → "✓ Reminder sent in PayPal". | "Every morning an AI agent goes through her invoices and proposes the day's work. One click, and the reminder goes out through PayPal." | — |
-| Client pays (in the automated take: "Simulate client payment", captioned as simulated; by hand: PayPal's invoice page with the sandbox buyer) → **"+[$2,807] collected"**. | "When the client pays, it shows up within seconds." | +$2,807 |
+| Client pays (in the automated take: "Simulate client payment", captioned as simulated; by hand: PayPal's invoice page with the sandbox buyer) → **"+[$2,807] collected"**. | "When the client pays, it shows up on her screen." | +$2,807 |
 
 ## 2 · 0:35–1:00 — Why sooner matters
 

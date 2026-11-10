@@ -49,7 +49,7 @@ export async function savePolicy(_prev: PolicyState, form: FormData): Promise<Po
     ok: true,
     message:
       intent === "approve"
-        ? "Policy approved. The autopilot will act inside it on weekday mornings and when you press Run now."
+        ? "Policy approved. The autopilot will act inside it once every weekday (00:17 UTC) and when you press Run now."
         : intent === "off"
           ? "Autopilot turned off. Proposals wait for your click again."
           : "Notes saved. The agent reads them on its next plan.",

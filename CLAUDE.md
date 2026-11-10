@@ -224,3 +224,18 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   ("Best,", "Thanks,", "Cheers", "Kind regards, Maya"); Tab leaves the invoice grid (`tabToNextCell` → false); the
   At risk column is searchable ("±$"); Next invoice notes that PayPal's own conversion fee is not counted, linking
   PayPal's fee page (no numbers).
+- **Round 8 blind review fixes** (2026-11-09): Today's cards in three groups with headings — late from abroad, on its way
+  from abroad, then late in the home currency ("no exchange-rate risk") — so the first card is never a USD reminder.
+  The Late tile says how many late invoices were reminded in the last 3 days (no card today). The source badge reads
+  "demo day … · ECB …" with a tooltip. Auto-reset also fires (when quiet) once a late invoice from abroad has been paid
+  since the reset, so the README/video story's late clients are there for the next judge. FXA-2005 is due in 80 days so
+  its offer allows more than one percent (the discount editor is visible). Next invoice option "Half as a 7-day
+  deposit". Docs: measured timings (approve 5–15 s; paid via PayPal's page under 20 s, simulated up to a minute),
+  autopilot "once every weekday (00:17 UTC)". Laptop top tightened so the four tiles fit 1440×900. Invoice grid:
+  `quickFilterParser` keeps "15 days late", "in 46 days", "GBP 3,800.00" together (AG Grid upper-cases text; Intl puts a
+  no-break space after the code); Still owed shows "≈ $value" underneath (its sort key); detail rows: Enter opens and
+  focuses inside, Tab/Enter on a focused detail row moves into its buttons, a native keydown listener keeps AG Grid from
+  taking keys, Escape closes and refocuses the invoice cell, "Open in PayPal as the client" link inside; paid-today rows
+  say "paid today" and history leaves the invoice itself out; editing the draft closes the open detail row; phones show
+  Invoice · Due · At risk only, the heatmap drops its value columns. /try: every pasted line in an AG Grid
+  (`src/app/own-grid.tsx`, floating filters, CSV, unread lines in red with the reason).
