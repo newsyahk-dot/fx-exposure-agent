@@ -260,5 +260,13 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   functions cannot cross from a server component; "on time" instead of a blank). Ask's ranking answers read late
   money from abroad first, then home currency, by days late within each (`lateList` sorts that way). Next invoice
   facts state the wait including the client's usual lateness, so Claude's sentence matches the note. README/Devpost
-  quote the 2026-11-10 eval (36 runs, 207 proposals, 0 problems in proposals, 1 flagged summary sentence).
+  quote the 2026-11-10 eval (rerun 04:27 UTC: 36 runs, 183 proposals, 0 problems).
+- **Round 11 blind review fixes** (2026-11-10): the "checks sent back an earlier draft because …" line uses whole
+  clauses (it showed "called a discount or a swing money gained"). /try Still owed sorts by home value and has no
+  number filter (face values of different currencies cannot be compared). TableGrid columns take `flex`; the wait
+  grid's date and invoice columns no longer clip. Ask's cards use `byCardOrder` from today.tsx (abroad late → abroad
+  on its way → home late), the same as Today. Enter on a heatmap cell moves keyboard focus to the first invoice it
+  narrowed to (`FocusDetail.keyboard`), the chip is a live region, and Tab leaves the heatmap like the other grids.
+  Offers: `WINDOW_DAYS` 14–21 (five days was too short for a client's payables run; the rules fallback uses the
+  minimum), client notes in the seller's voice ("I", never "we") and worded per client.
 

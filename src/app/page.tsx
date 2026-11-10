@@ -715,9 +715,9 @@ function Timing({ view }: { view: BookView }) {
         csvName={`what-the-wait-did-${view.base}.csv`}
         highlightField="today"
         cols={[
-          { field: "invoice", header: "Invoice", minWidth: 150 },
+          { field: "invoice", header: "Invoice", minWidth: 210 },
           { field: "received", header: "Received", right: true, sortBy: "receivedValue", minWidth: 120 },
-          { field: "dates", header: "Invoiced → paid", minWidth: 220, sortBy: "daysWaited" },
+          { field: "dates", header: "Invoiced → paid", minWidth: 270, flex: 2, sortBy: "daysWaited" },
           { field: "lateText", header: "Days late", right: true, sortBy: "daysLate", csvBy: "daysLate", minWidth: 96, late: "isLate" },
           { field: "effect", header: `Effect in ${view.base}`, right: true, sortBy: "effectValue", csvBy: "effectValue", minWidth: 110 },
         ]}

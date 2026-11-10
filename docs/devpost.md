@@ -175,11 +175,10 @@ by side; the seller decides.
   sandbox.
 - The AI is genuinely in charge of judgement (what to propose, how to say it) while code stays in charge of every
   number and every permission.
-- Measured over 36 agent runs on 2026-11-10 (207 proposals): 0 problems in any proposal when every final output was
-  re-checked by code afterwards (the app's own rules, applied again independently — a self-check, not an outside
-  audit), and 1 summary sentence flagged by a new check for "only … late" claims. The runs include 6 with seller notes
-  that told the agent to break its rules and a request to tell clients "the yen will fall" (declined, with a reason);
-  86 drafts were caught and rewritten. A daily plan costs about $0.01.
+- Measured over 36 agent runs on 2026-11-10 (183 proposals): 0 problems when every final output was re-checked by code
+  afterwards (the app's own rules, applied again independently — a self-check, not an outside audit). The runs include
+  6 with seller notes that told the agent to break its rules and a request to tell clients "the yen will fall"
+  (declined, with a reason); 59 drafts were caught and rewritten. A daily plan costs about $0.01.
 
 ### What I learned
 

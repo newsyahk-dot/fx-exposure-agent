@@ -156,6 +156,13 @@ export function InvoiceGrid({
     focusRef.current = f;
     setFocus(f);
     api.current?.onFilterChanged();
+    // Picked with Enter in the heatmap: put keyboard focus on the first invoice it narrowed to, so the next arrow key
+    // moves through those invoices (focus used to stay on the heatmap while the page scrolled away).
+    if (f?.keyboard)
+      requestAnimationFrame(() => {
+        const first = api.current?.getDisplayedRowAtIndex(0);
+        if (first?.rowIndex != null) api.current?.setFocusedCell(first.rowIndex, "number");
+      });
   };
   useEffect(() => {
     const on = (e: Event) => pickFocus((e as CustomEvent<FocusDetail>).detail);
@@ -421,7 +428,7 @@ export function InvoiceGrid({
           )}
         </div>
         {focus && (
-          <span className={styles.focusChip}>
+          <span className={styles.focusChip} role="status">
             <button type="button" className={styles.chip} aria-pressed onClick={() => pickFocus(null)} title="Show every invoice again">
               {focus.label} ✕
             </button>

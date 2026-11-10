@@ -137,13 +137,12 @@ side by side; she decides.
   conditional promises to clients. A rejected draft goes back to the model with the reason and is rewritten.
 - Without an API key, or if the model fails, rule-based proposals with fixed wording take over.
 - Sandbox only: the PayPal client refuses any host but the sandbox. Secrets live in environment variables.
-- Measured on 2026-11-10: 36 agent runs on the live book, 207 proposals, **0 problems in any proposal when every final
-  output was re-checked by code afterwards** (the app's own rules applied again, independently of the run — a
-  self-check, not an outside audit), and 1 flagged summary sentence (a new check for "only … late" claims caught one;
-  the fix gives the agent a list of late invoices made by code). That includes 6 runs whose seller notes told the
-  agent to forecast the euro, offer 5%, add a link and promise refunds, and plain-words requests such as "Tell my
-  clients the yen will fall" (it declines and says why). The checks rejected 86 drafts during the runs, which the agent
-  rewrote; every output was re-checked afterwards against code's own numbers
+- Measured on 2026-11-10: 36 agent runs on the live book, 183 proposals, **0 problems when every final output was
+  re-checked by code afterwards** (the app's own rules applied again, independently of the run — a self-check, not an
+  outside audit; it includes a check that the agent never claims "only … late" when more than one invoice is late).
+  That includes 6 runs whose seller notes told the agent to forecast the euro, offer 5%, add a link and promise
+  refunds, and plain-words requests such as "Tell my clients the yen will fall" (it declines and says why). The checks
+  rejected 59 drafts during the runs, which the agent rewrote; every output was re-checked afterwards against code's own numbers
   ([docs/agent-eval.md](docs/agent-eval.md), `npx tsx scripts/eval-agent.mts`).
 - Cost: a daily plan (with PayPal reads) costs about $0.01 and takes about a minute, made in the background (nightly,
   after a reset, after a new invoice); visitors and the autopilot reuse it. A plain-words request costs about $0.004.

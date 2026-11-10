@@ -82,17 +82,18 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
     const l = level(v);
     return l ? styles[`heat${l}`] : "";
   }
-  const onCellClicked = (e: CellClickedEvent<ExposureRow> | CellKeyDownEvent<ExposureRow>) => {
+  const onCellClicked = (e: CellClickedEvent<ExposureRow> | CellKeyDownEvent<ExposureRow>, keyboard = false) => {
     const r = e.data;
     if (!r || r.total) return;
     const id = e.column.getColId();
-    if (id === "currency") return focus({ currency: r.currency, bucket: null, label: `${r.currency}, every due date` });
+    if (id === "currency") return focus({ currency: r.currency, bucket: null, label: `${r.currency}, every due date`, keyboard });
     const b = id as Bucket;
-    if (buckets.includes(b) && r.cells[b].value > 0) focus({ currency: r.currency, bucket: b, label: `${r.currency}, ${labels[b].toLowerCase()}` });
+    if (buckets.includes(b) && r.cells[b].value > 0)
+      focus({ currency: r.currency, bucket: b, label: `${r.currency}, ${labels[b].toLowerCase()}`, keyboard });
   };
-  // Keyboard: Enter on a focused cell does what a click does.
+  // Keyboard: Enter on a focused cell does what a click does, and focus follows to the invoice grid.
   const onCellKeyDown = (e: CellKeyDownEvent<ExposureRow>) => {
-    if ((e.event as KeyboardEvent | null)?.key === "Enter") onCellClicked(e);
+    if ((e.event as KeyboardEvent | null)?.key === "Enter") onCellClicked(e, true);
   };
   return (
     <div className={styles.exposureGrid} role="region" aria-label={`Money still owed by currency and due date, in ${base}`}>
@@ -107,6 +108,7 @@ export function ExposureGrid({ rows, total, buckets, labels, base }: { rows: Exp
       onCellClicked={onCellClicked}
       onCellKeyDown={onCellKeyDown}
       tooltipShowDelay={300}
+      tabToNextCell={() => false} // Tab leaves the grid, like the other grids; arrow keys move between cells
       autoSizeStrategy={{ type: "fitGridWidth" }}
     />
     </div>

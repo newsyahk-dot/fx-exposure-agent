@@ -5,7 +5,7 @@ import type { AgentInput, AgentRun } from "@/lib/agent";
 import { compact } from "@/lib/format";
 import { proposalState } from "@/lib/plan-state";
 import type { Invoice } from "@/lib/types";
-import { ProposalCard } from "./today";
+import { byCardOrder, ProposalCard } from "./today";
 import styles from "./page.module.css";
 
 export async function AskResult({
@@ -61,7 +61,7 @@ export async function AskResult({
       </div>
       {r.source === "agent" && r.proposals.length > 0 && (
         <ul className={styles.cards}>
-          {r.proposals.map((p) => (
+          {[...r.proposals].sort((a, b) => byCardOrder(a, b, base)).map((p) => (
             <ProposalCard
               key={`${p.kind}-${p.invoiceId}`}
               p={p}

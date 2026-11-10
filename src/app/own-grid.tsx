@@ -53,7 +53,11 @@ export function OwnGrid({ lines, run, base }: { lines: OwnLine[]; run: AgentRun;
         headerName: "Still owed",
         minWidth: 120,
         type: "rightAligned",
-        filter: "agNumberColumnFilter",
+        // Sort by what it is worth in the home currency (by face value JPY 380,000 sorted above EUR 6,800), and no number
+        // filter: amounts in different currencies cannot be compared as numbers. Filter on "In …" instead.
+        comparator: (_a, _b, na, nb) => (na.data?.value ?? -1) - (nb.data?.value ?? -1),
+        filter: false,
+        headerTooltip: "Sorted by what it is worth in the home currency",
         valueFormatter: (p) => (p.value == null || !p.data?.currency ? "" : fmtCcy(p.data.currency, p.value)),
         getQuickFilterText: (p) => (p.value == null || !p.data?.currency ? "" : `${fmtCcy(p.data.currency, p.value)} ${p.data.currency}`),
       },
