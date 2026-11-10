@@ -25,6 +25,22 @@ export type OwnAnalysis = {
   run: AgentRun;
   timeline: MoneyTimeline;
   clients: Record<string, string>; // invoice id -> client name, for the proposal cards
+  // One row per pasted line, for the grid on /try: read invoices with their value and risk, and rows that could not be
+  // read with the reason (nothing silently dropped).
+  lines: OwnLine[];
+};
+
+export type OwnLine = {
+  row: number | null; // line number in the pasted list, when known
+  number: string;
+  client: string;
+  currency: string;
+  amount: number | null;
+  dueDate: string;
+  daysToDue: number | null;
+  value: number | null; // in the home currency
+  atRisk: number | null; // ±3% stress test, home currency (0 for home-currency invoices)
+  error?: string; // set when the row could not be read or valued
 };
 
 export function analyzeOwn(text: string, base: Base, ecb: EcbQuotes, today: string, now = new Date()): { analysis: OwnAnalysis; agentInput: AgentInput } {
@@ -52,7 +68,32 @@ export function analyzeOwn(text: string, base: Base, ecb: EcbQuotes, today: stri
     run: rulesRun(view.agentInput, "your invoices — rules"),
     timeline: { bins: [], soon: { days: 14, asInvoiced: 0, asProposed: 0 }, total: 0 },
     clients: Object.fromEntries(parsed.invoices.filter((i) => i.recipientName).map((i) => [i.id, i.recipientName!])),
+    lines: [],
   };
   analysis.timeline = moneyTimeline(view.agentInput, analysis.run);
+  const day = Date.parse(today);
+  const unvalued = new Map(e.skipped.map((k) => [k.id, k.reason]));
+  analysis.lines = [
+    ...parsed.invoices.map((i): OwnLine => {
+      const rate = i.currency === base ? 1 : view.rates[i.currency];
+      const value = rate > 0 ? i.amountDue * rate : null;
+      const err = unvalued.get(i.id);
+      return {
+        row: Number(i.id.replace("own-", "")) || null,
+        number: i.number,
+        client: i.recipientName ?? "",
+        currency: i.currency,
+        amount: i.amountDue,
+        dueDate: i.dueDate,
+        daysToDue: Math.round((Date.parse(i.dueDate) - day) / 86_400_000),
+        value,
+        atRisk: value == null ? null : i.currency === base ? 0 : (value * 3) / 100,
+        ...(err ? { error: err } : {}),
+      };
+    }),
+    ...parsed.skipped.map((k): OwnLine => ({
+      row: k.row, number: "", client: "", currency: "", amount: null, dueDate: "", daysToDue: null, value: null, atRisk: null, error: k.reason,
+    })),
+  ].sort((a, b) => (a.row ?? 0) - (b.row ?? 0));
   return { analysis, agentInput: view.agentInput };
 }

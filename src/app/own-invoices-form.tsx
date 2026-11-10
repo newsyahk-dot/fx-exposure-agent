@@ -10,6 +10,7 @@ import { annualCostPct } from "@/lib/offer-rule";
 import { BASES } from "@/lib/fx";
 import { compact, money } from "@/lib/format";
 import { sampleCsv } from "@/lib/own-invoices";
+import { OwnGrid } from "./lazy";
 import { MoneyTimeline } from "./money-timeline";
 import { analyzeOwnAction, type OwnState } from "./try-actions";
 import styles from "./page.module.css";
@@ -133,6 +134,13 @@ function OwnResult({ s }: { s: Extract<OwnState, { ok: true }> }) {
         </table>
       )}
 
+      {a.lines.length > 0 && (
+        <>
+          <h2>Every line you pasted</h2>
+          <OwnGrid lines={a.lines} run={a.run} base={a.base} />
+        </>
+      )}
+
       {a.read > 0 && (
         <>
           <h2>{a.run.source === "agent" ? "What Claude would do today" : "What the agent would do today"}</h2>
@@ -169,7 +177,7 @@ function OwnResult({ s }: { s: Extract<OwnState, { ok: true }> }) {
         </>
       )}
 
-      {a.skipped.length > 0 && (
+      {a.skipped.length > 0 && a.lines.length === 0 && (
         <details className={styles.leftAlone} open={a.read === 0}>
           <summary>Rows not read ({a.skipped.length})</summary>
           <ul>

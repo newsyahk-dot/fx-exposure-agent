@@ -2092,3 +2092,53 @@
 .page:has([data-step]:not([data-step="today"])) .heroExtra {
   display: none;
 }
+
+/* Round 8: headings between card groups on Today (abroad late · abroad on its way · home late). */
+.cardGroup {
+  font-size: 0.95rem;
+  margin: 1.1rem 0 0.4rem;
+  font-weight: 600;
+}
+
+/* /try grid: rows that could not be read or valued stay visible, tinted. */
+.gridErrorRow {
+  background: color-mix(in srgb, var(--critical) 9%, transparent) !important;
+}
+.gridTwoLineRight {
+  align-items: flex-end;
+}
+
+/* Round 8 (2026-11-09): tighter top on laptops, so the four tiles under the big number fit a 1440×900 screen. */
+@media (min-width: 720px) {
+  .header .headline {
+    margin-top: 6px;
+    font-size: clamp(34px, 4.6vw, 50px);
+  }
+  .moments {
+    margin-top: 6px;
+  }
+  .moments a {
+    padding: 9px 14px;
+  }
+  .contextRow,
+  .baseNav {
+    margin-bottom: -12px;
+  }
+  .contextRow {
+    padding: 8px 14px;
+  }
+}
+@media (min-width: 720px) {
+  .header .lede {
+    font-size: 17px;
+  }
+  .steps {
+    margin-bottom: -10px;
+  }
+}
+@media (max-width: 719px) {
+  .gridInvoice {
+    font-size: 12.5px;
+    gap: 2px;
+  }
+}

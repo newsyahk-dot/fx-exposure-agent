@@ -68,10 +68,10 @@ her how much is at stake, or which invoice to deal with first.
    getting paid weeks sooner, with its cost as a yearly rate (the agent only offers terms at most 12% a year and at
    least three weeks sooner). She approves, and it runs in PayPal. The offer is a separate early-payment invoice that
    lapses after its date: her own invoice never changes, and the client gets the discount only by paying early.
-4. **The loop closes on its own.** When the client pays, PayPal notifies the app and her screen shows it within
-   seconds: "+ collected" with the amount, and what is still waiting goes down ("start of today → now").
+4. **The loop closes on its own.** When the client pays on PayPal's invoice page, PayPal notifies the app and her
+   screen shows it in under 20 seconds (measured; a simulated payment can take up to about a minute to appear): "+ collected" with the amount, and what is still waiting goes down ("start of today → now").
 5. **Routine work handed over.** She approves a standing policy once (for example: reminders yes, discounts no more
-   than 1%), and an autopilot runs the proposals that fit it every weekday morning. Anything else still waits for her,
+   than 1%), and an autopilot runs the proposals that fit it once every weekday (00:17 UTC). Anything else still waits for her,
    and it never changes the terms of an invoice she sent in the last 7 days.
 
 The app never says which way rates will go, and never says which option is better. It shows the cost and the risk

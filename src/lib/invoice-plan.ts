@@ -173,7 +173,7 @@ export function planOptions(req: InvoiceRequest, h: ClientHistory, ctx: PlanCont
     out.push(
       build(
         "split",
-        "Half up front",
+        `Half as a ${SPLIT_DEPOSIT_DAYS}-day deposit`,
         [
           part(req.currency, half, SPLIT_DEPOSIT_DAYS, "A deposit invoice of"),
           part(req.currency, req.amount - half, req.termsDays, "A balance invoice of"),

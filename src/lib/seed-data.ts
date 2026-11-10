@@ -38,7 +38,7 @@ export const SEED_INVOICES: SeedInvoice[] = [
   { number: "FXA-2002", currency: "EUR", amount: 2400, item: "Shopify theme customization", client: "Kleinfeld GmbH", issueOffset: -13, dueOffset: 17, outcome: { kind: "open" }, why: "week 3 -> early-pay candidate" },
   { number: "FXA-2003", currency: "EUR", amount: 950, item: "Product photo retouching", client: "Atelier Moreau", issueOffset: -5, dueOffset: 10, outcome: { kind: "open" }, why: "due in week 2" },
   { number: "FXA-2004", currency: "EUR", amount: 3200, item: "Packaging design", client: "Studio Verde", issueOffset: -69, dueOffset: -39, outcome: { kind: "paid", paidOffset: -41 }, why: "paid on time" },
-  { number: "FXA-2005", currency: "EUR", amount: 5000, item: "Annual design support", client: "Kleinfeld GmbH", issueOffset: -8, dueOffset: 59, outcome: { kind: "open" }, why: "large, far out -> early-pay candidate" },
+  { number: "FXA-2005", currency: "EUR", amount: 5000, item: "Annual design support", client: "Kleinfeld GmbH", issueOffset: -8, dueOffset: 80, outcome: { kind: "open" }, why: "large, far out -> early-pay candidate" },
   { number: "FXA-2006", currency: "EUR", amount: 1200, item: "Newsletter templates", client: "Studio Verde", issueOffset: -33, dueOffset: -3, outcome: { kind: "paid", paidOffset: -1 }, why: "paid a little late" },
   { number: "FXA-2007", currency: "EUR", amount: 1400, item: "Brochure layout", client: "Atelier Moreau", issueOffset: -90, dueOffset: -60, outcome: { kind: "paid", paidOffset: -49 }, why: "paid 11 days late -> payment history" },
   // GBP — UK clients
