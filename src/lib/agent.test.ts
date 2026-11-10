@@ -83,6 +83,11 @@ describe("what code lets the agent do", () => {
     for (const c of late) expect(t).toContain(c.invoiceNumber);
     expect(t).toMatch(/in USD, so exchange rates do not change it/);
     expect(t).toMatch(/from abroad: a 3% move either way/);
+    // From abroad first: every "from abroad" line comes before every home-currency line.
+    const lines = t.split("\n").slice(1);
+    const lastAbroad = lines.map((l) => /from abroad/.test(l)).lastIndexOf(true);
+    const firstHome = lines.findIndex((l) => /in USD, so/.test(l));
+    expect(lastAbroad).toBeLessThan(firstHome);
   });
 
   it("chases late invoices in the home currency too, but offers only on money from abroad", () => {

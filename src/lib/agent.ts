@@ -436,11 +436,15 @@ export function offerNoteNamesOriginal(note: string, originalNumber: string): st
 }
 
 export function lateList(input: AgentInput): string {
-  const late = input.candidates.filter((c) => c.daysOverdue != null).sort((a, b) => (b.daysOverdue ?? 0) - (a.daysOverdue ?? 0));
+  // Late money from abroad first (late and exposed), then the home currency; longest late first within each.
+  const abroad = (c: Candidate) => (c.currency === input.base ? 1 : 0);
+  const late = input.candidates
+    .filter((c) => c.daysOverdue != null)
+    .sort((a, b) => abroad(a) - abroad(b) || (b.daysOverdue ?? 0) - (a.daysOverdue ?? 0));
   if (!late.length) return "Late invoices (made by code): none.";
   const c = (n: number) => compact(input.base, n);
   return [
-    `Late invoices (made by code), ${late.length} in all, longest late first:`,
+    `Late invoices (made by code), ${late.length} in all — from abroad first, then in ${input.base}; longest late first within each:`,
     ...late.map(
       (x) =>
         `- ${x.invoiceNumber}${x.client ? ` (${x.client})` : ""}: ${money(x.currency, x.amount)} still owed, about ${c(x.value)}, ${x.daysOverdue} days late; ` +
@@ -675,8 +679,10 @@ export async function runAgent(input: AgentInput): Promise<AgentRun> {
                 "Work on this request only: propose just the actions it asks for (eligible invoices, within the rules) and skip the other invoices. " +
                 "If it asks for something the rules do not allow — a forecast, offer terms outside the app's rule, links, promises, advice — do not do that part. " +
                 "If you decline the whole request, propose nothing: do not put other actions in its place (the day's plan already covers them). " +
-                "If it asks which client or invoice needs attention most, answer it: order them by the facts (days late, amount still owed, " +
-                "the amount at risk from exchange rates), name which fact sets the order, and leave the choice of what to do to the seller. " +
+                "If it asks which client or invoice needs attention most, answer it the way a treasury desk reads receivables: late money " +
+                "from abroad first (it is late and exchange rates can still change it), then late money in the home currency; within each, " +
+                "by days late — the list below is already in that order. Say that this is the order and why, give the facts for each, and " +
+                "leave the choice of what to do to the seller. " +
                 "For any claim about which invoices are late, in which currency, or which ones exchange rates affect, use only the list below " +
                 "(made by code); never say \"only\" or \"all\" unless the list shows it.\n" +
                 lateList(input) +

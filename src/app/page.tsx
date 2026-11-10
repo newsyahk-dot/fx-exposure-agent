@@ -31,7 +31,7 @@ import { UnlockForm } from "./unlock-form";
 import { WaitChart } from "./wait-chart";
 import { HeroValue } from "./hero-value";
 import { Logo } from "./logo";
-import { InvoiceGrid } from "./lazy";
+import { InvoiceGrid, TableGrid } from "./lazy";
 import { AskAgent } from "./ask-agent";
 import { AskResult } from "./ask-result";
 import { ReplanButton } from "./replan-button";
@@ -710,41 +710,32 @@ function Timing({ view }: { view: BookView }) {
         History, not a forecast: rate moves while you waited went {signed(t.gains)} for you and {signed(t.losses)} against
         you. The next wait can go either way.
       </p>
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th scope="col">Invoice</th>
-              <th scope="col" className={styles.num}>
-                Received
-              </th>
-              <th scope="col">Invoiced → paid</th>
-              <th scope="col" className={styles.num}>
-                Days late
-              </th>
-              <th scope="col" className={styles.num}>
-                Effect in {view.base}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {t.rows.map((r) => (
-              <tr key={`${r.invoiceId}-${r.paidDate}`} className={r.paidDate === t.to ? styles.today : undefined}>
-                <th scope="row">
-                  {r.invoiceNumber}
-                  {r.paidDate === t.to && " · paid today"}
-                </th>
-                <td className={styles.num}>{money(r.currency, r.amount)}</td>
-                <td>
-                  {r.invoiceDate} → {r.paidDate} ({r.daysWaited} days)
-                </td>
-                <td className={styles.num}>{r.daysLate || ""}</td>
-                <td className={styles.num}>{signed(r.effect)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <TableGrid
+        label={`Payments from clients abroad in the last ${TIMING_DAYS} days`}
+        csvName={`what-the-wait-did-${view.base}.csv`}
+        highlightField="today"
+        cols={[
+          { field: "invoice", header: "Invoice", minWidth: 150 },
+          { field: "received", header: "Received", right: true, sortBy: "receivedValue", minWidth: 120 },
+          { field: "dates", header: "Invoiced → paid", minWidth: 220, sortBy: "daysWaited" },
+          { field: "lateText", header: "Days late", right: true, sortBy: "daysLate", csvBy: "daysLate", minWidth: 96, late: "isLate" },
+          { field: "effect", header: `Effect in ${view.base}`, right: true, sortBy: "effectValue", csvBy: "effectValue", minWidth: 110 },
+        ]}
+        rows={t.rows.map((r) => ({
+          invoice: `${r.invoiceNumber}${r.paidDate === t.to ? " · paid today" : ""}`,
+          received: money(r.currency, r.amount),
+          receivedValue: r.amount,
+          dates: `${r.invoiceDate} → ${r.paidDate} (${r.daysWaited} days)`,
+          daysWaited: r.daysWaited,
+          // "on time" instead of a blank, which read as missing data (blind review round 10).
+          lateText: r.daysLate ? `${r.daysLate} days` : "on time",
+          daysLate: r.daysLate,
+          isLate: r.daysLate > 0,
+          effect: signed(r.effect),
+          effectValue: Math.round(r.effect * 100) / 100,
+          today: r.paidDate === t.to,
+        }))}
+      />
     </section>
   );
 }

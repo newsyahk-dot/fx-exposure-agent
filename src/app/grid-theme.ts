@@ -19,3 +19,9 @@ export const gridTheme = themeQuartz.withParams({
 
 export const FOCUS_EVENT = "fxa:focus";
 export type FocusDetail = { currency: string; bucket: Bucket | null; label: string } | null;
+
+// Search words, but keep what reads as one phrase on screen together: "15 days late", "in 46 days", "paid today",
+// "GBP 3,800.00". Word by word, "15 days late" matched any row with a 15 somewhere (blind review round 8).
+export const parseSearch = (q: string) =>
+  // AG Grid upper-cases both the search and the row text before matching.
+  q.toUpperCase().match(/\bIN\s+\d+\s+DAYS?|\d+\s+DAYS?\s+LATE|PAID\s+TODAY|\b(?:USD|EUR|GBP|JPY|KRW|CHF|CAD|AUD|NZD|SEK|NOK|DKK|PLN|SGD|HKD|CNY|INR|MXN|BRL)\s+[\d,.]*\d|\S+/g) ?? [];

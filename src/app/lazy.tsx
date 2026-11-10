@@ -32,3 +32,8 @@ export const OwnGrid = dynamic(() => import("./own-grid").then((m) => m.OwnGrid)
   ssr: false,
   loading: () => <Loading height={260} label="Loading the table…" />,
 });
+
+export const TableGrid = dynamic(() => import("./table-grid").then((m) => m.TableGrid), {
+  ssr: false,
+  loading: () => <Loading height={200} label="Loading the table…" />,
+});

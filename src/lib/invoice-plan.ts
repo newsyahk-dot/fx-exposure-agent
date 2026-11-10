@@ -131,6 +131,11 @@ export function planOptions(req: InvoiceRequest, h: ClientHistory, ctx: PlanCont
     const facts = [
       `${title}: ${lead}`,
       parts.map((p) => `${p.label} ${money(p.currency, p.amount)} due ${p.dueDate} (${p.dueInDays} days).`).join(" "),
+      // The wait the swing and range use: the terms plus this client's usual lateness. Claude used to write "money waits
+      // 45 days" while the note under the options said the waits add 6 late days (blind review round 10).
+      late > 0
+        ? `With this client's usual ${late} days late, the money waits about ${waits.map((w) => `${w} days`).join(" and ")}.`
+        : `Money waits ${waits.map((w) => `${w} days`).join(" and ")} if paid on the due date.`,
       `Worth about ${c(value)} at today's rate.`,
       !foreign
         ? req.currency === base
@@ -292,7 +297,7 @@ export async function writeComparison(req: InvoiceRequest, h: ClientHistory, opt
           output_config: { effort: "medium", format: zodOutputFormat(z.object({ comparison: z.string() })) },
           system:
             `You help a freelancer compare ways to bill one client. Home currency: ${base}. In at most 4 short sentences (under 600 characters), ` +
-            "say what each option changes: how long money waits, how large the typical swing is, and who carries the exchange rate. " +
+            "say what each option changes: how long money waits (use the wait in the facts, which includes the client's usual lateness), how large the typical swing is, and who carries the exchange rate. " +
             "Use only numbers that appear in the facts, copied exactly, and keep each figure with its own label (typical swing vs the two-year range). " +
             "Never say which option is better, never recommend, never predict where rates go. A swing is a size of uncertainty, not a loss or a gain. " +
             "Describe only the options listed in the facts; do not mention any other way to bill. " +
