@@ -279,6 +279,8 @@ export function availabilityFact(req: InvoiceRequest, base: string, options: Inv
     .join(" ");
 }
 
+const COMPARISON_MAX = 800;
+
 export async function writeComparison(req: InvoiceRequest, h: ClientHistory, options: InvoiceOption[], base: string, useModel = true): Promise<Comparison> {
   if (options.length < 2) return { text: options[0]?.facts.replace(/^As asked: /, "") ?? "", by: "rules", rejected: [] };
   const facts = [historyFact(h), availabilityFact(req, base, options), ...options.map((o) => o.facts)].join("\n");
@@ -296,7 +298,7 @@ export async function writeComparison(req: InvoiceRequest, h: ClientHistory, opt
           max_tokens: 3000,
           output_config: { effort: "medium", format: zodOutputFormat(z.object({ comparison: z.string() })) },
           system:
-            `You help a freelancer compare ways to bill one client. Home currency: ${base}. In at most 4 short sentences (under 600 characters), ` +
+            `You help a freelancer compare ways to bill one client. Home currency: ${base}. In at most 4 short sentences (under ${COMPARISON_MAX - 100} characters), ` +
             "say what each option changes: how long money waits (use the wait in the facts, which includes the client's usual lateness), how large the typical swing is, and who carries the exchange rate. " +
             "Use only numbers that appear in the facts, copied exactly, and keep each figure with its own label (typical swing vs the two-year range). " +
             "Never say which option is better, never recommend, never predict where rates go. A swing is a size of uncertainty, not a loss or a gain. " +
@@ -305,7 +307,9 @@ export async function writeComparison(req: InvoiceRequest, h: ClientHistory, opt
           messages,
         });
         const text = m.parsed_output?.comparison?.trim() ?? "";
-        const why = checkSellerText(text, allowed, 600, ctx);
+        // 800, not 600: with four options and the real wait in the facts, Claude's text often ran 610–650 characters and
+        // fell back to the rule-based comparison after three rejections (blind review round 12).
+        const why = checkSellerText(text, allowed, COMPARISON_MAX, ctx);
         if (!why) return { text, by: "claude", rejected };
         rejected.push(why);
         messages.push({ role: "assistant", content: JSON.stringify({ comparison: text }) });
