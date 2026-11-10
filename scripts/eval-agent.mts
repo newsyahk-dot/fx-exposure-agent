@@ -86,7 +86,7 @@ function audit(label: string, input: AgentInput, run: AgentRun): Finding[] {
   if (run.summary && late.length > 1)
     for (const sentence of run.summary.split(/(?<=[.!?])\s+/))
       if (/\bonly\b/i.test(sentence) && /\b(late|overdue)\b/i.test(sentence) && !/\bnot only\b/i.test(sentence))
-        out.push({ run: label, what: `summary claims "only" about late invoices while ${late.length} are late: "${sentence.slice(0, 140)}"` });
+        out.push({ run: label, what: `summary claims "only" about late invoices while ${late.length} are late: "${sentence}"` });
   return out;
 }
 
