@@ -457,9 +457,16 @@ export function lateList(input: AgentInput): string {
   ].join("\n");
 }
 
+// Kill switch (2026-11-13: the hackathon is over and the site no longer spends on the model). In production Claude is
+// called only when FXA_AGENT_ENABLED=1; otherwise every plan, answer and comparison is the rule-based one.
+export function modelCallsOff(): boolean {
+  return process.env.NODE_ENV === "production" && process.env.FXA_AGENT_ENABLED !== "1";
+}
+
 export async function runAgent(input: AgentInput): Promise<AgentRun> {
   const apiKey = process.env.FXA_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return rulesRun(input, "no API key");
+  if (modelCallsOff()) return rulesRun(input, "Claude is switched off on this site");
   if (!input.candidates.some((c) => c.eligible.length)) return rulesRun(input, "nothing eligible");
 
   const byId = new Map(input.candidates.map((c) => [c.invoiceId, c]));

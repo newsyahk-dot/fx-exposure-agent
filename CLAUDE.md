@@ -278,4 +278,7 @@ actions that shorten that exposure (payment reminders, early-payment discount te
   "Next 4 weeks" (`PHONE_GROUPS`; a merged cell filters by `FocusDetail.buckets`), TableGrid columns can be
   `hideOnPhone` (the wait grid keeps Invoice · Days late · Effect), the invoice grid's risk header reads "±3%".
   Draft search text matches "1% · fixed".
+- **Switched off** (2026-11-13, user decision — the hackathon was not submitted and the site no longer spends): no Vercel
+  crons, no keep-warm workflow, and in production no Claude calls unless `FXA_AGENT_ENABLED=1` (`modelCallsOff` in
+  `src/lib/agent.ts`; every plan, answer and comparison falls back to the rule-based one). The site stays up.
 

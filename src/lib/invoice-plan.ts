@@ -8,7 +8,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { AGENT_MODEL, FALLBACK_MODELS, toBusinessDays } from "./agent";
+import { AGENT_MODEL, FALLBACK_MODELS, modelCallsOff, toBusinessDays } from "./agent";
 import { checkSellerText } from "./checks";
 import { replayBook } from "./evidence";
 import { daysBetween } from "./exposure";
@@ -196,6 +196,7 @@ const signed = (c: (n: number) => string, n: number) => `${n >= 0 ? "+" : "−"}
 
 const client = () => {
   const apiKey = process.env.FXA_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
+  if (modelCallsOff()) return null; // see agent.ts
   return apiKey ? new Anthropic({ apiKey, baseURL: "https://api.anthropic.com", timeout: 45_000, maxRetries: 1 }) : null;
 };
 const modelParams = () => ({
